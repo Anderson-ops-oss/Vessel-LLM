@@ -423,6 +423,14 @@
                 <h2 class="text-3xl font-bold dark:text-white text-gray-800 mb-3">Welcome to OOCL AI</h2>
                 <p class="dark:text-gray-300 text-gray-600 max-w-lg">Ask questions or upload documents to get insights from our AI assistant.</p>
             </div>
+            <!-- 训练进度显示 -->
+            <div id="main-training-progress" class="hidden w-full max-w-lg mt-4">
+                <h3 class="text-lg font-medium dark:text-white text-gray-800 mb-2">Training RAG Model</h3>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                    <div id="main-training-progress-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="main-training-status" class="text-center mt-2 text-sm">Preparing files...</p>
+            </div>
             <!-- 输入区域：最大宽度 lg -->
             <div class="w-full max-w-lg">
                 <div class="relative mb-4">
@@ -444,28 +452,20 @@
                     </label>
                     <div id="file-info" class="text-sm dark:text-gray-400 text-gray-500"></div>
                 </div>
-                
-                <!-- 文件夹上传区域（用于 RAG 模型训练） -->
-                <div class="mt-6">
-                    <h3 class="text-lg font-medium dark:text-white text-gray-800 mb-2">Train your own RAG model</h3>
-                    <div id="folder-upload-area" class="folder-upload-area">
-                        <input type="file" id="folder-input" webkitdirectory directory multiple class="hidden">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto text-blue-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v6m-3-3h6" />
-                        </svg>
-                        <p class="dark:text-gray-300 text-gray-600">Upload a folder with documents to train a custom RAG model</p>
-                        <p class="text-sm text-blue-500 mt-2">Click here or drag files</p>
-                    </div>
-                    <!-- 文件夹信息显示区域 -->
-                    <div id="folder-info" class="text-sm dark:text-gray-400 text-gray-500 mt-2"></div>
-                </div>
             </div>
         </div>
 
         <!-- 聊天界面 -->
         <div id="chat-interface" class="hidden flex-1 flex flex-col">
             <div id="chat-container" class="flex-1 overflow-y-auto p-4"></div>
+            <!-- 训练进度显示 -->
+            <div id="main-training-progress" class="hidden w-full max-w-lg mt-4">
+                <h3 class="text-lg font-medium dark:text-white text-gray-800 mb-2">Training RAG Model</h3>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                    <div id="main-training-progress-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="main-training-status" class="text-center mt-2 text-sm">Preparing files...</p>
+            </div>
             <div class="p-4 rounded-lg backdrop-blur-sm bg-white/30 dark:bg-gray-800/30 shadow-sm mt-auto">
                 <div class="relative">
                     <textarea id="chat-question-input" rows="3" class="w-full p-4 rounded-xl shadow-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500" placeholder="Type your question here..."></textarea>
@@ -511,6 +511,14 @@
                     </div>
                 </div>
             </div>
+            <!-- 训练进度显示 -->
+            <div id="modal-training-progress" class="hidden mb-4">
+                <h3 class="text-lg font-medium dark:text-white text-gray-800 mb-2">Training RAG Model</h3>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                    <div id="modal-training-progress-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="modal-training-status" class="text-center mt-2 text-sm">Preparing files...</p>
+            </div>
             <!-- 新模型训练区域 -->
             <div class="mt-6 border-t dark:border-gray-700 border-gray-200 pt-4">
                 <h4 class="font-medium mb-2">Train new model</h4>
@@ -535,23 +543,6 @@
                 <button id="train-rag-btn" class="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                     Train Model
                 </button>
-            </div>
-        </div>
-    </div>
-
-    <<!-- 训练进度模态框 -->
-    <div id="training-modal" class="modal-overlay">
-        <div class="modal-container">
-            <h3 class="text-lg font-bold dark:text-white text-gray-800 mb-4">Training RAG Model</h3>
-            <div class="mb-4">
-                <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
-                    <div id="training-progress" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
-                </div>
-                <p id="training-status" class="text-center mt-2 text-sm">Preparing files...</p>
-            </div>
-            <div class="text-center text-sm dark:text-gray-400 text-gray-500">
-                <p>This may take a few minutes depending on the size of your documents.</p>
-                <p>Please don't close this window.</p>
             </div>
         </div>
     </div>
@@ -591,28 +582,36 @@
     const modalFolderInput = document.getElementById('modal-folder-input');
     const modalFolderInfo = document.getElementById('modal-folder-info');
     const trainRagBtn = document.getElementById('train-rag-btn');
-    // New progress bar elements
     const trainingProgressContainer = document.getElementById('training-progress-container');
     const trainingProgress = document.getElementById('training-progress');
     const trainingStatus = document.getElementById('training-status');
+    const mainTrainingProgress = document.getElementById('main-training-progress');
+    const mainTrainingProgressBar = document.getElementById('main-training-progress-bar');
+    const mainTrainingStatus = document.getElementById('main-training-status');
+    const chatTrainingProgress = document.getElementById('chat-training-progress');
+    const chatTrainingProgressBar = document.getElementById('chat-training-progress-bar');
+    const chatTrainingStatus = document.getElementById('chat-training-status');
+    const modalTrainingProgress = document.getElementById('modal-training-progress');
+    const modalTrainingProgressBar = document.getElementById('modal-training-progress-bar');
+    const modalTrainingStatus = document.getElementById('modal-training-status');
 
-    // State variables
+    // 状态变量
     let isDarkMode = localStorage.getItem('darkMode') !== 'false';
     let isRagEnabled = false;
-    let currentRagModel = 'default';
+    let currentRagModel = 'None'; 
     let availableRagModels = [];
     let isTraining = false; // Track training state
 
-    // Base URL for backend API
+    // 后端 API 基础 URL
     const BASE_URL = 'http://localhost:5000';
 
-    // Event listeners
+    // 初始化事件监听器
     function initializeEventListeners() {
-        // Send buttons
+        // 发送按钮事件
         sendButton?.addEventListener('click', () => sendMessage(questionInput, fileInput));
         chatSendButton?.addEventListener('click', () => sendMessage(chatQuestionInput, chatFileInput));
 
-        // Enter key for inputs
+        // 输入框回车键事件
         questionInput?.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
@@ -626,39 +625,20 @@
             }
         });
 
-        // File inputs
+        // 文件输入事件
         fileInput?.addEventListener('change', updateFileInfo);
         chatFileInput?.addEventListener('change', updateChatFileInfo);
 
-        // Theme toggle
+        // 主题切换
         themeToggle?.addEventListener('click', toggleTheme);
 
-        // Clear chat
+        // 清除聊天
         clearChatButton?.addEventListener('click', clearChat);
 
-        // RAG toggle
+        // RAG 模式切换
         ragToggle?.addEventListener('click', toggleRagMode);
 
-        // Folder upload
-        folderUploadArea?.addEventListener('click', () => folderInput?.click());
-        folderInput?.addEventListener('change', handleFolderSelect);
-        folderUploadArea?.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            folderUploadArea.classList.add('drag-active');
-        });
-        folderUploadArea?.addEventListener('dragleave', () => {
-            folderUploadArea.classList.remove('drag-active');
-        });
-        folderUploadArea?.addEventListener('drop', (e) => {
-            e.preventDefault();
-            folderUploadArea.classList.remove('drag-active');
-            if (e.dataTransfer.files) {
-                folderInput.files = e.dataTransfer.files;
-                handleFolderSelect();
-            }
-        });
-
-        // RAG models modal
+        // RAG 模型模态框事件
         ragModelsBtn?.addEventListener('click', openRagModelsModal);
         closeRagModalBtn?.addEventListener('click', closeRagModelsModal);
         modalFolderUpload?.addEventListener('click', () => modalFolderInput?.click());
@@ -671,9 +651,44 @@
             trainRagBtn.disabled = !newRagName.value || modalFolderInput.files.length === 0 || isTraining;
         });
         trainRagBtn?.addEventListener('click', startRagTraining);
+
+        // 添加 SSE 监听以获取训练进度
+        const source = new EventSource(`${BASE_URL}/training_progress`);
+        source.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.is_training || data.percentage > 0) {
+                updateTrainingProgress(data.percentage, data.status, !!data.error);
+            } else {
+                mainTrainingProgress?.classList.add('hidden');
+                chatTrainingProgress?.classList.add('hidden');
+                modalTrainingProgress?.classList.add('hidden');
+            }
+            if (data.error) {
+                displayMessage('error', data.error);
+                isTraining = false;
+                trainRagBtn.disabled = false;
+            }
+        };
+        source.onerror = () => {
+            console.error('SSE connection error');
+            updateTrainingProgress(100, 'Error: Lost connection to server', true);
+            setTimeout(() => {
+                mainTrainingProgress?.classList.add('hidden');
+                chatTrainingProgress?.classList.add('hidden');
+                modalTrainingProgress?.classList.add('hidden');
+                mainTrainingProgressBar.classList.remove('bg-red-500');
+                chatTrainingProgressBar.classList.remove('bg-red-500');
+                modalTrainingProgressBar.classList.remove('bg-red-500');
+                mainTrainingProgressBar.style.width = '0%';
+                chatTrainingProgressBar.style.width = '0%';
+                modalTrainingProgressBar.style.width = '0%';
+                isTraining = false;
+                trainRagBtn.disabled = false;
+            }, 3000);
+        };
     }
 
-    // Send message (question with optional files)
+    // 发送消息（问题和可选文件）
     async function sendMessage(inputElement, fileInputElement) {
         const question = inputElement.value.trim();
         const files = fileInputElement.files;
@@ -682,10 +697,13 @@
             return;
         }
 
-        // Disable inputs during processing
+        if (inputElement === questionInput) {
+        showChatInterface();
+        }
+        // 禁用输入控件
         setInputControlsDisabled(true, inputElement === chatQuestionInput);
 
-        // Display user message and clear input
+        // 显示用户消息并清空输入t
         if (question) {
             displayMessage('user', question);
             saveMessage('user', question);
@@ -695,14 +713,14 @@
             displayMessage('system', `Uploading ${files.length} file(s)...`);
         }
 
-        // Generate unique ID for thinking message
+        // 显示思考中消息
         const thinkingId = Date.now();
         displayThinkingMessage(thinkingId);
 
         try {
             let response;
             if (files.length > 0 && !isRagEnabled) {
-                // Send files and question
+                // 发送文件和问题
                 const formData = new FormData();
                 formData.append('question', question);
                 for (let file of files) {
@@ -713,7 +731,7 @@
                     body: formData
                 });
             } else {
-                // Use RAG or simple question
+                // 使用 RAG 或普通问题
                 const endpoint = isRagEnabled ? '/rag_ask' : '/ask';
                 response = await fetch(`${BASE_URL}${endpoint}`, {
                     method: 'POST',
@@ -722,6 +740,9 @@
                 });
             }
 
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
             const data = await response.json();
             removeThinkingMessage(thinkingId);
 
@@ -730,15 +751,17 @@
                 return;
             }
 
-            // Display thinking details before AI response
+            // 显示思考细节
             if (data.thinking) {
                 displayMessage('system', `(Thinking: ${data.thinking})`, true);
                 saveMessage('system', `(Thinking: ${data.thinking})`, true);
             }
+
+            // 显示 AI 响应
             displayMessage('ai', data.response);
             saveMessage('ai', data.response);
 
-            // Clear file input
+            // 清空文件输入
             fileInputElement.value = '';
             if (fileInputElement === fileInput) {
                 fileInfo.textContent = '';
@@ -753,7 +776,7 @@
         }
     }
 
-    // Update file info display
+    // 更新文件信息显示
     function updateFileInfo() {
         const files = fileInput.files;
         fileInfo.textContent = files.length > 0 ? `${files.length} file(s) selected` : '';
@@ -764,14 +787,14 @@
         chatFileInfo.textContent = files.length > 0 ? `${files.length} file(s) selected` : '';
     }
 
-    // Clear chat history
+    // 清除聊天历史
     function clearChat() {
         chatContainer.innerHTML = '';
         localStorage.removeItem('chatHistory');
         displayMessage('system', 'Chat history cleared.');
     }
 
-    // Toggle theme
+    // 切换主题
     function toggleTheme() {
         isDarkMode = !isDarkMode;
         document.body.classList.toggle('dark', isDarkMode);
@@ -781,9 +804,13 @@
         darkBg?.classList.toggle('hidden', !isDarkMode);
         lightBg?.classList.toggle('hidden', isDarkMode);
         localStorage.setItem('darkMode', isDarkMode);
+        if (isDarkMode) {
+            darkBg.innerHTML = ''; 
+            createFireflies(); 
+        }
     }
 
-    // Toggle RAG mode
+    // 切换 RAG 模式
     function toggleRagMode() {
         isRagEnabled = !isRagEnabled;
         ragStatus.className = `ml-1 inline-block w-3 h-3 rounded-full ${isRagEnabled ? 'bg-green-500' : 'bg-gray-400'}`;
@@ -802,30 +829,20 @@
         }
     }
 
-    // Handle folder selection for RAG training
-    function handleFolderSelect() {
-        const files = folderInput.files;
-        if (files.length > 0) {
-            folderInfo.textContent = `${files.length} files selected`;
-            openRagModelsModal();
-            modalFolderInput.files = files;
-            modalFolderInfo.textContent = `${files.length} files selected`;
-            trainRagBtn.disabled = !newRagName.value || isTraining;
-        }
-    }
 
-    // Open RAG models modal
+
+    // 打开 RAG 模型模态框
     function openRagModelsModal() {
         loadRagModels();
         ragModelsModal?.classList.add('active');
     }
 
-    // Close RAG models modal
+    // 关闭 RAG 模型模态框
     function closeRagModelsModal() {
         ragModelsModal?.classList.remove('active');
     }
 
-    // Load RAG models
+    // 加载 RAG 模型
     async function loadRagModels() {
         try {
             const response = await fetch(`${BASE_URL}/rag_models`);
@@ -862,7 +879,7 @@
         }
     }
 
-    // Select RAG model
+    // 选择 RAG 模型
     function selectRagModel(modelId) {
         currentRagModel = modelId;
         document.querySelectorAll('.rag-model-item').forEach(item => {
@@ -885,90 +902,121 @@
         displayMessage('system', `Selected RAG model: ${modelId}`);
     }
 
-    // Update training progress UI
-    function updateTrainingProgress(percentage, status, isError = false) {
-        if (!trainingProgressContainer) return;
-        trainingProgressContainer.classList.remove('hidden');
-        trainingProgress.style.width = `${percentage}%`;
-        trainingStatus.textContent = status;
+    // 更新训练进度 UI
+function updateTrainingProgress(percentage, status, isError = false) {
+    // 更新主界面进度
+    if (mainTrainingProgress) {
+        mainTrainingProgress.classList.remove('hidden');
+        mainTrainingProgressBar.style.width = `${percentage}%`;
+        mainTrainingStatus.textContent = status;
         if (isError) {
-            trainingProgress.classList.add('bg-red-500');
+            mainTrainingProgressBar.classList.add('bg-red-500');
         } else {
-            trainingProgress.classList.remove('bg-red-500');
+            mainTrainingProgressBar.classList.remove('bg-red-500');
         }
     }
-
-    // Start RAG training
-    async function startRagTraining() {
-        if (isTraining) {
-            displayMessage('error', 'A training process is already in progress.');
-            return;
-        }
-
-        const modelName = newRagName.value.trim();
-        const files = modalFolderInput.files;
-        if (!modelName || files.length === 0) {
-            displayMessage('error', 'Please provide a model name and select files.');
-            return;
-        }
-
-        isTraining = true;
-        trainRagBtn.disabled = true; // Disable only the train button
-        closeRagModelsModal();
-        updateTrainingProgress(10, 'Uploading files...');
-
-        try {
-            const formData = new FormData();
-            formData.append('model_name', modelName);
-            for (const file of files) {
-                formData.append('files[]', file, file.webkitRelativePath || file.name);
-            }
-
-            updateTrainingProgress(30, 'Processing files...');
-
-            const response = await fetch(`${BASE_URL}/upload_folder_for_rag`, {
-                method: 'POST',
-                body: formData
-            });
-
-            updateTrainingProgress(80, 'Finalizing training...');
-
-            const result = await response.json();
-            if (result.error) {
-                throw new Error(result.error);
-            }
-
-            updateTrainingProgress(100, 'Training complete!');
-
-            setTimeout(() => {
-                trainingProgressContainer?.classList.add('hidden');
-                newRagName.value = '';
-                modalFolderInput.value = '';
-                modalFolderInfo.textContent = '';
-                trainRagBtn.disabled = true;
-                currentRagModel = result.model_name;
-                if (!isRagEnabled) {
-                    toggleRagMode();
-                }
-                displayMessage('system', `Successfully trained RAG model "${result.model_name}" with ${result.processed_files} files. The model is now selected for use.`);
-                loadRagModels();
-                isTraining = false;
-                trainRagBtn.disabled = false;
-            }, 1500);
-        } catch (error) {
-            console.error('RAG training error:', error);
-            updateTrainingProgress(100, `Error: ${error.message || 'Failed to train model'}`, true);
-            setTimeout(() => {
-                trainingProgressContainer?.classList.add('hidden');
-                trainingProgress.classList.remove('bg-red-500');
-                trainingProgress.style.width = '0%';
-                isTraining = false;
-                trainRagBtn.disabled = false;
-            }, 3000);
+    // 更新聊天界面进度
+    if (chatTrainingProgress) {
+        chatTrainingProgress.classList.remove('hidden');
+        chatTrainingProgressBar.style.width = `${percentage}%`;
+        chatTrainingStatus.textContent = status;
+        if (isError) {
+            chatTrainingProgressBar.classList.add('bg-red-500');
+        } else {
+            chatTrainingProgressBar.classList.remove('bg-red-500');
         }
     }
+    // 更新模态框进度
+    if (modalTrainingProgress) {
+        modalTrainingProgress.classList.remove('hidden');
+        modalTrainingProgressBar.style.width = `${percentage}%`;
+        modalTrainingStatus.textContent = status;
+        if (isError) {
+            modalTrainingProgressBar.classList.add('bg-red-500');
+        } else {
+            modalTrainingProgressBar.classList.remove('bg-red-500');
+        }
+    }
+}
 
-    // Display message
+    // 开始 RAG 训练
+async function startRagTraining() {
+    if (isTraining) {
+        displayMessage('error', 'A training process is already in progress.');
+        return;
+    }
+
+    const modelName = newRagName.value.trim();
+    const files = modalFolderInput.files;
+    if (!modelName || files.length === 0) {
+        displayMessage('error', 'Please provide a model name and select files.');
+        return;
+    }
+
+    isTraining = true;
+    trainRagBtn.disabled = true;
+    closeRagModelsModal();
+    updateTrainingProgress(10, 'Uploading files...');
+
+    try {
+        const formData = new FormData();
+        formData.append('model_name', modelName);
+        for (const file of files) {
+            formData.append('files[]', file, file.webkitRelativePath || file.name);
+        }
+
+        updateTrainingProgress(30, 'Processing files...');
+
+        const response = await fetch(`${BASE_URL}/upload_folder_for_rag`, {
+            method: 'POST',
+            body: formData
+        });
+
+        updateTrainingProgress(80, 'Finalizing training...');
+
+        const result = await response.json();
+        if (result.error) {
+            throw new Error(result.error);
+        }
+
+        updateTrainingProgress(100, 'Training complete!');
+
+        setTimeout(() => {
+            mainTrainingProgress?.classList.add('hidden');
+            chatTrainingProgress?.classList.add('hidden');
+            modalTrainingProgress?.classList.add('hidden');
+            newRagName.value = '';
+            modalFolderInput.value = '';
+            modalFolderInfo.textContent = '';
+            trainRagBtn.disabled = true;
+            currentRagModel = result.model_name;
+            if (!isRagEnabled) {
+                toggleRagMode();
+            }
+            displayMessage('system', `Successfully trained RAG model "${result.model_name}" with ${result.processed_files} files. The model is now selected for use.`);
+            loadRagModels();
+            isTraining = false;
+            trainRagBtn.disabled = false;
+        }, 1500);
+    } catch (error) {
+        console.error('RAG training error:', error);
+        updateTrainingProgress(100, `Error: ${error.message || 'Failed to train model'}`, true);
+        setTimeout(() => {
+            mainTrainingProgress?.classList.add('hidden');
+            chatTrainingProgress?.classList.add('hidden');
+            modalTrainingProgress?.classList.add('hidden');
+            mainTrainingProgressBar.classList.remove('bg-red-500');
+            chatTrainingProgressBar.classList.remove('bg-red-500');
+            modalTrainingProgressBar.classList.remove('bg-red-500');
+            mainTrainingProgressBar.style.width = '0%';
+            chatTrainingProgressBar.style.width = '0%';
+            modalTrainingProgressBar.style.width = '0%';
+            isTraining = false;
+            trainRagBtn.disabled = false;
+        }, 3000);
+    }
+}
+    // 显示消息
     function displayMessage(type, content, isThinking = false) {
         if (isThinking) {
             const details = document.createElement('details');
@@ -1004,14 +1052,14 @@
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    // Save message to local storage
+    // 保存消息到本地存储
     function saveMessage(type, content, isThinking = false) {
         const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
         history.push({ type, content, isThinking });
         localStorage.setItem('chatHistory', JSON.stringify(history));
     }
 
-    // Display thinking message
+    // 显示思考中消息
     function displayThinkingMessage(id) {
         const div = document.createElement('div');
         div.id = `thinking-${id}`;
@@ -1028,7 +1076,7 @@
         chatContainer.scrollTop = chatContainer.scrollHeight;
     }
 
-    // Remove thinking message
+    // 移除思考中消息
     function removeThinkingMessage(id) {
         const thinkingMsg = document.getElementById(`thinking-${id}`);
         if (thinkingMsg) {
@@ -1036,7 +1084,7 @@
         }
     }
 
-    // Show chat interface
+    // 显示聊天界面
     function showChatInterface() {
         welcomeScreen?.classList.add('fade-out');
         setTimeout(() => {
@@ -1048,7 +1096,7 @@
         }, 300);
     }
 
-    // Enable/disable input controls
+    // 启用/禁用输入控件
     function setInputControlsDisabled(isDisabled, isChat) {
         if (isChat) {
             chatSendButton.disabled = isDisabled;
@@ -1073,7 +1121,7 @@
         }
     }
 
-    // Check server status
+    // 检查服务器状态
     async function checkServerStatus() {
         try {
             const response = await fetch(`${BASE_URL}/health`);
@@ -1085,7 +1133,7 @@
             if (data.rag_available) {
                 loadRagModels();
             }
-            // Test LLM connection
+            // 测试 LLM 连接
             const llmResponse = await fetch(`${BASE_URL}/test_llm`);
             if (!llmResponse.ok) {
                 displayLLMError();
@@ -1096,7 +1144,7 @@
         }
     }
 
-    // Display server error
+    // 显示服务器错误
     function displayServerError() {
         const errorMsg = document.createElement('div');
         errorMsg.className = 'p-4 mb-4 text-sm text-white bg-red-500 rounded-lg';
@@ -1104,7 +1152,7 @@
         document.querySelector('.welcome-container')?.prepend(errorMsg);
     }
 
-    // Display LLM error
+    // 显示 LLM 错误
     function displayLLMError() {
         const errorMsg = document.createElement('div');
         errorMsg.className = 'p-4 mb-4 text-sm text-white bg-orange-500 rounded-lg';
@@ -1112,30 +1160,58 @@
         document.querySelector('.welcome-container')?.prepend(errorMsg);
     }
 
-    // Placeholder for createFireflies (optional visual effect)
+    // 创建萤火虫效果
     function createFireflies() {
-        console.log('Fireflies effect placeholder');
+        const darkBg = document.getElementById('dark-bg');
+        const fireflyCount = 30; // 萤火虫数量，可调整
+
+        for (let i = 0; i < fireflyCount; i++) {
+            const firefly = document.createElement('div');
+            firefly.className = 'firefly';
+        
+            // 随机位置
+            const left = Math.random() * 100;
+            const top = Math.random() * 100;
+            firefly.style.left = `${left}%`;
+            firefly.style.top = `${top}%`;
+        
+            // 随机动画时长（50s 到 150s）
+            const duration = 50 + Math.random() * 100;
+            firefly.style.animationDuration = `${duration}s`;
+        
+            // 随机动画延迟（0s 到 10s）
+            const delay = Math.random() * 10;
+            firefly.style.animationDelay = `${delay}s`;
+        
+            // 随机初始旋转角度
+            firefly.style.transform = `rotate(${Math.random() * 360}deg)`;
+        
+            darkBg.appendChild(firefly);
+        }
     }
 
-    // Initialize UI
+    // 初始化 UI
     function initUI() {
-        // Apply saved theme
+        // 应用保存的主题
         if (!isDarkMode) {
             toggleTheme();
         }
+        else{
+            createFireflies();
+        }
 
-        // Load chat history
+        // 加载聊天历史
         const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
         if (history.length > 0) {
             showChatInterface();
             history.forEach(msg => displayMessage(msg.type, msg.content, msg.isThinking));
         }
 
-        // Check server status
+        // 检查服务器状态
         checkServerStatus();
     }
 
-    // Initialize on page load
+    // 页面加载时初始化
     document.addEventListener('DOMContentLoaded', () => {
         initializeEventListeners();
         initUI();
