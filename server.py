@@ -14,6 +14,9 @@ from collections import defaultdict, deque
 import uuid
 import sys
 import json
+from flask import Response
+import time
+
 
 # Import RAG system - adding the RAG directory to the path
 rag_path = r'C:\Users\zeyua\Desktop\Coding\RAG'
@@ -169,6 +172,22 @@ def extract_file_content(file_path, file_extension):
         logger.error(f"Error in extract_file_content: {str(e)}")
         return f"Error extracting file content: {str(e)}"
 
+# 存储当前训练进度的全局变量
+training_progress = {
+    'percentage': 0,
+    'status': '',
+    'is_training': False,
+    'error': None
+}
+
+# SSE 路由，用于实时推送训练进度
+@app.route('/training_progress', methods=['GET'])
+def training_progress_stream():
+    def generate():
+        while True:
+            yield f"data: {json.dumps(training_progress)}\n\n"
+            time.sleep(1)  # 每秒推送一次
+    return Response(generate(), mimetype='text/event-stream')
 
 @app.route('/ask', methods=['POST'])
 def ask_question():
@@ -396,12 +415,25 @@ def process_folder_for_rag(upload_dir):
     return processed_dir, file_count
 
 # Add a route to handle folder upload and RAG training
+# 修改 upload_folder_for_rag 路由以更新训练进度
 @app.route('/upload_folder_for_rag', methods=['POST'])
 def upload_folder_for_rag():
     """Handle folder upload and train RAG model."""
+    global training_progress
     try:
+        # 初始化训练进度
+        training_progress = {
+            'percentage': 10,
+            'status': 'Uploading files...',
+            'is_training': True,
+            'error': None
+        }
+
         # Check if files were uploaded
         if 'files[]' not in request.files:
+            training_progress['error'] = 'No files provided'
+            training_progress['percentage'] = 100
+            training_progress['is_training'] = False
             return jsonify({'error': 'No files provided'}), 400
             
         # Get model name from form data
@@ -409,7 +441,7 @@ def upload_folder_for_rag():
         if not model_name:
             model_name = f"rag_model_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         
-        # Sanitize model name (only allow alphanumeric, underscore and hyphen)
+        # Sanitize model name
         model_name = re.sub(r'[^a-zA-Z0-9_-]', '_', model_name)
         
         # Create directory for this upload
@@ -424,10 +456,8 @@ def upload_folder_for_rag():
             if file.filename == '':
                 continue
                 
-            # Preserve directory structure by splitting path
             filepath_parts = file.filename.split('/')
             if len(filepath_parts) > 1:
-                # Create subdirectories if needed
                 subdir = os.path.join(upload_dir, *filepath_parts[:-1])
                 os.makedirs(subdir, exist_ok=True)
                 save_path = os.path.join(upload_dir, *filepath_parts)
@@ -439,19 +469,29 @@ def upload_folder_for_rag():
             
         logger.info(f"Saved {len(saved_paths)} files for RAG training")
         
+        # 更新进度
+        training_progress['percentage'] = 30
+        training_progress['status'] = 'Processing files...'
+
         # Process files
         processed_dir, file_count = process_folder_for_rag(upload_dir)
         
         if file_count == 0:
+            training_progress['error'] = 'No valid files for processing'
+            training_progress['percentage'] = 100
+            training_progress['is_training'] = False
             return jsonify({'error': 'No valid files for processing'}), 400
             
+        # 更新进度
+        training_progress['percentage'] = 80
+        training_progress['status'] = 'Finalizing training...'
+
         # Create model directory
         model_dir = os.path.join(BASE_MODEL_DIR, model_name)
         os.makedirs(model_dir, exist_ok=True)
         
         # Train RAG model
         try:
-            # Create and train a new RAG system
             new_rag = ChineseRAGSystem(processed_texts_dir=processed_dir, model_save_dir=model_dir)
             new_rag.train_system(processed_dir)
             
@@ -464,7 +504,10 @@ def upload_folder_for_rag():
                 shutil.rmtree(processed_texts_backup)
             shutil.copytree(processed_dir, processed_texts_backup)
             
-            # Don't delete upload_dir for safety - can be cleaned up later or manually
+            # 更新进度
+            training_progress['percentage'] = 100
+            training_progress['status'] = 'Training complete!'
+            training_progress['is_training'] = False
             
             return jsonify({
                 'success': True,
@@ -473,12 +516,18 @@ def upload_folder_for_rag():
             })
         except Exception as e:
             logger.error(f"RAG training error: {str(e)}")
+            training_progress['error'] = f"RAG training failed: {str(e)}"
+            training_progress['percentage'] = 100
+            training_progress['is_training'] = False
             return jsonify({'error': f"RAG training failed: {str(e)}"}), 500
             
     except Exception as e:
         logger.error(f"Error in upload_folder_for_rag: {str(e)}")
+        training_progress['error'] = str(e)
+        training_progress['percentage'] = 100
+        training_progress['is_training'] = False
         return jsonify({'error': str(e)}), 500
-
+    
 # Add a simple health check endpoint to test if the server is running
 @app.route('/health', methods=['GET'])
 def health_check():
