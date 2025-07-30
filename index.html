@@ -596,11 +596,11 @@
     const modalTrainingStatus = document.getElementById('modal-training-status');
 
     // 状态变量
-    let isDarkMode = localStorage.getItem('darkMode') !== 'false';
+    let isDarkMode = true;
     let isRagEnabled = false;
     let currentRagModel = 'None'; 
     let availableRagModels = [];
-    let isTraining = false; // Track training state
+    let isTraining = false; 
 
     // 后端 API 基础 URL
     const BASE_URL = 'http://localhost:5000';
@@ -812,6 +812,10 @@
 
     // 切换 RAG 模式
     function toggleRagMode() {
+        if(currentRagModel === 'None') {
+            displayMessage('system', 'Please select a RAG model first.');
+            return;
+        }
         isRagEnabled = !isRagEnabled;
         ragStatus.className = `ml-1 inline-block w-3 h-3 rounded-full ${isRagEnabled ? 'bg-green-500' : 'bg-gray-400'}`;
         if (isRagEnabled) {
@@ -994,7 +998,7 @@ async function startRagTraining() {
                 toggleRagMode();
             }
             displayMessage('system', `Successfully trained RAG model "${result.model_name}" with ${result.processed_files} files. The model is now selected for use.`);
-            loadRagModels();
+            // loadRagModels();
             isTraining = false;
             trainRagBtn.disabled = false;
         }, 1500);
@@ -1163,7 +1167,7 @@ async function startRagTraining() {
     // 创建萤火虫效果
     function createFireflies() {
         const darkBg = document.getElementById('dark-bg');
-        const fireflyCount = 30; // 萤火虫数量，可调整
+        const fireflyCount = 30; 
 
         for (let i = 0; i < fireflyCount; i++) {
             const firefly = document.createElement('div');
@@ -1192,14 +1196,9 @@ async function startRagTraining() {
 
     // 初始化 UI
     function initUI() {
-        // 应用保存的主题
-        if (!isDarkMode) {
+        if (isDarkMode) {
             toggleTheme();
         }
-        else{
-            createFireflies();
-        }
-
         // 加载聊天历史
         const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
         if (history.length > 0) {
