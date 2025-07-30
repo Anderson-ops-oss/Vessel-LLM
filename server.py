@@ -1,3 +1,5 @@
+# https://github.com/YorkieDev/lmstudioservercodeexamples
+
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
@@ -19,15 +21,15 @@ import time
 
 
 # Import RAG system - adding the RAG directory to the path
-rag_path = r'C:\Users\zeyua\Desktop\Coding\RAG'
+rag_path = r'C:\Users\CHENGAN3\Desktop\Project 1 Coding part\RAG'
 sys.path.append(rag_path)
 try:
     # Import directly from rag_trainer.py
     from rag_trainer import ChineseRAGSystem
     
     # RAG models directory
-    BASE_MODEL_DIR = r"C:\Users\zeyua\Desktop\Coding\RAG\rag_models"
-    
+    BASE_MODEL_DIR = r"C:\Users\CHENGAN3\Desktop\Project 1 Coding part\RAG\rag_models"
+
     # Create a dictionary to store multiple RAG systems
     rag_systems = {}
     
@@ -72,10 +74,12 @@ def call_llm_api(messages, temperature=0.5, max_tokens=32000):
     """Helper function to call the LLM API with consistent error handling"""
     try:
         payload = {
-            "model": "qwen3-14b", # This can be any name, LM Studio will use whatever model is loaded
+            "model": "qwen/qwen3-14b", 
             "messages": messages,
             "max_tokens": max_tokens,
-            "temperature": temperature
+            "temperature": temperature,
+            # "stream": True,
+            # "enable_thinking": False,
         }
         
         logger.info(f"Sending request to LLM API: {LM_STUDIO_API_URL}")
@@ -85,7 +89,7 @@ def call_llm_api(messages, temperature=0.5, max_tokens=32000):
             LM_STUDIO_API_URL, 
             json=payload, 
             headers={"Content-Type": "application/json"},
-            timeout=120  # Increase timeout for longer responses
+            timeout= 300 
         )
         
         logger.info(f"LLM API response status: {response.status_code}")
@@ -332,7 +336,7 @@ def rag_ask():
     try:
         data = request.get_json()
         question = data.get('question', '')
-        model_id = data.get('model_id', 'default')  # Get model ID, default to "default"
+        model_id = data.get('model_id', 'default') 
         
         if not question:
             return jsonify({'error': 'No question provided'}), 400
@@ -470,7 +474,7 @@ def upload_folder_for_rag():
         logger.info(f"Saved {len(saved_paths)} files for RAG training")
         
         # 更新进度
-        training_progress['percentage'] = 30
+        training_progress['percentage'] = 10
         training_progress['status'] = 'Processing files...'
 
         # Process files
@@ -483,8 +487,8 @@ def upload_folder_for_rag():
             return jsonify({'error': 'No valid files for processing'}), 400
             
         # 更新进度
-        training_progress['percentage'] = 80
-        training_progress['status'] = 'Finalizing training...'
+        training_progress['percentage'] = 30
+        training_progress['status'] = 'Training RAG model...'
 
         # Create model directory
         model_dir = os.path.join(BASE_MODEL_DIR, model_name)
@@ -494,9 +498,13 @@ def upload_folder_for_rag():
         try:
             new_rag = ChineseRAGSystem(processed_texts_dir=processed_dir, model_save_dir=model_dir)
             new_rag.train_system(processed_dir)
+            training_progress['percentage'] = 50
+            training_progress['status'] = 'Training RAG model...'
             
             # Store the new model
             rag_systems[model_name] = new_rag
+            training_progress['percentage'] = 70
+            training_progress['status'] = 'Training RAG model...'
             
             # Clean up upload directory but keep processed texts
             processed_texts_backup = os.path.join(model_dir, "processed_texts")
