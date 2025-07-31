@@ -1,0 +1,6 @@
+{
+  "chunk_size": 512,
+  "chunk_overlap": 100,
+  "similarity_top_k": 30,
+  "created_at": "2025-07-31T23:12:08.595574"
+}

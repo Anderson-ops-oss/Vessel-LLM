@@ -1,0 +1,658 @@
+COMP3251 Lecture 7: Depth-First Search
+(Chapter 3)
+Zhiyi HuangCOMP3251GraphsSet of objects with pairwise connections.
+212345Edge: for connectionVertex: for object
+Zhiyi HuangCOMP3251An example:  Facebook accounts connected by friendships
+3
+
+Zhiyi HuangCOMP3251Another example:
+Cities connected by highways
+4
+
+Zhiyi HuangCOMP3251Directed GraphsIn a directed graph, every edge has a direction. Each edge is represented by an ordered pair (u, v), meaning that the edge is from vertex u to vertex v.
+512345
+Zhiyi HuangCOMP3251Directed GraphsIn a directed graph, every edge has a direction. Each edge is represented by an ordered pair (u, v), meaning that the edge is from vertex u to vertex v.We let V denote the set of vertices, and E the set of edges. 
+512345
+Zhiyi HuangCOMP3251Directed GraphsIn a directed graph, every edge has a direction. Each edge is represented by an ordered pair (u, v), meaning that the edge is from vertex u to vertex v.We let V denote the set of vertices, and E the set of edges. Examples:  Directed G = (V, E) where V = {1, 2, 3, 4, 5} and  E = {(1,2), (2,4), (4,3), (4,5), (3,1)}.
+512345
+Zhiyi HuangCOMP3251Directed GraphsIn a directed graph, every edge has a direction. Each edge is represented by an ordered pair (u, v), meaning that the edge is from vertex u to vertex v.We let V denote the set of vertices, and E the set of edges. Examples:  Directed G = (V, E) where V = {1, 2, 3, 4, 5} and  E = {(1,2), (2,4), (4,3), (4,5), (3,1)}.Fact:  In any directed graphs, 0 ≤ |E| ≤ |V| (|V| - 1) = O(|V|2).
+512345
+Zhiyi HuangCOMP3251Undirected GraphsIn an undirected graph, the edges have no directions; we can go through the edge in both direction.  
+612345
+Zhiyi HuangCOMP3251Undirected GraphsIn an undirected graph, the edges have no directions; we can go through the edge in both direction.  In fact, an undirected graph is just a special case of directed graph, in which for every edge (u, v), we also have edge (v, u).
+612345
+Zhiyi HuangCOMP3251Undirected GraphsIn an undirected graph, the edges have no directions; we can go through the edge in both direction.  In fact, an undirected graph is just a special case of directed graph, in which for every edge (u, v), we also have edge (v, u).Examples:  G = (V, E) where V = {1, 2, 3, 4, 5} and E = {(1,2), (2,1), (2,4), (4,2), (3,4), (4,3), (4,5), (5,4)}.
+612345
+Zhiyi HuangCOMP3251Undirected GraphsIn an undirected graph, the edges have no directions; we can go through the edge in both direction.  In fact, an undirected graph is just a special case of directed graph, in which for every edge (u, v), we also have edge (v, u).Examples:  G = (V, E) where V = {1, 2, 3, 4, 5} and E = {(1,2), (2,1), (2,4), (4,2), (3,4), (4,3), (4,5), (5,4)}.Or, we can simply use E = { {1,2}, {2,4}, {3,4}, {4,5} }.
+612345
+Zhiyi HuangCOMP3251Representation of Graphs: Adjacency Matrix
+7
+The adjacency matrix A of a (directed) graph is a |V| ⨉ |V| matrix:
+12345
+Zhiyi HuangCOMP3251Representation of Graphs: Adjacency Matrix
+7
+The adjacency matrix A of a (directed) graph is a |V| ⨉ |V| matrix:1234510100020001031000040010150000012345
+Zhiyi HuangCOMP3251Representation of Graphs: Adjacency Matrix
+7
+The adjacency matrix A of a (directed) graph is a |V| ⨉ |V| matrix:1234510100020001031000040010150000012345
+Space: O(|V|2)
+Zhiyi HuangCOMP3251Representation of Graphs: Adjacency ListEvery vertex u is associated with a linked list Adj[u], which contains all the vertices adjacent to u, i.e., all the vertices that can be reached directly from u, or more precisely, all the vertices v such that edge (u,v) is in the graph.
+8123451234524135/////
+Zhiyi HuangCOMP3251Representation of Graphs: Adjacency ListEvery vertex u is associated with a linked list Adj[u], which contains all the vertices adjacent to u, i.e., all the vertices that can be reached directly from u, or more precisely, all the vertices v such that edge (u,v) is in the graph.
+8123451234524135/////
+Space: O(|V| + |E|)
+Zhiyi HuangCOMP3251ReachabilityIntuitively, for any vertices u and v, we say that v is reachable from u if there is a sequence of edges that lead us from u to v.
+9u
+v
+Zhiyi HuangCOMP3251ReachabilityFormally, for any vertices u and v, we say that v is reachable from u if either there is an edge (u, v), or there is a vertex x, such that x is reachable from u, and (x, v) is an edge.
+10uvuxv
+Rest of the Lecture: Depth-First Search (DFS)•DFS in Undirected Graphs
+•DFS in Directed Graphs
+•Applications of DFS
+Zhiyi HuangCOMP3251Reachability as a Computational Problem
+12
+What parts of the graph are reachable from a given vertex s,  assuming that we are given the adjacency list.
+12345
+Zhiyi HuangCOMP3251Reachability as a Computational ProblemBasic exploration step:  When reaching some vertex u, pick one vertex v in its adjacent list (and thus there is edge (u, v)) and (recursively) continue our exploration from v.
+12
+What parts of the graph are reachable from a given vertex s,  assuming that we are given the adjacency list.
+12345
+Zhiyi HuangCOMP3251Reachability as a Computational ProblemBasic exploration step:  When reaching some vertex u, pick one vertex v in its adjacent list (and thus there is edge (u, v)) and (recursively) continue our exploration from v.Main diﬃculty:  Exploring the graph carelessly may lead us around in circle and, thus, overlook some reachable vertices.
+12
+What parts of the graph are reachable from a given vertex s,  assuming that we are given the adjacency list.
+12345
+Zhiyi HuangCOMP3251Reachability as a Computational ProblemBasic exploration step:  When reaching some vertex u, pick one vertex v in its adjacent list (and thus there is edge (u, v)) and (recursively) continue our exploration from v.Main diﬃculty:  Exploring the graph carelessly may lead us around in circle and, thus, overlook some reachable vertices.
+12
+What parts of the graph are reachable from a given vertex s,  assuming that we are given the adjacency list.
+12345
+Zhiyi HuangCOMP3251Reachability as a Computational ProblemBasic exploration step:  When reaching some vertex u, pick one vertex v in its adjacent list (and thus there is edge (u, v)) and (recursively) continue our exploration from v.Main diﬃculty:  Exploring the graph carelessly may lead us around in circle and, thus, overlook some reachable vertices.Our solution:  We mark a vertex the  ﬁrst time we reach it, and we only  explore vertex that has no mark.  When stuck, we backtrack.12
+What parts of the graph are reachable from a given vertex s,  assuming that we are given the adjacency list.
+12345
+Zhiyi HuangCOMP3251Depth-First Search (in Undirected Graphs)The implementation of this simple idea is called Depth-First Search (DFS):
+13
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}
+Zhiyi HuangCOMP3251Depth-First Search (in Undirected Graphs)The implementation of this simple idea is called Depth-First Search (DFS):
+13
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}
+Explore the portion of the graph reachable from vertex v.
+Zhiyi HuangCOMP3251Depth-First Search (in Undirected Graphs)The implementation of this simple idea is called Depth-First Search (DFS):
+13
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}
+procedure dfs(G){     for each v in V:        visited(v) = false;    for each v in V:        if not visited(v):             explore(v);}
+Explore the portion of the graph reachable from vertex v.
+Repeatedly call the explore procedure to visit all vertices.
+Zhiyi HuangCOMP3251Sample Run
+14abcdesInitially, all vertices are unvisited.
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}
+Zhiyi HuangCOMP3251Sample Run
+15abcdesColored green means visited(s) = true
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}explore(s)
+Zhiyi HuangCOMP3251Sample Run
+16abcdes
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}explore(s) ↳explore(c)
+Zhiyi HuangCOMP3251Sample Run
+17abcdes
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}explore(s) ↳explore(c)   ↳explore(a)
+Zhiyi HuangCOMP3251Sample Run
+18abcdes
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}explore(s) ↳explore(c)   ↳explore(a)     ↳explore(d)
+Zhiyi HuangCOMP3251Sample Run
+19abcdes
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}explore(s) ↳explore(c)   ↳explore(a)     ↳explore(d)       ↳explore(e)
+Zhiyi HuangCOMP3251Sample Run
+20abcdes
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}visited(s) = true so we will not explore(s) againexplore(s) ↳explore(c)   ↳explore(a)     ↳explore(d)       ↳explore(e)
+Zhiyi HuangCOMP3251Sample Run
+21abcdes
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}Colored blue means we have  ﬁnished and returned from explore(e).explore(s) ↳explore(c)   ↳explore(a)     ↳explore(d)
+Zhiyi HuangCOMP3251Sample Run
+22abcdes
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}explore(s) ↳explore(c)   ↳explore(a)
+Zhiyi HuangCOMP3251Sample Run
+23abcdes
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}explore(s) ↳explore(c)   ↳explore(a)     ↳explore(b)
+Zhiyi HuangCOMP3251Sample Run
+24abcdes
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}explore(s) ↳explore(c)   ↳explore(a)
+Zhiyi HuangCOMP3251Sample Run
+25abcdes
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}explore(s) ↳explore(c)
+Zhiyi HuangCOMP3251Sample Run
+26abcdes
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}explore(s)
+Zhiyi HuangCOMP3251Sample Run
+27abcdes
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}
+Zhiyi HuangCOMP3251Sample Run
+27abcdes
+procedure explore(v){     visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);}
+Running time:  O(|V|+|E|) time, as we just scan through the adjacent list once, and the size of the list is O(|V|+|E|).
+Zhiyi HuangCOMP3251Correctness of DFSWe want to show that all vertices that are reachable from s are discovered by DFS.
+28Proof by contradiction: •Suppose c is reachable from s, but is not discovered by DFS.
+•Let b be the ﬁrst vertex on the path from s to c that is not discovered by DFS.
+•That means its predecessor on the path, a, is discovered by DFS, and b is on the adjacent list of a.
+•Then, b will be explored when DFS processes a, i.e.,  b will be discovered by DFS, a contradiction.sabc
+Zhiyi HuangCOMP3251Classiﬁcation of EdgesThe edges can be classiﬁed into two types:
+•“Critical” edges that lead us to the discovery of new vertices.
+•Back edges that lead us back to old, visited vertices.
+Note that the set of critical edges form a tree, which we call the DFS tree. So we also refer to “critical” edges as tree edges.
+29abcdesabcdes
+
+Zhiyi HuangCOMP3251Relation Among Vertices
+30Root of the DFS treeThe ﬁrst vertex that the algorithm explores, i.e., s.u is the parent of v,  and v is a child of u
+(u, v) is a tree edge, and v is discovered from u.u is an ancestor of v,  and v is a descendent of u.
+Either 1) u is a parent of v, or  2) u is an ancestor of the parent of v.
+abcdes
+Zhiyi HuangCOMP3251Relation Among Vertices
+30Root of the DFS treeThe ﬁrst vertex that the algorithm explores, i.e., s.u is the parent of v,  and v is a child of u
+(u, v) is a tree edge, and v is discovered from u.u is an ancestor of v,  and v is a descendent of u.
+Either 1) u is a parent of v, or  2) u is an ancestor of the parent of v.
+abcdes
+Fact:  If u is an ancestor of v, then there is a tree-path from u to v.
+Zhiyi HuangCOMP3251An Extension of DFSWe can get more information by doing some simple extra steps:
+1)a pre-order number pre[v] (moment of ﬁrst discovery);
+2)a post-order number post[v] (moment of ﬁnal department).
+31
+procedure explore(v) {    pre[v] = clock;    clock++;    visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);    post[v] = clock;    clock++;}
+initialize clock = 1procedure dfs(G){     for each v in V:        visited(v) = false;    for each v in V:        if not visited(v):             explore(v);}
+Zhiyi HuangCOMP3251Sample Run
+32
+initialize clock = 1procedure explore(v) {    pre[v] = clock;    clock++;    visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);    post[v] = clock;    clock++;-/--/--/--/--/-Initially, all vertices are  unvisited, and clock = 1.
+Zhiyi HuangCOMP3251Sample Run
+33
+initialize clock = 1procedure explore(v) {    pre[v] = clock;    clock++;    visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);    post[v] = clock;    clock++;1/--/--/--/--/-clock = 2
+Zhiyi HuangCOMP3251Sample Run
+34
+initialize clock = 1procedure explore(v) {    pre[v] = clock;    clock++;    visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);    post[v] = clock;    clock++;1/-2/--/--/--/-clock = 3
+Zhiyi HuangCOMP3251Sample Run
+35
+initialize clock = 1procedure explore(v) {    pre[v] = clock;    clock++;    visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);    post[v] = clock;    clock++;1/-2/--/-3/--/-clock = 4
+Zhiyi HuangCOMP3251Sample Run
+36
+initialize clock = 1procedure explore(v) {    pre[v] = clock;    clock++;    visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);    post[v] = clock;    clock++;1/-2/-4/-3/--/-clock = 5
+Zhiyi HuangCOMP3251Sample Run
+37
+initialize clock = 1procedure explore(v) {    pre[v] = clock;    clock++;    visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);    post[v] = clock;    clock++;1/-2/-4/53/--/-clock = 6
+Zhiyi HuangCOMP3251Sample Run
+38
+initialize clock = 1procedure explore(v) {    pre[v] = clock;    clock++;    visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);    post[v] = clock;    clock++;1/-2/-4/53/-6/-clock = 7
+Zhiyi HuangCOMP3251Sample Run
+39
+initialize clock = 1procedure explore(v) {    pre[v] = clock;    clock++;    visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);    post[v] = clock;    clock++;1/-2/-4/53/-6/7clock = 8
+Zhiyi HuangCOMP3251Sample Run
+40
+initialize clock = 1procedure explore(v) {    pre[v] = clock;    clock++;    visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);    post[v] = clock;    clock++;1/-2/-4/53/86/7clock = 9
+Zhiyi HuangCOMP3251Sample Run
+41
+initialize clock = 1procedure explore(v) {    pre[v] = clock;    clock++;    visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);    post[v] = clock;    clock++;1/-2/94/53/86/7clock = 10
+Zhiyi HuangCOMP3251Sample Run
+42
+initialize clock = 1procedure explore(v) {    pre[v] = clock;    clock++;    visited(v) = true;    for each edge (v, u) in E:        if not visited(u):             explore(u);    post[v] = clock;    clock++;1/102/94/53/86/7
+Rest of the Lecture:  Depth-First Search (DFS)•DFS in Undirected Graphs
+•DFS in Directed Graphs
+•Applications of DFS
+Zhiyi HuangCOMP3251Depth-ﬁrst search of a directed graph can be run verbatim on directed graphs, taking care to traverse edges only in their prescribed directions.DFS in Directed Graphs
+44abcefdghefbha
+gcd1/162/113/104/75/68/912/1513/14
+Zhiyi HuangCOMP3251Fact:  
+1)If u is an ancestor of v then the v’s lifespan [pre[v], post[v]] is contained in the u’s lifespan of [pre[u], post[u]]. 
+2)If u and v have no ancestor-descendant relation, then [pre[v],post[v]] and [pre[u],post[u]] are disjoint.DFS in Directed Graphs
+45abcefdghefbha
+gcd1/162/113/104/75/68/912/1513/14
+Zhiyi HuangCOMP3251Tree edges are deﬁned the same as in undirected graphs. Forward edges lead from a node to a non-child descendent in the DFS tree.
+Back edges lead to an ancestor in the DFS.
+Cross edges lead to a node that has already been explored.More types of edges in directed DFS
+46abcefdghefbha
+gcd1/162/113/104/75/68/912/1513/14
+Rest of the Lecture:  Depth-First Search (DFS)•DFS in Undirected Graphs
+•DFS in Directed Graphs
+•Applications of DFS
+-Detecting Cycles 
+-Topological Ordering
+-Strongly Connected Components 
+Zhiyi HuangCOMP3251Cycles and Directed Acyclic GraphsA cycle in a directed graph is a sequence of edges	
+(a,b), (b,c), (c,d),…, (x,a)
+A directed acyclic graph (DAG) is a directed graph that does not contain any cycle.
+48
+End point of an edge is the starting point of the next edge
+End point of last edge is the starting point of ﬁrst edge12345
+Zhiyi HuangCOMP3251DFS and Cycles in GraphsFact:  A directed graph G has a cycle if and only if its DFS has a back edge.
+Reasons: •If there is a back edge (v, u):
+-u is an ancestor of v, so there is a tree-path from u to v.
+-The tree-path and the back edge (v, u) forms a cycle.
+•If G has a cycle:
+-Let v0 → v1 → … → vk → v0 be the smallest cycle, and suppose that DFS explores v0 ﬁrst. 
+-Then, vk is a descendant of v0, and (vk, v0) is a back edge.49
+Zhiyi HuangCOMP3251a)Computer programming 
+b)Introduction to data structures and algorithms
+c)Design and analysis of algorithms 
+d)Artiﬁcial intelligence
+e)Introduction to theory of computation
+f)Advanced algorithm analysisApplications of DFS: Detecting Cycles in Graphs
+50abcdefwe want to avoid  cycles like thisSuppose we are designing pre-requisite requirements of the following courses for a new CS program:We can run a DFS to detect cycles in the pre-requisite graph.
+Zhiyi HuangCOMP3251Applications of DFS:  Topological Ordering for DAGsSuppose we want to ﬁnish a set of jobs sequentially subject to dependency of jobs: e.g., job b must be completed before job a.
+51caebdf
+fcebadMathematically, this is the same as ﬁnding an ordering of the vertices on a line such that all edges goes from left to right.
+Zhiyi HuangCOMP3251Applications of DFS:  Topological Ordering for DAGsSuppose we want to ﬁnish a set of jobs sequentially subject to dependency of jobs: e.g., job b must be completed before job a.
+52caebdf1/1210/113/84/56/72/9
+fcebad1/1210/112/93/86/74/5Mathematically, this is the same as ﬁnding an ordering of the vertices on a line such that all edges goes from left to right.
+Observe that post[v]'s are listed in descending order.
+Zhiyi HuangCOMP3251Why topological ordering exists and straightforward algorithm
+53caebdfFor any DAG, there exists a vertex with no outgoing edges
+Why? 
+-Keep exploring the DAG along the directed edges. Since there is no directed cycle, this has to stop at some vertex, which must have no outgoing edges.
+-This will be the last vertex in the topological ordering.
+-Remove this vertex and repeat…
+Zhiyi HuangCOMP3251Why topological ordering exists and straightforward algorithmFor any DAG, there exists a vertex with no outgoing edges
+Why? 
+-Keep exploring the DAG along the directed edges. Since there is no directed cycle, this has to stop at some vertex, which must have no outgoing edges.
+-This will be the last vertex in the topological ordering.
+-Remove this vertex and repeat…
+54caebdf6
+Zhiyi HuangCOMP3251Why topological ordering exists and straightforward algorithmFor any DAG, there exists a vertex with no outgoing edges
+Why? 
+-Keep exploring the DAG along the directed edges. Since there is no directed cycle, this has to stop at some vertex, which must have no outgoing edges.
+-This will be the last vertex in the topological ordering.
+-Remove this vertex and repeat…
+55caebdf65
+Zhiyi HuangCOMP3251Why topological ordering exists and straightforward algorithmFor any DAG, there exists a vertex with no outgoing edges
+Why? 
+-Keep exploring the DAG along the directed edges. Since there is no directed cycle, this has to stop at some vertex, which must have no outgoing edges.
+-This will be the last vertex in the topological ordering.
+-Remove this vertex and repeat…
+56caebdf654
+Zhiyi HuangCOMP3251Why topological ordering exists and straightforward algorithmFor any DAG, there exists a vertex with no outgoing edges
+Why? 
+-Keep exploring the DAG along the directed edges. Since there is no directed cycle, this has to stop at some vertex, which must have no outgoing edges.
+-This will be the last vertex in the topological ordering.
+-Remove this vertex and repeat…
+57caebdf6543
+Zhiyi HuangCOMP3251Why topological ordering exists and straightforward algorithmFor any DAG, there exists a vertex with no outgoing edges
+Why? 
+-Keep exploring the DAG along the directed edges. Since there is no directed cycle, this has to stop at some vertex, which must have no outgoing edges.
+-This will be the last vertex in the topological ordering.
+-Remove this vertex and repeat…
+58caebdf65432
+Zhiyi HuangCOMP3251Why topological ordering exists and straightforward algorithmFor any DAG, there exists a vertex with no outgoing edges
+Why? 
+-Keep exploring the DAG along the directed edges. Since there is no directed cycle, this has to stop at some vertex, which must have no outgoing edges.
+-This will be the last vertex in the topological ordering.
+-Remove this vertex and repeat…
+59caebdf654321
+Zhiyi HuangCOMP3251Why topological ordering exists and straightforward algorithmFor any DAG, there exists a vertex with no outgoing edges
+Why? 
+-Keep exploring the DAG along the directed edges. Since there is no directed cycle, this has to stop at some vertex, which must have no outgoing edges.
+-This will be the last vertex in the topological ordering.
+-Remove this vertex and repeat…
+59caebdf654321
+Running time:  O( |V|2 )
+Zhiyi HuangCOMP3251Applications of DFS: Topological Ordering
+60
+Zhiyi HuangCOMP3251Applications of DFS: Topological OrderingObservation:  After a DFS, if there is an edge (u, v) such that post[u] < post[v], then this edge must be a back edge. 
+60
+Zhiyi HuangCOMP3251Applications of DFS: Topological OrderingObservation:  After a DFS, if there is an edge (u, v) such that post[u] < post[v], then this edge must be a back edge. Why?  There are three potential relations between u and v: -v is an ancestor of u, in which case (u, v) is a back edge.
+-u is an ancestor of v, in which case the DFS would call explore(v) when it processes u. Therefore, the DFS departs v before it departs u, which contradicts post[u] < post[v].
+-There is no ancestor-descendent relation between u and v. Then, by our earlier observation [pre[u], post[u]] and [pre[v], post[v]] are disjoint. Thus, post[u] < pre[v], i.e., the DFS departs u before it explores v, which is impossible as the DFS would check edge (u, v) when it processes u.60
+Zhiyi HuangCOMP3251Applications of DFS: Topological Ordering
+61
+Zhiyi HuangCOMP3251Applications of DFS: Topological OrderingObservation:  After a DFS, if there is an edge (u, v) such that post[u] < post[v], then this edge must be a back edge. 
+61
+Zhiyi HuangCOMP3251Applications of DFS: Topological OrderingObservation:  After a DFS, if there is an edge (u, v) such that post[u] < post[v], then this edge must be a back edge. Fact:  In a DAG, every edge leads to a vertex with a lower post number (because there is no cycle, and thus no back edge). 
+61
+Zhiyi HuangCOMP3251Applications of DFS: Topological OrderingObservation:  After a DFS, if there is an edge (u, v) such that post[u] < post[v], then this edge must be a back edge. Fact:  In a DAG, every edge leads to a vertex with a lower post number (because there is no cycle, and thus no back edge). Our algorithm for topological sort: 1)Run a DFS with pre-/post-ordering numbers.
+2)List vertices in descending order of the post-ordering numbers.
+Then, all edges are from left to right and thus the vertices are topologically sorted.61
+Zhiyi HuangCOMP3251An example
+62caebdf1/1210/113/84/56/72/9
+fcebad1/1210/112/93/86/74/5Pre-/post-ordering numbers of an  DFS starting from bTopological sorted ordering:
+Zhiyi HuangCOMP3251Running time analysisA straightforward analysis:-DFS with pre-/post-ordering takes O(|V| + |E|) time.-Sorting the vertices according to post-ordering numbers takes O(|V| log |V|) time. -So the algorithm runs in O(|V| log |V| + |E|) time.Correct?
+63
+Zhiyi HuangCOMP3251Running time analysisA straightforward analysis:-DFS with pre-/post-ordering takes O(|V| + |E|) time.-Sorting the vertices according to post-ordering numbers takes O(|V| log |V|) time. -So the algorithm runs in O(|V| log |V| + |E|) time.Correct?-It’s a correct upper bound,  but we can actually show that it runs in O(|V| + |E|) time.
+63
+Zhiyi HuangCOMP3251Running time analysisA straightforward analysis:-DFS with pre-/post-ordering takes O(|V| + |E|) time.-Sorting the vertices according to post-ordering numbers takes O(|V| log |V|) time. -So the algorithm runs in O(|V| log |V| + |E|) time.Correct?-It’s a correct upper bound,  but we can actually show that it runs in O(|V| + |E|) time.-Recall that post-ordering numbers are the time that the algorithm departs a vertex.
+63
+Zhiyi HuangCOMP3251Running time analysisA straightforward analysis:-DFS with pre-/post-ordering takes O(|V| + |E|) time.-Sorting the vertices according to post-ordering numbers takes O(|V| log |V|) time. -So the algorithm runs in O(|V| log |V| + |E|) time.Correct?-It’s a correct upper bound,  but we can actually show that it runs in O(|V| + |E|) time.-Recall that post-ordering numbers are the time that the algorithm departs a vertex.-The ﬁrst time that the algorithm departs a vertex, that is the last vertex in the topological ordering; the second time it departs a vertex, that is the second last vertex, etc.63
+Rest of the Lecture:  Depth-First Search (DFS)•DFS in Undirected Graphs
+•DFS in Directed Graphs
+•Applications of DFS
+-Detecting Cycles 
+-Topological Ordering
+-Strongly Connected Components 
+Zhiyi HuangCOMP3251We say that an undirected graph is connected if for any two vertices u and v, there is at least one path connecting them.
+Examples:Connected Components (CCs)
+65
+This graph is not connected; it has
+two connected components.12345678
+12345A connected graph
+Zhiyi HuangCOMP3251Finding CCs for undirected graphs
+We can use DFS:  
+1)pick a vertex s, and explore it to “capture” all the vertices reachable from s; this set of vertices is a SCC that contains s. 
+2)If there is un-explored vertex, repeat the process, until all vertices are visited.665123467891011
+Zhiyi HuangCOMP3251Finding CCs for undirected graphs
+We can use DFS:  
+1)pick a vertex s, and explore it to “capture” all the vertices reachable from s; this set of vertices is a SCC that contains s. 
+2)If there is un-explored vertex, repeat the process, until all vertices are visited.675123467891011DFS from 1
+Zhiyi HuangCOMP3251
+Finding CCs for undirected graphs
+We can use DFS:  
+1)pick a vertex s, and explore it to “capture” all the vertices reachable from s; this set of vertices is a SCC that contains s. 
+2)If there is un-explored vertex, repeat the process, until all vertices are visited.685123467891011DFS from 1
+Zhiyi HuangCOMP3251
+Finding CCs for undirected graphs
+We can use DFS:  
+1)pick a vertex s, and explore it to “capture” all the vertices reachable from s; this set of vertices is a SCC that contains s. 
+2)If there is un-explored vertex, repeat the process, until all vertices are visited.695123467891011DFS from 5
+Zhiyi HuangCOMP3251
+Finding CCs for undirected graphs
+We can use DFS:  
+1)pick a vertex s, and explore it to “capture” all the vertices reachable from s; this set of vertices is a SCC that contains s. 
+2)If there is un-explored vertex, repeat the process, until all vertices are visited.705123467891011DFS from 5
+Zhiyi HuangCOMP3251
+Finding CCs for undirected graphs
+We can use DFS:  
+1)pick a vertex s, and explore it to “capture” all the vertices reachable from s; this set of vertices is a SCC that contains s. 
+2)If there is un-explored vertex, repeat the process, until all vertices are visited.715123467891011DFS from 9
+Zhiyi HuangCOMP3251
+Finding CCs for undirected graphs
+We can use DFS:  
+1)pick a vertex s, and explore it to “capture” all the vertices reachable from s; this set of vertices is a SCC that contains s. 
+2)If there is un-explored vertex, repeat the process, until all vertices are visited.725123467891011DFS from 9
+Zhiyi HuangCOMP3251
+Strongly Connected Components (SCCs)For directed graphs, deﬁning connectivity is much more subtle.
+Examples:
+7312341234Is this directed graph connected? No.  While visually the graph is in  one piece, we cannot, for example,  reach 4 from 1, 2, or 3.Is this directed graph connected? Yes.  We can reach any vertex from any other vertex.
+Zhiyi HuangCOMP3251Strongly Connected Components (SCCs)Deﬁnition:  Two vertices a, b are strongly connected if there is a directed path from a to b, and a directed path from b to a.
+Examples:
+74
+Even though there is a directed
+path from a to b, a and b are not  strongly connectedacdb…
+a and b are strongly connected
+because there is a directed path from a to b, and another directed
+path from b to a.acdb…ghfe…
+Zhiyi HuangCOMP3251Strongly Connected Components (SCCs)Deﬁnition:  Consider any directed graph G = (V, E).  A subset C of vertices is a strongly connected component of G if C is the maximal subset of vertices such that for any two vertices in C, they are strongly connected.
+Example:
+751239811107645
+Zhiyi HuangCOMP3251
+Strongly Connected Components (SCCs)Deﬁnition:  Consider any directed graph G = (V, E).  A subset C of vertices is a strongly connected component of G if C is the maximal subset of vertices such that for any two vertices in C, they are strongly connected.
+Example:
+751239811107645
+4 SCCs in this graph
+Zhiyi HuangCOMP3251
+Strongly Connected Components (SCCs)Deﬁnition:  Consider any directed graph G = (V, E).  A subset C of vertices is a strongly connected component of G if C is the maximal subset of vertices such that for any two vertices in C, they are strongly connected.
+Example:
+751239811107645
+4 SCCs in this graph
+Note:  4, 5, and 7 are not a SCC because we could add 6 and still every two vertices are strongly connected.
+Zhiyi HuangCOMP3251Some Facts about SCCsProof:
+76abc
+Fact 1:  If vertices a and b are strongly connected, and b and c are strongly connected, then a and c are strongly connected.
+Zhiyi HuangCOMP3251Some Facts about SCCsProof:•Since a and b are strongly connected, there is a directed path from a to b.
+76abc
+Fact 1:  If vertices a and b are strongly connected, and b and c are strongly connected, then a and c are strongly connected.
+Zhiyi HuangCOMP3251Some Facts about SCCsProof:•Since a and b are strongly connected, there is a directed path from a to b.•Likewise, there is a directed path from b to c.
+76abc
+Fact 1:  If vertices a and b are strongly connected, and b and c are strongly connected, then a and c are strongly connected.
+Zhiyi HuangCOMP3251Some Facts about SCCsProof:•Since a and b are strongly connected, there is a directed path from a to b.•Likewise, there is a directed path from b to c.•Combining the two paths, we get a directed path from a to c.
+76abc
+Fact 1:  If vertices a and b are strongly connected, and b and c are strongly connected, then a and c are strongly connected.
+Zhiyi HuangCOMP3251Some Facts about SCCsProof:•Since a and b are strongly connected, there is a directed path from a to b.•Likewise, there is a directed path from b to c.•Combining the two paths, we get a directed path from a to c.•For the same reason, we also get a directed path from c to a.
+76abc
+Fact 1:  If vertices a and b are strongly connected, and b and c are strongly connected, then a and c are strongly connected.
+Zhiyi HuangCOMP3251Some Facts about SCCs
+Proof of a):  
+•It suﬃces to show that for any vertex v, v ∈ C1 ∪ C2 ∪ … ∪ Cm.
+•This is equivalent to showing there is an SCC that contains v.
+-Start from a singleton set that contains only vertex v.
+-Repeatedly adding to this set some vertex that is strongly connected to v until we cannot enlarge the set any more. 
+-The resulting set is an SSC containing v.77
+Fact 2:  Let C1, C2, …, Cm be all the SCCs of a directed graph  G = (V, E).  Then,
+1)C1 ∪ C2 ∪ … ∪ Cm = V; and
+2)for any Ci ≠ Cj, we have Ci ∩ Cj = ∅.
+Zhiyi HuangCOMP3251Some Facts about SCCs
+Proof of b):  
+•Suppose for contradiction that there are Ci ≠ Cj whose intersection is not empty, say, vertex a is in the intersection of Ci and Cj.
+•Since Ci ≠ Cj, there is a vertex that is not in the intersection, say, vertex b is in Ci but is not in Cj.
+•Since a and b are strongly connected, by  Fact 1, b is strongly connected to any  vertex c in Cj. So adding b to to Cj gives  a larger strongly connected set, a contradiction.78
+Fact 2:  Let C1, C2, …, Cm be all the SCCs of a directed graph  G = (V, E).  Then,
+1)C1 ∪ C2 ∪ … ∪ Cm = V; and
+2)for any Ci ≠ Cj, we have Ci ∩ Cj = ∅.
+CiCjabc
+Zhiyi HuangCOMP3251Some Facts about SCCs
+79
+Fact 2:  Let C1, C2, …, Cm be all the SCCs of a directed graph  G = (V, E).  Then,
+1)C1 ∪ C2 ∪ … ∪ Cm = V; and
+2)for any Ci ≠ Cj, we have Ci ∩ Cj = ∅.
+Corollary:  The set of all SSCs of G = (V, E) forms a partition of the vertex set V.
+
+Zhiyi HuangCOMP3251
+SCC1
+SCC2
+SCC3
+SCC4Using DFS to Find SCCs: 1st AttemptSince DFS is so successful for ﬁnding SCC for undirected graph, it is natural to try DFS to ﬁnd SCC for directed graph.
+801239811107645
+Zhiyi HuangCOMP3251
+SCC1
+SCC2
+SCC3
+SCC4Using DFS to Find SCCs: 1st Attempt
+811239811107645
+explore(10) ﬁnds exactly the 4th SCC.  Seems good so far.
+Zhiyi HuangCOMP3251
+SCC1
+SCC2
+SCC3
+SCC4Using DFS to Find SCCs: 1st Attempt
+811239811107645
+explore(10) ﬁnds exactly the 4th SCC.  Seems good so far.
+911
+Zhiyi HuangCOMP3251
+SCC1
+SCC2
+SCC3
+SCC4Using DFS to Find SCCs: 1st Attempt
+821239811107645
+explore(5) ﬁnds both the 2nd SCC and the 4th SCC.  We are in trouble!
+Zhiyi HuangCOMP3251
+SCC1
+SCC2
+SCC3
+SCC4Using DFS to Find SCCs: 1st Attempt
+821239811107645
+explore(5) ﬁnds both the 2nd SCC and the 4th SCC.  We are in trouble!
+91110764
+Zhiyi HuangCOMP3251Lesson Learnt•We need choose where to start carefully.
+•But, what is so special about starting from 10 instead of 5?
+83
+SCC1
+SCC2
+SCC3
+SCC41239811107645
+Zhiyi HuangCOMP3251Lesson LearntNote:  Any two vertices in a connected component are “kind-of” equivalent; if we can reach one of them, we can reach another.
+•Shrink each strongly connected down to a single meta-vertex. 
+•Connect these meta-vertex by the remaining edges.
+84
+SCC1
+SCC2
+SCC3
+SCC41, 2, 34, 5, 6, 789, 10, 11
+Zhiyi HuangCOMP3251Lesson LearntFact:  The resulting directed graph must be a DAG.
+•If there is a cycle, any two vertices in the SCCs in this cycle are strongly connected. 
+•So all these vertices should be in one single SCC.
+85
+SCC1
+SCC2
+SCC3
+SCC41, 2, 34, 5, 6, 789, 10, 11
+Zhiyi HuangCOMP3251Lesson Learnt•10 is in SCC4 that does not have outgoing edges in the meta-graph. So starting from 10 reaches only vertices in SCC4.
+•5 is in SCC2 which has an outgoing edge in the meta-graph. So starting from 5 reaches all SCCs reachable from SCC2 in the meta-graph.
+86
+SCC1
+SCC2
+SCC3
+SCC41, 2, 34, 5, 6, 789, 10, 11
+Zhiyi HuangCOMP3251Using DFS to Find SCCs: 2nd AttemptRepeat until all vertices are visited:
+•Pick a vertex x from an SCC without outgoing edge and  run a DFS starting from x to ﬁnd the SCC containing x.
+•Remove all vertices in the SCC containing x.
+87
+Does such an SCC always exist during each iteration? Yes. In each iteration, the meta-graph must be a DAG and thus it has a sink SCC without any outgoing edge.
+Zhiyi HuangCOMP3251Sample RunRepeat until all vertices are visited:
+•Pick a vertex x from an SCC without outgoing edge and run a DFS starting from x to ﬁnd the SCC containing x.
+•Remove all vertices in the SCC containing x.
+881239811107645
+Zhiyi HuangCOMP3251Sample RunRepeat until all vertices are visited:
+•Pick a vertex x from an SCC without outgoing edge and run a DFS starting from x to ﬁnd the SCC containing x.
+•Remove all vertices in the SCC containing x.
+89
+1239811107645explore(10)
+Zhiyi HuangCOMP3251
+Sample RunRepeat until all vertices are visited:
+•Pick a vertex x from an SCC without outgoing edge and run a DFS starting from x to ﬁnd the SCC containing x.
+•Remove all vertices in the SCC containing x.
+90
+123
+98
+11
+107645
+explore(10) explore(8)
+Zhiyi HuangCOMP3251
+Sample RunRepeat until all vertices are visited:
+•Pick a vertex x from an SCC without outgoing edge and run a DFS starting from x to ﬁnd the SCC containing x.
+•Remove all vertices in the SCC containing x.
+91
+123
+9
+8
+11
+107645
+explore(10) explore(8) explore(5)
+Zhiyi HuangCOMP3251
+Sample RunRepeat until all vertices are visited:
+•Pick a vertex x from an SCC without outgoing edge and run a DFS starting from x to ﬁnd the SCC containing x.
+•Remove all vertices in the SCC containing x.
+92
+123
+9
+8
+11
+10
+7
+6
+4
+5
+explore(10) explore(8) explore(5) explore(1)
+Zhiyi HuangCOMP3251But, how do we ﬁnd a sink SCC?1)We will ﬁrst explain how to ﬁnd a vertex that is in some source SCC.
+2)Then, we explain how to ﬁnd a vertex that is in some sink SCC using one extra trick.
+93
+Zhiyi HuangCOMP3251But, how do we ﬁnd a source SCC?1)Run a DFS of G with pre-/post-order numbers.
+2)Identify the vertex s that has been assigned the largest post-order number. Then, s must be in some source SCC of G.
+Why?
+94
+s
+vThe SSC containing s. Suppose for contradiction that it is not a source, and there is an edge incident to it from a vertex v in some other SSC.
+Zhiyi HuangCOMP3251But, how do we ﬁnd a source SCC?
+95Consider [pre(s), post(s)] and [pre(v), post(v)]. Recall from previous discussion that there are three possible relations between the intervals:
+1)v is an ancestor of s in the DFS tree; [pre[s], post[s]] is contained in [pre[v], post[v]].
+2)s is an ancestor of v in the DFS tree; [pre[v], post[v]] is contained in [pre[s], post[s]].
+3)u and v have no ancestor-descendant relation;  [pre[v],post[v]] and [pre[u],post[u]] are disjoint.
+s
+v1)Run a DFS of G with pre-/post-order numbers.
+2)Identify the vertex s that has been assigned the largest post-order number. Then, s must be in some source SCC of G.
+Why?
+Zhiyi HuangCOMP3251But, how do we ﬁnd a source SCC?
+961)v is an ancestor of s in the DFS tree; [pre[s], post[s]] is contained in [pre[v], post[v]].
+This is impossible because post[s] > post[v] by our choice of s.
+s
+v1)Run a DFS of G with pre-/post-order numbers.
+2)Identify the vertex s that has been assigned the largest post-order number. Then, s must be in some source SCC of G.
+Why?
+Zhiyi HuangCOMP3251But, how do we ﬁnd a source SCC?
+972)s is an ancestor of v in the DFS tree; [pre[v], post[v]] is contained in [pre[s], post[s]].
+If this is the case, there is a directed path from s to v (in the DFS tree) and a directed path from v to s (by our assumption). So s and v must be in the same SCC, a contradiction.
+s
+v1)Run a DFS of G with pre-/post-order numbers.
+2)Identify the vertex s that has been assigned the largest post-order number. Then, s must be in some source SCC of G.
+Why?
+Zhiyi HuangCOMP3251But, how do we ﬁnd a source SCC?
+983)s and v have no ancestor-descendant relation;  [pre[v], post[v]] and [pre[s], post[s]] are disjoint.
+Then, by post[s] > post[v], we get that
+pre[v] < post[v] < pre[s] < post[s] pre[v] < pre[s] means that when DFS calls explore(v), s is not visited yet. Since there is a directed path from v to s, DFS would have called explore(s) before exiting explore(v).  So post[s] < post[v], a contradiction.
+s
+v1)Run a DFS of G with pre-/post-order numbers.
+2)Identify the vertex s that has been assigned the largest post-order number. Then, s must be in some source SCC of G.
+Why?
+Zhiyi HuangCOMP3251Finding a sink SCCIdea:  Reverse the direction of every edge in G to get GR. 
+1)G and GR have the same set of SCCs
+2)A sink SCC in G is a source SCC in GR, and vice versa.
+99
+SCC1SCC3SCC2SCC4G
+SCC1SCC3SCC2SCC4GR
+source SCC in GR
+sink SCC in G
+Zhiyi HuangCOMP3251An Eﬃcient Algorithm for Finding SCCs1)Construct GR;
+10012
+39811107645G
+12
+39811107645GR
+Zhiyi HuangCOMP3251An Eﬃcient Algorithm for Finding SCCs1)Construct GR;
+2)Run a DFS on GR to ﬁnd post[v] for every vertex v;
+3)Pick the vertex x with the largest post[x] in the DFS;
+10112
+39811107645G
+12
+39811107645GR
+Zhiyi HuangCOMP3251
+An Eﬃcient Algorithm for Finding SCCs1)Construct GR;
+2)Run a DFS on GR to ﬁnd post[v] for every vertex v;
+3)Pick the vertex x with the largest post[x] in the DFS;
+4)explore(x) in G;
+10212
+39811107645G
+12
+39811107645GR
+Zhiyi HuangCOMP3251An Eﬃcient Algorithm for Finding SCCs1)Construct GR;
+2)Run a DFS on GR to ﬁnd post[v] for every vertex v;
+3)Pick the vertex x with the largest post[x] in the DFS;
+4)explore(x) in G;
+5)Remove all visited vertex;
+10312
+38
+7645G
+12
+38
+7645GR
+Zhiyi HuangCOMP3251An Eﬃcient Algorithm for Finding SCCs1)Construct GR;
+2)Run a DFS on GR to ﬁnd post[v] for every vertex v;
+3)Pick the vertex x with the largest post[x] in the DFS;
+4)explore(x) in G;
+5)Remove all visited vertex;
+6)Pick the vertex y with the largest post[y] among the remaining vertices; (y must be at the source SCC of the remaining GR)
+7)Repeat…10412
+38
+7645G
+12
+38
+7645GR
+Zhiyi HuangCOMP3251
+An Eﬃcient Algorithm for Finding SCCs1)Construct GR;
+2)Run a DFS on GR to ﬁnd post[v] for every vertex v;
+3)Pick the vertex x with the largest post[x] in the DFS;
+4)explore(x) in G;
+5)Remove all visited vertex;
+6)Pick the vertex y with the largest post[y] among the remaining vertices; (y must be at the source SCC of the remaining GR)
+7)Repeat…10512
+38
+7645G
+12
+38
+7645GR
+Zhiyi HuangCOMP3251An Eﬃcient Algorithm for Finding SCCs1)Construct GR;
+2)Call DFS(GR) to compute the post[u] for every vertex u;
+3)Call DFS(G); when we pick a new starting vertex, we choose a vertex v with the largest post[v] among the unvisited vertices;
+4)Each depth-ﬁrst search tree computed in step 3) covers a strongly-connected component.
+106
+Zhiyi HuangCOMP3251An Eﬃcient Algorithm for Finding SCCs1)Construct GR;
+2)Call DFS(GR) to compute the post[u] for every vertex u;
+3)Call DFS(G); when we pick a new starting vertex, we choose a vertex v with the largest post[v] among the unvisited vertices;
+4)Each depth-ﬁrst search tree computed in step 3) covers a strongly-connected component.
+106
+Running time:  O(|V| + |E|)

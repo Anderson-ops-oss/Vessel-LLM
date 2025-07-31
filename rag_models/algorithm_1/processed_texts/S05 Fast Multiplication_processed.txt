@@ -1,0 +1,94 @@
+COMP3251 Lecture 5: Fast Multiplication  (Chapter 2.1 and 2.5)
+Zhiyi HuangCOMP3251The divide-and-conquer algorithm design paradigm solves a problem as follows:
+1)Divide:  Breaking the problem into subproblems that are themselves smaller instances of the same type of problem;  
+2)Recurse:  Recursively solving these subproblems;
+3)Combine:  Appropriately combining their answers to get an answer of the original problem.
+Note:  If the size of a subproblem is small enough, we will stop using the divide-and-conquer strategy; instead, we may solve the subproblem by brute-force.
+Recall Divide and Conquer (Ch. 2)
+2
+Zhiyi HuangCOMP3251Integer MultiplicationInput:  Two n-bit binary integers x, y, e.g., (1011)2 and (0110)2.
+Output:  A (2n-1)-bit integer that equals the product of x and y.
+Warm-up:  The straightforward algorithm runs in O(n2) time.
+31011⨉011000001011101100001000010n steps per row for  either copying 1011  or writing down 0000n rows in totalroughly n steps for calculating each bit in the ﬁnal result, and there are 2n-1 bits in total
+Zhiyi HuangCOMP3251Integer MultiplicationInput:  Two n-bit binary integers x, y, e.g., (1011)2 and (0110)2.
+Output:  A (2n-1)-bit integer that equals the product of x and y.
+Method:  Use divide and conquer to design an algorithm for integer multiplication with running time faster than O(n2).
+4
+Zhiyi HuangCOMP3251Integer MultiplicationInput:  Two n-bit binary integers x, y, e.g., (1011)2 and (0110)2.
+Output:  A (2n-1)-bit integer that equals the product of x and y.
+Method:  Use divide and conquer to design an algorithm for integer multiplication with running time faster than O(n2).
+Fact:  Any n-bit binary integer x = (xn xn-1 … x1)2 can be decomposed into two n/2-bit binary integers xL = (xn … xn/2+1)2 and xR = (xn/2 … x1)2 such that x = xL ⨉ 2n/2 + xR.
+4
+Zhiyi HuangCOMP3251Integer MultiplicationInput:  Two n-bit binary integers x, y, e.g., (1011)2 and (0110)2.
+Output:  A (2n-1)-bit integer that equals the product of x and y.
+Method:  Use divide and conquer to design an algorithm for integer multiplication with running time faster than O(n2).
+Fact:  Any n-bit binary integer x = (xn xn-1 … x1)2 can be decomposed into two n/2-bit binary integers xL = (xn … xn/2+1)2 and xR = (xn/2 … x1)2 such that x = xL ⨉ 2n/2 + xR.
+4Note:  We don't need to do any multiplication here; we may simply shift xL n/2 positions left, or pad it with n/2 zeros.
+Zhiyi HuangCOMP3251Integer MultiplicationInput:  Two n-bit binary integers x, y, e.g., (1011)2 and (0110)2.
+Output:  A (2n-1)-bit integer that equals the product of x and y.
+Method:  Use divide and conquer to design an algorithm for integer multiplication with running time faster than O(n2).
+For example, (1011)2 = 1 ⨉ 23 + 0 ⨉ 22 + 1 ⨉ 21 + 1 ⨉ 20                                   = (1 ⨉ 21 + 0 ⨉ 20) ⨉ 22 + 1 ⨉ 21 + 1 ⨉ 20                                   = (10)2 ⨉ 22 + (11)2
+Fact:  Any n-bit binary integer x = (xn xn-1 … x1)2 can be decomposed into two n/2-bit binary integers xL = (xn … xn/2+1)2 and xR = (xn/2 … x1)2 such that x = xL ⨉ 2n/2 + xR.
+4Note:  We don't need to do any multiplication here; we may simply shift xL n/2 positions left, or pad it with n/2 zeros.
+Zhiyi HuangCOMP3251A Simple Divide and Conquer Algorithm for Integer MultiplicationInput:  Two n-bit binary integers x, y, e.g., (1011)2 and (0110)2.
+Output:  A (2n-1)-bit integer that equals the product of x and y.
+Divide:        Let x = xL ⨉ 2n/2 + xR and y = yL ⨉ 2n/2 + yR,                     where xL, xR, yL, yR are n/2-bit binary integers.
+Recurse:    Compute 4 multiplications of n/2-bit integers,                    xL yL, xL yR, xR yL, and xR yR.
+Combine:   x y = (xL ⨉ 2n/2 + xR) (yL ⨉ 2n/2 + yR)                          = xL yL ⨉ 2n + (xL yR + xR yL) ⨉ 2n/2 + xR yRRunning time:  T(n), total time for multiplying two n-bit integers.
+•Computing 4 multiplications of n/2-bit integers: 4 T(n/2);
+•Padding the results with zeros and adding them together: O(n).
+Hence, T(n) = 4 T(n/2) + O(n).
+Zhiyi HuangCOMP3251What is T(n) = 4 T(n/2) + O(n)?Recall that O(n) ≤ cn for some constant c. Hence,
+            T(n) ≤ 4 T(n/2) + cn                    ≤ 4 ( 4 T(n/22) + c(n/2) ) + cn                              = 42 T(n/22) + cn (2 + 1)                    ≤ 42 ( 4 T(n/23) + c(n/22) ) + cn (2+1)                              = 43 T(n/23) + cn (22+2+1)                    ≤ …                    ≤ 4k T(n/2k) + cn (2k-1 + … + 22 + 2 + 1) Note that when k = log2 n, we have 2k = n. Thus,
+            T(n) ≤ 4k T(n/2k) + cn (2k-1 + … + 22 + 2 + 1)                    = n2 T(1) + cn (2k - 1)/(2 - 1)                    = n2 T(1) + cn (n-1)                    = O(n2) We can also use Master Theorem to get the same result.6
+Zhiyi HuangCOMP3251Can we do better?
+7Input:  Two n-bit binary integers x, y, e.g., (1011)2 and (0110)2.
+Output:  A (2n-1)-bit integer that equals the product of x and y.
+Divide:        Let x = xL ⨉ 2n/2 + xR and y = yL ⨉ 2n/2 + yR,                     where xL, xR, yL, yR are n/2-bit binary integers.
+Recurse:    Compute 4 multiplications of n/2-bit integers,                    xL yL, xL yR, xR yL, and xR yR.
+Combine:   x y = (xL ⨉ 2n/2 + xR) (yL ⨉ 2n/2 + yR)                          = xL yL ⨉ 2n + (xL yR + xR yL) ⨉ 2n/2 + xR yR
+Zhiyi HuangCOMP3251Can we do better?
+•The combine step needs 3 terms: xL yL, xL yR + xR yL, and xR yR.
+7Input:  Two n-bit binary integers x, y, e.g., (1011)2 and (0110)2.
+Output:  A (2n-1)-bit integer that equals the product of x and y.
+Divide:        Let x = xL ⨉ 2n/2 + xR and y = yL ⨉ 2n/2 + yR,                     where xL, xR, yL, yR are n/2-bit binary integers.
+Recurse:    Compute 4 multiplications of n/2-bit integers,                    xL yL, xL yR, xR yL, and xR yR.
+Combine:   x y = (xL ⨉ 2n/2 + xR) (yL ⨉ 2n/2 + yR)                          = xL yL ⨉ 2n + (xL yR + xR yL) ⨉ 2n/2 + xR yR
+Zhiyi HuangCOMP3251Can we do better?
+•The combine step needs 3 terms: xL yL, xL yR + xR yL, and xR yR.•The recurse step uses 4 multiplications to get the 3 terms.7Input:  Two n-bit binary integers x, y, e.g., (1011)2 and (0110)2.
+Output:  A (2n-1)-bit integer that equals the product of x and y.
+Divide:        Let x = xL ⨉ 2n/2 + xR and y = yL ⨉ 2n/2 + yR,                     where xL, xR, yL, yR are n/2-bit binary integers.
+Recurse:    Compute 4 multiplications of n/2-bit integers,                    xL yL, xL yR, xR yL, and xR yR.
+Combine:   x y = (xL ⨉ 2n/2 + xR) (yL ⨉ 2n/2 + yR)                          = xL yL ⨉ 2n + (xL yR + xR yL) ⨉ 2n/2 + xR yR
+Zhiyi HuangCOMP3251Can we do better?
+•The combine step needs 3 terms: xL yL, xL yR + xR yL, and xR yR.•The recurse step uses 4 multiplications to get the 3 terms.7Input:  Two n-bit binary integers x, y, e.g., (1011)2 and (0110)2.
+Output:  A (2n-1)-bit integer that equals the product of x and y.
+Divide:        Let x = xL ⨉ 2n/2 + xR and y = yL ⨉ 2n/2 + yR,                     where xL, xR, yL, yR are n/2-bit binary integers.
+Recurse:    Compute 4 multiplications of n/2-bit integers,                    xL yL, xL yR, xR yL, and xR yR.
+Combine:   x y = (xL ⨉ 2n/2 + xR) (yL ⨉ 2n/2 + yR)                          = xL yL ⨉ 2n + (xL yR + xR yL) ⨉ 2n/2 + xR yR
+Question:  Can we use 3 multiplications to ﬁnd the 3 terms?
+Zhiyi HuangCOMP3251A Faster Divide and Conquer Algorithm for Integer Multiplication
+8Input:  Two n-bit binary integers x, y, e.g., (1011)2 and (0110)2.
+Output:  A (2n-1)-bit integer that equals the product of x and y.
+Divide:        Let x = xL ⨉ 2n/2 + xR and y = yL ⨉ 2n/2 + yR,                     where xL, xR, yL, yR are n/2-bit binary integers.
+Recurse:    Compute 3 multiplications of n/2-bit integers,                    xL yL, (xL + xR) (yL + yR), and xR yR.
+Combine:  Compute xL yR + xR yL = (xL + xR) (yL + yR) - xL yL - xR yR.                    Then, x y = xL yL ⨉ 2n + (xL yR + xR yL) ⨉ 2n/2 + xR yR.Running time: 
+Note:  Actually, it should be T(n) = 2 T(n/2) + T(n/2+1) + O(n) because xL + xR and yL + yR could be (n/2+1)-bit integers, which also leads to T(n) = O(n1.59).T(n)=3T(n/2) +O(n)=O(nlog23)=O(n1.59)
+Optional: Matrix multiplication
+Zhiyi HuangCOMP3251Matrix MultiplicationA 2⨉2 matrix
+The product of two 2⨉2 matrices:
+The product Z = (zij) of two n⨉n matrices X = (xij) and Y = (yjk) is:
+10
+Running time:  Since Z has n2 entries, and computing each entry zij takes O(n) time. So O(n3) time in total to ﬁnd Z = XY .Note:  Here, we assume that algorithm can add or multiply two numbers in constant time and count the number of additions/multiplications. 
+Zhiyi HuangCOMP3251A Simple Divide and Conquer  Matrix Multiplication Algorithm
+11
+ Key fact:  If                       and                      , then
+X, Y are n⨉n matrices,  A, B, C, D, E, F, G, H are n/2 ⨉ n/2 matrices.
+Divide:        Decompose X and Y each into four n/2 ⨉ n/2                     matrices as above, namely, A, B, C, D, E, F , G, H.
+Recurse:    Compute 8 multiplications of n/2 ⨉ n/2 matrices,                    AE, BG, AF , BH, CE, DG, CF , DH.
+Combine:   Add them as above to get XY .Running time:  T(n) = 8 T(n/2) + O(n2) = O(n3).
+Zhiyi HuangCOMP3251Strassen’s Magical Idea
+So, the running time becomes12
+ Divide:        Decompose X and Y into two n/2⨉n/2 matrices                    as above, namely, A, B, C, D, E, F , G, H.
+Recurse:    Compute 7 multiplications of n/2⨉n/2 matrices,                    P1 = A(F-H), P2 = (A+B)H, P3 = (C+D)E, P4 = D(G-E),                     P5 = (A+D)(E+H), P6 = (B-D)(G+H), P7 = (A-C)(E+F).
+Combine:   Add them as above to get XY as follows:

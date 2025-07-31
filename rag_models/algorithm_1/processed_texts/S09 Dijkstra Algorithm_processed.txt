@@ -1,0 +1,207 @@
+COMP3251 Lecture 9: Dijkstra Algorithm
+(Chapter 4.3, 4.4, and 4.5)
+Zhiyi HuangCOMP3251Edges with LengthsWe now consider weighted graph, i.e., every edge (u,v) is associated with a length L(u,v).
+2sbcdefgt9231415530442018261116619
+Zhiyi HuangCOMP3251Single-Source Shortest Paths Problem  (for Weighted Graphs)Deﬁnition:  length of a path P is equal to the sum of the length of the edges on P.
+3
+Given a weighted directed graph and a source vertex s ∈ V, ﬁnd, for every vertex v ∈ V, the length of the shortest path from the source s to v.
+Zhiyi HuangCOMP3251An Example
+4sbcdefgt9231415530442018261116619sbcdefgt9231415530442018261116619
+Zhiyi HuangCOMP3251An Example
+5sbcdefgt
+9
+231415
+5
+30
+44
+20182
+61116
+6
+19
+Note that this is a tree, and for any vertex v, the tree path from  s to v is the shortest path s to v. Such a tree is called the Shortest Path Tree (SPT).
+Zhiyi HuangCOMP3251The BFS tree is a Shortest Path Tree•If all edges have length 1, then BFS solves the shortest path problem and the BFS tree coincides with the SPT tree.
+•An alternative view of BFS:
+-Starting from the smallest subtree of BFS tree that contains only the starting vertex s.
+-Add vertices and the corresponding tree edges one by one in ascending order of their distance from s.
+6abcg
+fdeh
+Zhiyi HuangCOMP3251
+General Idea•Starting from the smallest subtree of SPT that contains only s. 
+•Iteratively attached a “correct” edge to the subtree such that the larger tree is still a subtree of SPT.  
+•When we include all vertices in the subtree, it is the SPT.
+7suvT: a subtree of SPT
+Grow T by adding v, together with the edge (u, v) to T.A larger T which is still a subtree of SPT
+Zhiyi HuangCOMP3251What is the correct vertex/edge?Let T be a subtree of the SPT. Here are a few deﬁnitions:
+-A T-path from s to v is a path from s to v that goes through only vertices in T.
+-The T-dist(v) is the length of shortest T-path from s to v. 
+-Note that for any vertex v, T-dist(v) ≥ dist(v), the length of the shortest path from s to v.
+-For every v ∈ T, T-dist(u) = dist(u).
+Example:
+8
+suv2410T-dist(v) = 24 + 10 = 34
+Zhiyi HuangCOMP3251What is the correct vertex/edge?Observation:  A shortest T-path from s to v, must be consists of a shortest T-path from s to some vertex u ∈ T and edge (u, v).
+•To determine T-dist(v), we check all vertices u ∈ T such that  (u, v) ∈ E, and the corresponding shortest T-path from s to u.
+•Then, determine their total lengths and return the minimum. 
+Example:
+9
+suv2410ab16201918
+T-dist(a) + L(a,v) = 35, T-dist(u) + L(u,v) = 34, T-dist(b) + L(b,v) = 38, so T-dist(v) = 34.
+Zhiyi HuangCOMP3251The Algorithm (Informal)
+What next? •Why is the above algorithm correct?
+•What is its running time?
+10
+Starting with T = { s } and repeatedly do the following to enlarge T until T includes all vertices:
+•Find the vertex v ∉ T with the smallest T-dist(v), add it to T;
+•Update the T-dist(x) for all vertices x ∉ T.
+Zhiyi HuangCOMP3251Correctness
+Suppose: -T is a subtree of SPT.
+-v has the smallest T-dist among vertices that are not in T, the the path leaves T through a vertex u ∈ T.
+Want to show: 
+-This path from s to v is indeed the shortest path.11
+suv2410
+Zhiyi HuangCOMP3251Correctness (cont’d)
+12
+suv2410ab
+Zhiyi HuangCOMP3251Correctness (cont’d)
+12
+suv2410
+By our choice of v, for all x ∉ T, T-dist(v) ≤ T-dist(x)ab
+Zhiyi HuangCOMP3251Correctness (cont’d)
+12
+suv2410
+By our choice of v, for all x ∉ T, T-dist(v) ≤ T-dist(x)ab
+Since going through u is the shortest T-path from s to t, any alternative path from s to v must go through some vertex b ∉ T, and T-dist(b) ≥ T-dist(v).
+Zhiyi HuangCOMP3251Correctness (cont’d)
+12
+suv2410
+By our choice of v, for all x ∉ T, T-dist(v) ≤ T-dist(x)ab
+Since going through u is the shortest T-path from s to t, any alternative path from s to v must go through some vertex b ∉ T, and T-dist(b) ≥ T-dist(v).
+The length of this part from b to v is positive.  (all edges have positive length.)
+Zhiyi HuangCOMP3251Correctness (cont’d)Conclusion:  The length of any path P from s to v is no smaller than T-dist(v) because length(P) ≥ T-dist(b) ≥ T-dist(v). Hence, the T-path from s to v through u is the shortest path.
+13
+suv2410ab
+Zhiyi HuangCOMP3251
+Sample Run
+14sab
+cde914152321853020
+T = { s }0Highlighted numbers  denote the length of of the shortest path from s to a vertex
+Zhiyi HuangCOMP3251
+Sample Run
+15sab
+cde914152321853020
+T = { s }91415∞∞0Shaded numbers  denote the current  T-distance of a vertex
+Zhiyi HuangCOMP3251
+Sample Run
+16sab
+cde914152321853020
+T = { s, a }91415∞∞0Add the vertex v ∉ T with the smallest T-dist
+Zhiyi HuangCOMP3251
+Sample Run
+17sab
+cde914152321853020
+T = { s, a }9111532∞0Update T-dist(x) for all x ∉ T
+Zhiyi HuangCOMP3251
+Sample Run
+18sab
+cde914152321853020
+T = { s, a, d }9111532∞0
+Zhiyi HuangCOMP3251
+Sample Run
+19sab
+cde914152321853020
+T = { s, a, d }9111529410
+Zhiyi HuangCOMP3251
+Sample Run
+20sab
+cde914152321853020
+T = { s, a, d, e }9111529410
+Zhiyi HuangCOMP3251
+Sample Run
+21sab
+cde914152321853020
+T = { s, a, d, e }9111529350
+Zhiyi HuangCOMP3251
+Sample Run
+22sab
+cde914152321853020
+T = { s, a, d, e, b }9111529350
+Zhiyi HuangCOMP3251
+Sample Run
+23sab
+cde914152321853020
+T = { s, a, d, e, b, c }9111529350
+Zhiyi HuangCOMP3251How to update T-dist(x)?
+24
+saxubv
+•Recall T-dist(x) = min { T-dist(a) + L(a, x) , T-dist(b) + L(b, x) }
+•Suppose the algorithm adds a new vertex v to T.
+-Let T’ denote the new tree. 
+-Let T’-dist denote the updated tree-distance.
+Zhiyi HuangCOMP3251
+How to update T-dist(x)?
+25saxubv
+•If there is no edge (v, x), then we have
+T’-dist(x) = min { T’-dist(a) + L(a, x) , T’-dist(b) + L(b, x) }
+•Adding v to T does not change the tree-distance of a and b: T’-dist(a) = T-dist(a), T’-dist(b) = T-dist(b). Hence, no change.
+Zhiyi HuangCOMP3251
+How to update T-dist(x)?
+26saxubv
+•If there is edge (u, x), then T’-dist(x) is equal to
+min { T’-dist(a) + L(a, x) , T’-dist(b) + L(b, x) , T’-dist(v) + L(v, x) }
+•Note that T-dist and T’-dist are the same for v, a, b. Thus, 
+T’-dist(x) = min { T-dist(x) , T-dist(v) + L(v, x) }
+Zhiyi HuangCOMP3251
+How to update T-dist(x)?
+27saxubv
+Conclusion:  After adding v to enlarge T, we only need to
+•scan the adjacent list of v in order to update T-dist;
+•for each vertex x in the adjacent list, update its tree-distance as the minimal of the old tree-distance and T-dist(v) + L(v, x).
+Zhiyi HuangCOMP3251The Algorithm (DPV 4.1.1)
+Running time: •Steps 1, 2, 5 take O(|V|) time. Steps 6, 7 takes O(|E|) time.
+•If we implement dist(.) as a simple array, step 4 takes O(|V|) time to ﬁnd the smallest dist(.), and since we execute step 4 O(|V|) times, total time is O(|V|2).28
+1)initialize dist(s) = 0, and dist(x) = ∞ for other vertices x;
+2)V’ = { };
+3)while V’ ≠ V do
+4)    pick the node v ∉ V’ with the smallest dist(.)
+5)    add v to V’                                                                        
+6)    for all edges (v, x) ∈ E :
+7)        if dist(x) > dist(v) + L(v, x) : update dist(x) = dist(v) + L(v, x).
+Zhiyi HuangCOMP3251Priority Queue Implementation•It is usually more eﬃcient to store dist(.) in a priority queue, e.g., implemented through binary min heap.
+•Recap of basic properties of binary min heap:
+-Building an empty heap (build-heap): O(1);
+-Finding the minimal number (ﬁnd-min): O(1);
+-Deleting a the minimal number (delete-min): O(log n).
+-Inserting a new number (insert): O(log n);
+29
+Zhiyi HuangCOMP3251Priority Queue Implementation
+30
+sadubvcedist(v)dist(d)dist(c)dist(e)
+Zhiyi HuangCOMP3251
+Priority Queue Implementation
+31sadubvcedist(v)dist(d)dist(c)dist(e)ﬁnd-min
+Zhiyi HuangCOMP3251
+Priority Queue Implementation
+32sadubvcedist(d)dist(e)dist(c)delete(v)
+Zhiyi HuangCOMP3251
+Priority Queue Implementation
+33sadubvcedist(d)dist(e)Update dist[x] for every x s.t. there is edge (v, x); for example, dist[c] may be decrease by some Δ > 0.dist(c)-Δ
+Zhiyi HuangCOMP3251
+Priority Queue Implementation
+34sadubvcedist(d)dist(e)Remember, we may need to shift up the new value in order to restore heap order.dist(c)-Δ
+Zhiyi HuangCOMP3251Running time for this implementation•Initially, we set dist(s) = 0, and dist(u) = ∞ for all other vertices u. Then, we insert all n vertices to a heap: O(|V| log |V|) time.
+•We need to delete the minimum value from the heap n times to add n vertices to the SPT: O(|V| log |V|) time.
+•After adding each vertex to the SPT, we need to scan its adjacency list and for each vertex x in the list, we may need to update dist(x) and shift up to restore heap order.
+-The hight of the tree is log |V|, so we need to shift up at most log |V| times per vertex in the adjacency list.
+-Total size of the adjacency lists of all vertices is O(|E|).
+-In total, this takes O(|E| log |V|) time.
+•In sum, the running time is O( (|E| + |V|) log |V| ).35
+Zhiyi HuangCOMP3251Advance topic: d-heap implementation
+36Heap3-Heapd-Heapbuild-heapO(1)O(1)O(1)insertO(log n)O(log3 n)O(logd n)ﬁnd-minO(1)O(1)O(1)delete-minO(log n)O(3 log3 n)O(d logd n)depth  O(logd n)
+Zhiyi HuangCOMP3251Advance topic: d-heap implementation•Initially, we set dist(s) = 0, and dist(u) = ∞ for all other vertices u. Then, we insert all n vertices to a heap: O(|V| logd |V|) time.
+•We need to delete the minimum value from the heap n times to add n vertices to the SPT: O(|V| d logd |V|) time.
+•After adding each vertex to the SPT, we need to scan its adjacency list and for each vertex x in the list, we may need to update dist(x) and shift up to restore heap order.
+-The hight of the tree is logd |V|, so we need to shift up at most log |V| times per vertex in the adjacency list.
+-Total size of the adjacency lists of all vertices is O(|E|).
+-In total, this takes O(|E| logd |V|) time.
+•Total O( (|E| + d |V|) logd |V|) time.
+•Choosing d = |E|/|V|, the running time is O( |E| log|E|/|V| |V| ).37

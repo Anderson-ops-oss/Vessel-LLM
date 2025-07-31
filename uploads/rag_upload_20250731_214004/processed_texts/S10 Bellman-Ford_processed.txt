@@ -1,0 +1,274 @@
+COMP3251 Lecture 10: Bellman-Ford Algorithm
+(Chapter 4.6)
+Zhiyi HuangCOMP3251Recap: Single-Source Shortest Path
+2
+Given a directed graph with edge lengths and a source vertex s, ﬁnd the length of the shortest path from s to v for every vertex v.
+Zhiyi HuangCOMP3251Recap: Single-Source Shortest Path
+2
+Given a directed graph with edge lengths and a source vertex s, ﬁnd the length of the shortest path from s to v for every vertex v.
+Breadth First SearchUnit Lengths
+Zhiyi HuangCOMP3251Recap: Single-Source Shortest Path
+3
+Given a directed graph with edge lengths and a source vertex s, ﬁnd the length of the shortest path from s to v for every vertex v.
+Breadth First SearchUnit Lengths914152321853020Positive Lengths
+Dijkstra Algorithm
+Zhiyi HuangCOMP3251Recap: Single-Source Shortest Path
+3
+Given a directed graph with edge lengths and a source vertex s, ﬁnd the length of the shortest path from s to v for every vertex v.
+Breadth First SearchUnit Lengths914152321853020Positive Lengths
+Dijkstra Algorithm
+Zhiyi HuangCOMP3251
+Recap: Single-Source Shortest Path
+4
+Given a directed graph with edge lengths and a source vertex s, ﬁnd the length of the shortest path from s to v for every vertex v.
+Breadth First SearchUnit Lengths914152321853020Positive Lengths
+Dijkstra Algorithm
+Zhiyi HuangCOMP3251
+Recap: Single-Source Shortest Path
+5
+Given a directed graph with edge lengths and a source vertex s, ﬁnd the length of the shortest path from s to v for every vertex v.
+Breadth First SearchUnit Lengths914152321853020Positive Lengths
+Dijkstra Algorithm
+Zhiyi HuangCOMP3251
+Recap: Single-Source Shortest Path
+6
+Given a directed graph with edge lengths and a source vertex s, ﬁnd the length of the shortest path from s to v for every vertex v.
+Breadth First SearchUnit Lengths914152321853020Positive Lengths
+Dijkstra Algorithm
+Zhiyi HuangCOMP3251Recap: Single-Source Shortest Path
+7
+Given a directed graph with edge lengths and a source vertex s, ﬁnd the length of the shortest path from s to v for every vertex v.
+Breadth First SearchUnit Lengths91415232185302009321115Positive Lengths
+Dijkstra AlgorithmdistanceT-dist
+Zhiyi HuangCOMP3251Recap: Single-Source Shortest Path
+8
+Given a directed graph with edge lengths and a source vertex s, ﬁnd the length of the shortest path from s to v for every vertex v.
+Breadth First SearchUnit Lengths91415232185302009321115Positive Lengths
+Dijkstra Algorithm
+Zhiyi HuangCOMP3251Recap: Single-Source Shortest Path
+9
+Given a directed graph with edge lengths and a source vertex s, ﬁnd the length of the shortest path from s to v for every vertex v.
+Breadth First SearchUnit Lengths9141523218530200929111530Positive Lengths
+Dijkstra Algorithm
+Zhiyi HuangCOMP3251Today: Negative Edge Lengths
+10sab
+cde9141523-1001853020•Negative lengthes are natural in some applications.
+•The correctness of Dijkstra depends on the fact that no edge has negative weight.
+Dijkstra will add this edge to SPT at step 1, and assert dist(a) = 9.
+But there is a path with distance -86
+Zhiyi HuangCOMP3251What goes wrong in the proof of Dijkstra’s correctness with negative edges?
+11
+suv2410ab
+Zhiyi HuangCOMP3251What goes wrong in the proof of Dijkstra’s correctness with negative edges?
+11
+suv2410
+By our choice of v  T-dist(v) ≤ T-dist(b)ab
+Zhiyi HuangCOMP3251What goes wrong in the proof of Dijkstra’s correctness with negative edges?
+11
+suv2410
+By our choice of v  T-dist(v) ≤ T-dist(b)ab
+Since going through u is the shortest T-path from s to v, any alternative path from s to v must go through some vertex b ∉ T, and T-dist(b) ≥ T-dist(v).
+Zhiyi HuangCOMP3251What goes wrong in the proof of Dijkstra’s correctness with negative edges?
+11
+suv2410
+By our choice of v  T-dist(v) ≤ T-dist(b)ab
+Since going through u is the shortest T-path from s to v, any alternative path from s to v must go through some vertex b ∉ T, and T-dist(b) ≥ T-dist(v).
+The length of this part from b to v is positive.  (all edges have positive length.)The red part is  no longer true.
+Zhiyi HuangCOMP3251Negative cyclesNote:  “shortest path” is not well deﬁned if the input graph has negative cycles.
+•From s to c, we can traverse the red cycle as many times as we want to get a path with distance as small as we want.
+12sab
+cde9141523-1001853020
+This lecture: Bellman-Ford algorithmFor graphs that have negative edges, but do not have negative cycle, we can use the Bellman-Ford algorithm to solve the single source shortest path problem.
+Zhiyi HuangCOMP3251Negative Lengths??
+14
+Zhiyi HuangCOMP3251Negative Lengths??•Suppose Zhiyi will go to New Zealand in reading week and needs some New Zealand dollars   
+14
+HK$
+NZ$exch. rate 0.23
+Zhiyi HuangCOMP3251Negative Lengths??•Suppose Zhiyi will go to New Zealand in reading week and needs some New Zealand dollars   •Or:    
+14
+HK$
+NZ$exch. rate 0.23
+HK$
+JP¥rate 19.36
+NZ$rate 0.012with 19.36×0.012=0.23232
+Zhiyi HuangCOMP3251Negative Lengths??•Suppose Zhiyi will go to New Zealand in reading week and needs some New Zealand dollars   •Or:    •Or:
+14
+HK$
+NZ$exch. rate 0.23
+HK$
+JP¥rate 19.36
+NZ$rate 0.012with 19.36×0.012=0.23232
+HK$
+EURO €rate 0.12
+JP¥
+NZ$rate 0.012…with 0.12×…×0.012=0.236
+Zhiyi HuangCOMP3251“Reduction” to Shortest Path•This is a path with (1) currencies as vertices, (2) exchanges as edges, and (3) exchange rates as “edge weights”
+15
+HK$
+EURO €rate 0.12
+JP¥
+NZ$rate 0.012…with 0.12×…×0.012=0.236
+Zhiyi HuangCOMP3251“Reduction” to Shortest Path•This is a path with (1) currencies as vertices, (2) exchanges as edges, and (3) exchange rates as “edge weights”•Goal:  maximizing the product of rates along the path
+15
+HK$
+EURO €rate 0.12
+JP¥
+NZ$rate 0.012…with 0.12×…×0.012=0.236
+Zhiyi HuangCOMP3251“Reduction” to Shortest Path•This is a path with (1) currencies as vertices, (2) exchanges as edges, and (3) exchange rates as “edge weights”•Goal:  maximizing the product of rates along the path•Compared to minimizing the sum of edge lengths
+15
+HK$
+EURO €rate 0.12
+JP¥
+NZ$rate 0.012…with 0.12×…×0.012=0.236
+Zhiyi HuangCOMP3251“Reduction” to Shortest Path•This is a path with (1) currencies as vertices, (2) exchanges as edges, and (3) exchange rates as “edge weights”•Goal:  maximizing the product of rates along the path•Compared to minimizing the sum of edge lengths•Product vs. Sumlog(abc)=log(a)+log(b)+log(c)
+15
+HK$
+EURO €rate 0.12
+JP¥
+NZ$rate 0.012…with 0.12×…×0.012=0.236
+Zhiyi HuangCOMP3251“Reduction” to Shortest Path•This is a path with (1) currencies as vertices, (2) exchanges as edges, and (3) exchange rates as “edge weights”•Goal:  maximizing the product of rates along the path•Compared to minimizing the sum of edge lengths•Product vs. Sumlog(abc)=log(a)+log(b)+log(c)•Maximization vs. Minimizationmaxa+b+c⇔min(−a)+(−b)+(−c)15
+HK$
+EURO €rate 0.12
+JP¥
+NZ$rate 0.012…with 0.12×…×0.012=0.236
+Zhiyi HuangCOMP3251Putting together
+16
+Zhiyi HuangCOMP3251Putting together•Let there be a vertex for each currency
+16… …
+HK$
+EURO €
+JP¥
+NZ$
+US$
+CN¥
+Zhiyi HuangCOMP3251Putting together•Let there be a vertex for each currency•Let there be a directed edge between each pair of currencies with the negative logarithm of exchange rate as “length”
+16… …
+HK$
+EURO €
+JP¥
+NZ$
+US$
+CN¥−ln(0.12)=2.12−ln(0.012)≈4.42−ln(0.13)≈2.04−ln(0.94)≈0.062−ln(7.28)≈−1.99−ln(1.04)≈−0.039
+Zhiyi HuangCOMP3251Putting together•Let there be a vertex for each currency•Let there be a directed edge between each pair of currencies with the negative logarithm of exchange rate as “length”•Find shortest path from HK$ to NZ$
+16… …
+HK$
+EURO €
+JP¥
+NZ$
+US$
+CN¥−ln(0.12)=2.12−ln(0.012)≈4.42−ln(0.13)≈2.04−ln(0.94)≈0.062−ln(7.28)≈−1.99−ln(1.04)≈−0.039
+Zhiyi HuangCOMP3251Putting together•Let there be a vertex for each currency•Let there be a directed edge between each pair of currencies with the negative logarithm of exchange rate as “length”•Find shortest path from HK$ to NZ$
+16… …
+HK$
+EURO €
+JP¥
+NZ$
+US$
+CN¥−ln(0.12)=2.12−ln(0.012)≈4.42−ln(0.13)≈2.04−ln(0.94)≈0.062−ln(7.28)≈−1.99−ln(1.04)≈−0.039
+negative cycle
+= 
+arbitrage 
+Zhiyi HuangCOMP3251Another view on DijkstraBasic step:  update (u, v) for an edge (u, v) ∈ E as follows
+dist(v) = min { dist(v), dist(u) + L(u, v) }
+Intuition: 
+-dist(v) is the length of the shortest path we have found so far from s to v. 
+-Whenever we ﬁnd a shorter path, we update dist(v).
+17svuold path with  length dist(v)there is a path from s  to u with length dist(u)
+together with edge (u, v) we may ﬁnd a shorter  path from s to v
+Zhiyi HuangCOMP3251An Example
+18svudist(v) = 12dist(u) = 52before update:
+svudist(v) = 7dist(u) = 52after update:dist(v) = min { dist(v), dist(u) + L(u, v) }
+Zhiyi HuangCOMP3251Bellman-Ford algorithm•Without negative weights, Dijkstra updates edges in a clever order so that the algorithm updates each edge only once.
+•With negative weights, Dijkstra’s clever order no longer works.
+•Bellman-Ford returns to the “stupid” way and updates each edge multiple times:
+191)initialize dist(s) = 0, and dist(x) = ∞ for other vertices x;
+2)do
+3)    for each edge (u, v) in E : 
+4)        dist(v) = min { dist(v), dist(u) + L(u, v) }
+5)until there is no more update
+Zhiyi HuangCOMP3251Bellman-Ford algorithm•Without negative weights, Dijkstra updates edges in a clever order so that the algorithm updates each edge only once.
+•With negative weights, Dijkstra’s clever order no longer works.
+•Bellman-Ford returns to the “stupid” way and updates each edge multiple times:
+201)initialize dist(s) = 0, and dist(x) = ∞ for other vertices x;
+2)for i from 1 to |V| - 1 :
+3)    for each edge (u, v) in E : 
+4)        dist(v) = min { dist(v), dist(u) + L(u, v) }
+Zhiyi HuangCOMP3251Bellman-Ford algorithm•Without negative weights, Dijkstra updates edges in a clever order so that the algorithm updates each edge only once.
+•With negative weights, Dijkstra’s clever order no longer works.
+•Bellman-Ford returns to the “stupid” way and updates each edge multiple times:
+201)initialize dist(s) = 0, and dist(x) = ∞ for other vertices x;
+2)for i from 1 to |V| - 1 :
+3)    for each edge (u, v) in E : 
+4)        dist(v) = min { dist(v), dist(u) + L(u, v) }
+Running time: O(|V||E|) = O(|V|3)
+Zhiyi HuangCOMP3251Sample Run
+21
+01234567S0A∞B∞C∞D∞E∞F∞G∞
+Zhiyi HuangCOMP3251Sample Run
+22
+01234567S00A∞10B∞∞C∞∞D∞∞E∞∞F∞∞G∞8
+Zhiyi HuangCOMP3251Sample Run
+23
+01234567S000A∞1010B∞∞∞C∞∞∞D∞∞∞E∞∞12F∞∞9G∞88
+Zhiyi HuangCOMP3251Sample Run
+24
+01234567S0000A∞10105B∞∞∞10C∞∞∞∞D∞∞∞∞E∞∞128F∞∞99G∞888
+Zhiyi HuangCOMP3251Sample Run
+25
+01234567S00000A∞101055B∞∞∞106C∞∞∞∞11D∞∞∞∞∞E∞∞1287F∞∞999G∞8888
+Zhiyi HuangCOMP3251Sample Run
+26
+01234567S000000A∞1010555B∞∞∞1065C∞∞∞∞117D∞∞∞∞∞14E∞∞12877F∞∞9999G∞88888
+Zhiyi HuangCOMP3251Sample Run
+27
+01234567S0000000A∞10105555B∞∞∞10655C∞∞∞∞1176D∞∞∞∞∞1410E∞∞128777F∞∞99999G∞888888
+Zhiyi HuangCOMP3251Sample Run
+28
+01234567S00000000A∞101055555B∞∞∞106555C∞∞∞∞11766D∞∞∞∞∞14109E∞∞1287777F∞∞999999G∞8888888
+Zhiyi HuangCOMP3251Correctness of Bellman-FordSuppose that G = (V, E) is a weighted directed graph without negative cycles. 
+Observation 1:  For every vertex v, there is a shortest path from s to v with at most |V| - 1 edges.
+Why? -We can assume without loss of generality that there is a shortest path that does not contain any cycle.
+-All the vertices on this shortest path must be distinct; otherwise there is a cycle.
+-Thus, there are at most |V| vertices, and thus at most  |V| - 1 edges on this path.29
+Zhiyi HuangCOMP3251Correctness of Bellman-Ford (cont’d)Fact:  dist[v] is no larger than the length of the shortest path from s to v through out the algorithm.
+Observation 2:  For any vertex v, if there is a shortest path from  s to u with i edges, then dist[v] = d(s, v) after the i-th iteration.
+-Prove by mathematical induction.
+-Base case:  obviously true for i = 0 because only s has a shortest path with no edge.
+-Inductive hypothesis:  suppose it is true for iteration i - 1.
+-Consider a shortest path of length i: P = (s, u1, … , ui-1, v).
+30svui-1shortest path from s to vshortest path from s to ui-1
+Zhiyi HuangCOMP3251Correctness of Bellman-Ford (cont’d)
+•Thus, there is a shortest path from s to ui-1 with i - 1 edges.
+•By the inductive hypothesis, we have dist[ui-1] = d(s, ui-1) after iteration i-1.
+•When the algorithm update edge (ui-1, v) at iteration i, 
+dist(v) = min { dist(v), dist(ui-1) + L(ui-1, v) } = d(s, v)
+•Note that dist[v] will remain the same hereafter because there are no shorter paths from s to v.31svui-1shortest path from s to vshortest path from s to ui-1
+Zhiyi HuangCOMP3251Correctness of Bellman-Ford (cont’d)Observation 1:  For every vertex v, there is a shortest path from s to v with at most |V| - 1 edges.
+Observation 2:  For any vertex v, if there is a shortest path from  s to v with i edges, then dist[v] = d(s, v) after the i-th iteration.
+•When Bellman-Ford terminates, it has iterated |V| - 1 times.
+•By the above observations, dist[v] = d(s, v) when Bellman-Ford terminates.
+32
+Optional Topic: Shortest Path in DAGs (Chapter 4.7)
+Zhiyi HuangCOMP3251Shortest Path in DAGs•Given a Directed Acyclic Graph (DAG) G with possibly negative-length edges, we can solve the single-source shortest path problem in O(|V| + |E|) time.
+•Note:  Since G is a DAG, it does not have any cycle, and thus it does not have any negative cycle.
+•Recall:  We can linearize G in a line such that every edge is from left to right by running a DFS in O(|V| + |E|) time.
+34caesbddcesab
+Zhiyi HuangCOMP3251Shortest Path in DAGs
+351)initialize dist(s) = 0, and dist(u) = ∞ for all other u ∈ V
+2)Linearize G;
+3)for each u ∈ V in linearized order : 
+4)    for all edges (u, v), update (u, v) as follows : dist(v) = min { dist(v), dist(u) + L(u, v) }dcesab
+Initially, dist(s) is correct.0∞∞∞∞∞
+Zhiyi HuangCOMP3251Shortest Path in DAGs
+361)initialize dist(s) = 0, and dist(u) = ∞ for all other u ∈ V
+2)Linearize G;
+3)for each u ∈ V in linearized order : 
+4)    for all edges (u, v), update (u, v) as follows : dist(v) = min { dist(v), dist(u) + L(u, v) }dcesab
+After the 1st iteration of the ﬁrst for loop (step 3), the 1st vertex following s has correct dist(.) value.011∞∞∞
+Zhiyi HuangCOMP3251Shortest Path in DAGs
+371)initialize dist(s) = 0, and dist(u) = ∞ for all other u ∈ V
+2)Linearize G;
+3)for each u ∈ V in linearized order : 
+4)    for all edges (u, v), update (u, v) as follows : dist(v) = min { dist(v), dist(u) + L(u, v) }dcesab011∞∞∞
+After the i-th iteration of the ﬁrst for loop (step 3), the i-th vertex following s has correct dist(.) value.

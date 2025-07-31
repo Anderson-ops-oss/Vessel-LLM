@@ -1,0 +1,94 @@
+COMP3251 Lecture 8: Breadth-First Search
+(Chapter 4.1 and 4.2)
+Zhiyi HuangCOMP3251Some DeﬁnitionsA path is a sequence of edges in which the end vertex of an edge equals the start vertex of the following edge.
+2abcdA path from a to dabcdNot a path from a to d, the directions of the edges are not correct
+Zhiyi HuangCOMP3251Some DeﬁnitionsA path is a sequence of edges in which the end vertex of an edge equals the start vertex of the following edge.
+The length of a path is the number of edges in this path.
+3abcdA path from a to d that has length 3
+Zhiyi HuangCOMP3251Some DeﬁnitionsA path is a sequence of edges in which the end vertex of an edge equals the start vertex of the following edge.
+The length of a path is the number of edges in this path.
+The distance d(u, v) from u to v is the length of the shortest path (the one with the smallest length) from u to v. 
+4uabvcde
+There are three paths from u to v, and the shortest ones have length three. Thus, d(u,v) = 3.
+Zhiyi HuangCOMP3251Single-Source Shortest Paths Problem
+5
+Given an input directed graph G = (V, E) and a speciﬁc vertex  s ∈ V, ﬁnd, for every vertex x ∈ V, the distance from s to x.
+Zhiyi HuangCOMP3251Single-Source Shortest Paths ProblemAssumption (for simplicity):  All vertices are reachable from s. Notations: •For any vertex v, let dist(v) = d(s, v).
+•For any k ≥ 0, let Lk be the set of vertices v with dist(v) = k.
+•Let adj(Lk) be the set of vertices that are adjacent to some vertices in Lk, i.e.,
+adj(Lk) = { u : (v, u) ∈ E for some v ∈ Lk }
+•In essence, our problem is to ﬁnd Lk for all k ≥ 0.5
+Given an input directed graph G = (V, E) and a speciﬁc vertex  s ∈ V, ﬁnd, for every vertex x ∈ V, the distance from s to x.
+Zhiyi HuangCOMP3251A Simple Idea for Solving the Problem•Initially, we set visited(v) = false for all vertices v.  As soon as we know that v is in Li, we set visited(v) = true.
+6
+Zhiyi HuangCOMP3251A Simple Idea for Solving the Problem•Initially, we set visited(v) = false for all vertices v.  As soon as we know that v is in Li, we set visited(v) = true.•We already know L0, which is { s }, and visited(s) = true.
+6
+Zhiyi HuangCOMP3251A Simple Idea for Solving the Problem•Initially, we set visited(v) = false for all vertices v.  As soon as we know that v is in Li, we set visited(v) = true.•We already know L0, which is { s }, and visited(s) = true.•We know that L1 is a subset of adj(L0), and in general for any  k ≥ 0, Lk+1 is a subset of adj(Lk). 
+6
+Zhiyi HuangCOMP3251A Simple Idea for Solving the Problem•Initially, we set visited(v) = false for all vertices v.  As soon as we know that v is in Li, we set visited(v) = true.•We already know L0, which is { s }, and visited(s) = true.•We know that L1 is a subset of adj(L0), and in general for any  k ≥ 0, Lk+1 is a subset of adj(Lk). •Key question:  Given Lk, how can we ﬁnd Lk+1 from adj(Lk)?
+6
+Zhiyi HuangCOMP3251A Simple Idea for Solving the Problem•Initially, we set visited(v) = false for all vertices v.  As soon as we know that v is in Li, we set visited(v) = true.•We already know L0, which is { s }, and visited(s) = true.•We know that L1 is a subset of adj(L0), and in general for any  k ≥ 0, Lk+1 is a subset of adj(Lk). •Key question:  Given Lk, how can we ﬁnd Lk+1 from adj(Lk)?•Observation:  Suppose we have determined L0, L1, … , Lk, but not Lk+1, Lk+2, … Then, for any v in adj(Lk),  
+-if visited(v) = true, then v is in Li for some i ≤ k;
+-if visited(v) = false, then v is in Lk+1.6
+Zhiyi HuangCOMP3251A Simple Idea for Solving the Problem•Initially, we set visited(v) = false for all vertices v.  As soon as we know that v is in Li, we set visited(v) = true.•We already know L0, which is { s }, and visited(s) = true.•We know that L1 is a subset of adj(L0), and in general for any  k ≥ 0, Lk+1 is a subset of adj(Lk). •Key question:  Given Lk, how can we ﬁnd Lk+1 from adj(Lk)?•Observation:  Suppose we have determined L0, L1, … , Lk, but not Lk+1, Lk+2, … Then, for any v in adj(Lk),  
+-if visited(v) = true, then v is in Li for some i ≤ k;
+-if visited(v) = false, then v is in Lk+1.•Hence, given L0, we can ﬁnd L1 by picking vertices v in adj(L0) with visited(v) = false; and then similarly ﬁnd L2, L3 … 6
+Zhiyi HuangCOMP3251Breadth-First Search (BFS)Breadth-First Search implements the idea directly. Breadth-ﬁrst means to expand the frontier between discovered and undiscovered vertices uniformly across the breadth of the frontier (just like water-front), i.e., the algorithm discovers all vertices in Lk before discovering any vertices Lk+1.
+7abcg
+fdehsource s is vertex a
+frontier, with  s-distance 0.
+Zhiyi HuangCOMP3251
+Breadth-First Search (BFS)Breadth-First Search implements the idea directly. Breadth-ﬁrst means to expand the frontier between discovered and undiscovered vertices uniformly across the breadth of the frontier (just like water-front), i.e., the algorithm discovers all vertices in Lk before discovering any vertices Lk+1.
+8abcg
+fdehsource s is vertex a
+All nodes next to a form a new frontier with s-distance 1.
+Zhiyi HuangCOMP3251
+Breadth-First Search (BFS)Breadth-First Search implements the idea directly. Breadth-ﬁrst means to expand the frontier between discovered and undiscovered vertices uniformly across the breadth of the frontier (just like water-front), i.e., the algorithm discovers all vertices in Lk before discovering any vertices Lk+1.
+9abcg
+fdehsource s is vertex a
+All undiscovered
+vertices next to a
+s-distance 1 vertex form a new frontier with s-distance 2.
+Zhiyi HuangCOMP3251
+Breadth-First Search (BFS)Breadth-First Search implements the idea directly. Breadth-ﬁrst means to expand the frontier between discovered and undiscovered vertices uniformly across the breadth of the frontier (just like water-front), i.e., the algorithm discovers all vertices in Lk before discovering any vertices Lk+1.
+10abcg
+fdehsource s is vertex a
+All undiscovered
+vertices next to a
+s-distance 2 vertex form a new frontier with s-distance 3.
+Zhiyi HuangCOMP3251Breadth-First Search (BFS)
+11
+
+Zhiyi HuangCOMP3251Time Complexity of BFS1)Every vertex will be put in some L[i] exactly once and be checked once. This takes O(|V|) step .
+2)When we explore a vertex, we explore all its adjacency edges once. This takes O(|E|) steps.
+In sum, the time complexity of BFS is O(|V| + |E|).
+12
+Zhiyi HuangCOMP3251Implementation in the Textbook
+Note:  The two implementations are essentially the same.
+Exercise:  Give an implementation of DFS similar to the above, using a stack instead of a queue.131)initialize dist(s) = 0 and dist(u) = ∞ for all other u ∈ V.
+2)initialize queue Q = [s] (a queue containing just s).
+3)while Q is not empty : 
+4)    u = eject(Q).
+5)    for all edges (u, v) ∈ E : 
+6)        if dist(v) = ∞ : 
+7)            inject(Q, v).
+8)            dist(v) = dist(u) + 1.
+Zhiyi HuangCOMP3251Retrieving the Shortest PathIn our discussion, we only focused on how to determine dist(u).
+Can we also retrieve the shortest path?
+•This is easy!
+-For each vertex v, let the algorithm remember prev[v], the vertex immediately precedes v in shortest path.
+-To do that, each time that the algorithm discovers a new vertex v through an edge (u, v), let prev[v] = u.
+14
+DFS vs. BFS
+Zhiyi HuangCOMP3251Why two diﬀerent search algorithms?
+1.When BFS encounters a non-tree edge, it is not easy to check whether it is a back edge.
+2.The “post-ordering” numbers in BFS are not meaningful.
+3.Same as above.
+4.DFS focuses on going deep instead of using the shortest path.16
+DFS
+BFS
+Detecting cycles✔✘1
+Topological ordering✔✘2
+Finding CCs✔✔
+Finding SCCs✔✘3
+Shortest path problem✘4✔

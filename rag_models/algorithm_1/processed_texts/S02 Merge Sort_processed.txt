@@ -1,0 +1,168 @@
+COMP3251 Lecture 2: Merge Sort (Chapter 2.3)
+Zhiyi HuangCOMP3251SortingInput:  A set of n integers — x1, x2, … , xn.
+Output:  The same set of n integers in ascending order.
+2
+Zhiyi HuangCOMP3251SortingInput:  A set of n integers — x1, x2, … , xn.
+Output:  The same set of n integers in ascending order.
+Warm-up:  The insertion sort algorithm.
+312567322093978InputOutput
+Zhiyi HuangCOMP3251SortingInput:  A set of n integers — x1, x2, … , xn.
+Output:  The same set of n integers in ascending order.
+Warm-up:  The insertion sort algorithm.
+41256732209397812InputOutput
+Zhiyi HuangCOMP3251Input:  A set of n integers — x1, x2, … , xn.
+Output:  The same set of n integers in ascending order.
+Warm-up:  The insertion sort algorithm.Sorting
+512567322093978512InputOutput
+Zhiyi HuangCOMP3251Input:  A set of n integers — x1, x2, … , xn.
+Output:  The same set of n integers in ascending order.
+Warm-up:  The insertion sort algorithm.Sorting
+61256732209397851267InputOutput
+Zhiyi HuangCOMP3251Input:  A set of n integers — x1, x2, … , xn.
+Output:  The same set of n integers in ascending order.
+Warm-up:  The insertion sort algorithm.Sorting
+7125673220939785123267InputOutput
+Zhiyi HuangCOMP3251Input:  A set of n integers — x1, x2, … , xn.
+Output:  The same set of n integers in ascending order.
+Warm-up:  The insertion sort algorithm.Sorting
+812567322093978512203267InputOutput
+Zhiyi HuangCOMP3251Input:  A set of n integers — x1, x2, … , xn.
+Output:  The same set of n integers in ascending order.
+Warm-up:  The insertion sort algorithm.Sorting
+9125673220939785912203267InputOutput
+Zhiyi HuangCOMP3251Input:  A set of n integers — x1, x2, … , xn.
+Output:  The same set of n integers in ascending order.
+Warm-up:  The insertion sort algorithm.Sorting
+1012567322093978591220323967InputOutput
+Zhiyi HuangCOMP3251Input:  A set of n integers — x1, x2, … , xn.
+Output:  The same set of n integers in ascending order.
+Warm-up:  The insertion sort algorithm.Sorting
+111256732209397859122032396778InputOutput
+Zhiyi HuangCOMP3251How good is insertion sort?•Worst-case analysis -For any input length n, consider the maximum number of steps the algorithm needs on the worst input of length n.
+-Measuring performance instance by instance does not lead to reasonable algorithms (too specialized).
+-Average performance is a reasonable alternative, but not the focus of this course.
+•Asymptotic analysis -Big-O notation
+-Focus on the performance when n gets really big
+-Example:  5n2+2n+10 = O(n2)12
+Zhiyi HuangCOMP3251Input:  A set of n integers — x1, x2, … , xn.
+Output:  The same set of n integers in ascending order.
+Warm-up:  The insertion sort algorithm takes O(n2) time.Sorting
+1312567322093978InputOutputn numbers  in the inputinserting a number to the output takes at most O(n) time59122032396778
+Zhiyi HuangCOMP3251The divide-and-conquer algorithm design paradigm solves a problem as follows:
+1)Divide:  Breaking the problem into subproblems that are themselves smaller instances of the same type of problem;  
+2)Recurse:  Recursively solving these subproblems;
+3)Combine:  Appropriately combining their answers to get an answer of the original problem.
+Note:  If the size of a subproblem is small enough, we will stop using the divide-and-conquer strategy; instead, we may solve the subproblem by brute-force.
+Divide and Conquer (Ch. 2)
+14
+Zhiyi HuangCOMP3251Merge SortInput:  A set of n integers — x1, x2, … , xn.
+Output:  The same set of n integers in ascending order.
+15
+Divide:        Divide the input integers into two subsets                     x1, … , xn/2 and xn/2+1, … , xn.
+Recurse:    Sort the two subsets (n/2-size subproblems).                    Let y1, … , yn/2 and yn/2+1, … , yn be the output.
+Combine:   Merge two sorted list y1, … , yn/2 and yn/2+1, … , yn                    into a single sorted lists of integers.Running time:  T(n), total time for sorting a set of n integers.
+T(n) = 2T(n/2) + (running time of merging two n/2-size sorted lists) 
+Zhiyi HuangCOMP3251An Example of Merge Sort
+1612567322093978
+Zhiyi HuangCOMP3251An Example of Merge Sort
+161256732209397812567322093978
+Zhiyi HuangCOMP3251An Example of Merge Sort
+1612567322093978125673220939781)  Sort the top list recursively
+Zhiyi HuangCOMP3251An Example of Merge Sort
+1612567322093978125673220939782)  Sort the bottom list recursively1)  Sort the top list recursively
+Zhiyi HuangCOMP3251An Example of Merge Sort
+1612567322093978125673220939782)  Sort the bottom list recursively1)  Sort the top list recursively
+3)  Merge the two sorted list output by the subproblems to get a sorted list of all integers
+Zhiyi HuangCOMP3251An Example of Merge Sort
+1712567322093978125673220939781256732
+Zhiyi HuangCOMP3251An Example of Merge Sort
+1812567322093978125673220939781256732125
+Zhiyi HuangCOMP3251An Example of Merge Sort
+1912567322093978125673220939785126732125
+Zhiyi HuangCOMP3251An Example of Merge Sort
+20125673220939781256732209397851267321256732
+Zhiyi HuangCOMP3251An Example of Merge Sort
+21125673220939781256732209397851232671256732
+Zhiyi HuangCOMP3251An Example of Merge Sort
+22125673220939785123267209397851232671256732
+Zhiyi HuangCOMP3251An Example of Merge Sort1256732209397820939782093978512326751232671256732
+Zhiyi HuangCOMP3251An Example of Merge Sort
+241256732209397820939782093978209512326751232671256732
+Zhiyi HuangCOMP3251An Example of Merge Sort
+251256732209397867321252093978125673212567329203978209512326751232671256732
+Zhiyi HuangCOMP3251An Example of Merge Sort
+2612567322093978209397839783978673212512567321256732920209512326751232671256732
+Zhiyi HuangCOMP3251An Example of Merge Sort
+2712567322093978209397839783978673212512567321256732920209512326751232671256732
+Zhiyi HuangCOMP3251An Example of Merge Sort
+2812567322093978920397839783978673212512567321256732920209512326751232671256732
+Zhiyi HuangCOMP3251An Example of Merge Sort
+2959122032396778920397839783978673212512567321256732920209512326751232671256732
+Rest of this lecture:1)How to merge two sorted lists of integers?
+2)Solving T(n).
+Zhiyi HuangCOMP3251Merging Two Sorted Lists of Numbers
+31
+
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+5
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+5
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+59
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+59
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+5912
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+5912
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+591220
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+591220
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+59122032
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+59122032
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+5912203239
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+5912203239
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+591220323967
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+591220323967
+Zhiyi HuangCOMP3251An Example of Merging Two Sorted Lists
+3251232679203978
+59122032396778
+Zhiyi HuangCOMP3251What is the running time?•To analyze the running time, we measure progress by the number of integers that have been put into the output list.
+33
+Zhiyi HuangCOMP3251What is the running time?•To analyze the running time, we measure progress by the number of integers that have been put into the output list.-After a comparison, the algorithm will put an integer into the output list.
+33
+Zhiyi HuangCOMP3251What is the running time?•To analyze the running time, we measure progress by the number of integers that have been put into the output list.-After a comparison, the algorithm will put an integer into the output list.-Initially, there is no integer in the output list.
+33
+Zhiyi HuangCOMP3251What is the running time?•To analyze the running time, we measure progress by the number of integers that have been put into the output list.-After a comparison, the algorithm will put an integer into the output list.-Initially, there is no integer in the output list.-To merge two sorted lists of length m and n, the ﬁnal output list has m+n integers.
+33
+Zhiyi HuangCOMP3251What is the running time?•To analyze the running time, we measure progress by the number of integers that have been put into the output list.-After a comparison, the algorithm will put an integer into the output list.-Initially, there is no integer in the output list.-To merge two sorted lists of length m and n, the ﬁnal output list has m+n integers.-The algorithm makes at most m+n comparisons.
+33
+Zhiyi HuangCOMP3251What is the running time?•To analyze the running time, we measure progress by the number of integers that have been put into the output list.-After a comparison, the algorithm will put an integer into the output list.-Initially, there is no integer in the output list.-To merge two sorted lists of length m and n, the ﬁnal output list has m+n integers.-The algorithm makes at most m+n comparisons.•Note that the size of the input is m+n, and the merging algorithm runs in O(m+n) time. So it is a linear-time algorithm.33
+Zhiyi HuangCOMP3251What is the running time?•To analyze the running time, we measure progress by the number of integers that have been put into the output list.-After a comparison, the algorithm will put an integer into the output list.-Initially, there is no integer in the output list.-To merge two sorted lists of length m and n, the ﬁnal output list has m+n integers.-The algorithm makes at most m+n comparisons.•Note that the size of the input is m+n, and the merging algorithm runs in O(m+n) time. So it is a linear-time algorithm.•Thus, we have T(n) = 2T(n/2) + O(n)33
+Zhiyi HuangCOMP3251Solving the Recursion•Suppose
+•Keep expanding the RHS until it is a function of n and T(1):
+34T(n)=2T(n/2)+O(n)≤2T(n/2)+cnT(n)≤2T(n/2)+cn≤2(2T(n/4)+c(n/2))+cn=4T(n/4)+2cn≤4(2T(n/8)+c(n/4))+2cn=8T(n/8)+3cn…≤2iT(n/2i)+icn…=2lognT(1)+cnlogn=O(nlogn)

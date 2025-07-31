@@ -1,0 +1,110 @@
+COMP3251 Lecture 11: Prim's Algorithm  (Chapter 5.1)
+Zhiyi HuangCOMP3251Recap of Graph AlgorithmsDFS is much like walking in a maze:
+-Basic exploration step:  When reaching some vertex u, pick an adjacent vertex v and (recursively) explore v.
+-If we hit a dead end, backtrack.
+-Mark visited vertices and do not re-visit them.
+-Applications:  detecting cycles, topological ordering, ﬁnding strongly connected components
+BFS is like expanding water front:
+-We ﬁrst visit all vertices that are directly adjacent to the root s, then all vertices that have distance 2 from s, etc.
+-Applications:  single-source shortest path problem when all edges have length 1.2
+Zhiyi HuangCOMP3251Recap of Graph AlgorithmsDijkstra solves the single-source shortest path problem with non-negative edge lengths:
+-Similar to BFS, it explore vertices in ascending order of their distance from the root vertex s.
+-Dijkstra’s greedy rule along with a non-trivial priority heap implementation allows us to do it in nearly linear time.
+Bellman-Ford solves the single-source shortest path problem with arbitrary edge lengths and without negative cycles.
+3
+Zhiyi HuangCOMP3251Greedy AlgorithmsGreedy algorithms build up a solution piece by piece, always choosing the next piece that oﬀers the most obvious and immediate beneﬁt.
+Example 1:  Finish the homework assignment with the closest deadline ﬁrst.
+Example 2:  Dijkstra's algorithm is a greedy algorithm that gives us the shortest path tree (SPT).
+4
+Zhiyi HuangCOMP3251Example 1:  Job SchedulingInput:  A set of n jobs (homework assignments),  where each job j is associated with a size sj and a deadline dj.
+Output:  An assignment of jobs to time slots such that:
+1)each job gets a number of time slots that equals its size;
+2)each job is completed before its corresponding deadline.
+Example: 
+5jobs12345size12122deadline24589time12345678910job assignment1-2234455-
+Zhiyi HuangCOMP3251Greed is good!A greedy algorithm for job scheduling:   Finish the job (homework assignment) with the closest deadline, and then the job with the second closest deadline, and so on. 
+6
+Zhiyi HuangCOMP3251Greed is good!A greedy algorithm for job scheduling:   Finish the job (homework assignment) with the closest deadline, and then the job with the second closest deadline, and so on. Claim.  If the greedy algorithm fails to ﬁnd a feasible schedule, then the input jobs do not admit a feasible schedule.
+6
+Zhiyi HuangCOMP3251Greed is good!A greedy algorithm for job scheduling:   Finish the job (homework assignment) with the closest deadline, and then the job with the second closest deadline, and so on. Claim.  If the greedy algorithm fails to ﬁnd a feasible schedule, then the input jobs do not admit a feasible schedule.Proof.  (Assume for simplicity that d1 < d2 < … < dn.)
+6
+Zhiyi HuangCOMP3251Greed is good!A greedy algorithm for job scheduling:   Finish the job (homework assignment) with the closest deadline, and then the job with the second closest deadline, and so on. Claim.  If the greedy algorithm fails to ﬁnd a feasible schedule, then the input jobs do not admit a feasible schedule.Proof.  (Assume for simplicity that d1 < d2 < … < dn.)-The ﬁrst s1 time slots are assigned to job 1, the next s2 time slots are assigned to job 2, and so on.
+6
+Zhiyi HuangCOMP3251Greed is good!A greedy algorithm for job scheduling:   Finish the job (homework assignment) with the closest deadline, and then the job with the second closest deadline, and so on. Claim.  If the greedy algorithm fails to ﬁnd a feasible schedule, then the input jobs do not admit a feasible schedule.Proof.  (Assume for simplicity that d1 < d2 < … < dn.)-The ﬁrst s1 time slots are assigned to job 1, the next s2 time slots are assigned to job 2, and so on.-Let j be a job that is not completed by its deadline.
+6
+Zhiyi HuangCOMP3251Greed is good!A greedy algorithm for job scheduling:   Finish the job (homework assignment) with the closest deadline, and then the job with the second closest deadline, and so on. Claim.  If the greedy algorithm fails to ﬁnd a feasible schedule, then the input jobs do not admit a feasible schedule.Proof.  (Assume for simplicity that d1 < d2 < … < dn.)-The ﬁrst s1 time slots are assigned to job 1, the next s2 time slots are assigned to job 2, and so on.-Let j be a job that is not completed by its deadline.-That means, s1 + s2 + … + sj > dj, namely, the amount of work that has to be done from time 1 to time dj is more than dj!6
+Zhiyi HuangCOMP3251Dijkstra Algorithm as a Greedy AlgorithmInput:  A directed graph G = (E, V), where each edge (u, v) is associated with a length L(u, v), and a starting vertex s.
+Output:  A Shortest Path Tree (SPT) rooted at s.
+Dijkstra Algorithm: 
+•Starting from the smallest subtree of SPT that contains only s. 
+•Iteratively attached a “correct” edge to the subtree such that the larger tree is still a subtree of SPT.  
+7
+suvT: a subtree of SPT
+Grow T by adding v with the minimum  T-distance.
+This Lecture: A Greedy Algorithm for the  Minimum Spanning Tree Problem
+Zhiyi HuangCOMP3251Spanning TreeDeﬁnition.  Given a connected undirected graph G = (V, E), a spanning tree of G is a subset of edges that forms a tree that contains all the vertices. Examples: -Connecting all cities in a country by building the minimum number of highways.
+-Building a network that connects a set of hubs using the minimum number of cables. Solutions: -BFS or DFS (the BFS and DFS trees are spanning trees if the graph is connected).9
+Zhiyi HuangCOMP3251Minimum Spanning TreeDeﬁnition:  Given a connected undirected graph G = (V, E) in which every edge e ∈ E is associated with a positive weight w(e), a minimum spanning tree (MST) is a subset of edges T ⊆ E s.t.
+(i)T forms a spanning tree; and
+(ii)the sum of edge weights of T is minimized.
+Example:
+106531217345317
+For the short path problem, each edge is associated with a length. For the MST problem, each edge is associated with a weight.w(T) = 16
+Zhiyi HuangCOMP3251Two Useful Properties1.Removing an edge in a cycle will not disconnect a graph.
+2.Let G = (V, E) be an undirected graph. The following three statements are equivalent:
+-G is a spanning tree.
+-G is connected and does not have any cycle.
+-G is connected and has |V| - 1 edges.
+11
+Zhiyi HuangCOMP3251Two Greedy Algorithms for MSTPrim’s algorithm (this lecture) -Start with some root node s and grow a tree T outward. 
+-At each step, add the minimum weight outgoing edge. 
+-This algorithm is almost the same as the Dijkstra's algorithm, except that we add the outgoing edge with the minimum weight, not the one with minimum T-distance.
+Kruskal’s algorithm (sequel lectures) -Start with T being the empty tree. 
+-Consider edges in ascending order of cost; insert edge e in T unless doing so would create a cycle.12
+Zhiyi HuangCOMP3251Prim's Algorithm (Chapter 5.1.5)
+131)Start with some root node s and grow a tree T outward. 
+2)At each step, add the minimum weight outgoing edge.
+Zhiyi HuangCOMP3251Prim's Algorithm (Chapter 5.1.5)
+141)Start with some root node s and grow a tree T outward. 
+2)At each step, add the minimum weight outgoing edge.653121734Initially, we start from a root node s
+Zhiyi HuangCOMP3251Prim's Algorithm (Chapter 5.1.5)
+151)Start with some root node s and grow a tree T outward. 
+2)At each step, add the minimum weight outgoing edge.6531217343At step one, there are two outgoing edges with  weight 3 and 5; add the edge with weight 3.
+Zhiyi HuangCOMP3251Prim's Algorithm (Chapter 5.1.5)
+161)Start with some root node s and grow a tree T outward. 
+2)At each step, add the minimum weight outgoing edge.65312173453
+Zhiyi HuangCOMP3251Prim's Algorithm (Chapter 5.1.5)
+171)Start with some root node s and grow a tree T outward. 
+2)At each step, add the minimum weight outgoing edge.653121734531
+Zhiyi HuangCOMP3251Prim's Algorithm (Chapter 5.1.5)
+181)Start with some root node s and grow a tree T outward. 
+2)At each step, add the minimum weight outgoing edge.6531217345317
+Zhiyi HuangCOMP3251Correctness of Prim's AlgorithmLemma.  Let S ⊆ V be any subset of vertices, and let e ∈ E be the outgoing edge of S with the smallest weight (call this edge the minimum outgoing edge of S). Then the MST T* contains e.
+Proof. (exchange argument)
+-To simplify the discussion, we assume that all edges have distinct weights. In this case, the MST is unique.
+-Suppose e does not belong to T*.
+19 e S
+Zhiyi HuangCOMP3251Correctness of Prim's AlgorithmLemma.  Let S ⊆ V be any subset of vertices, and let e ∈ E be the outgoing edge of S with the smallest weight (call this edge the minimum outgoing edge of S). Then the MST T* contains e.
+Proof. (exchange argument)
+-Adding e to T* creates a cycle C (the red edges) in T*.
+-There must be an edge in the cycle other than e which bring us from inside S to outside, say, e’.
+20 e S e’ 
+Zhiyi HuangCOMP3251Correctness of Prim's AlgorithmLemma.  Let S ⊆ V be any subset of vertices, and let e ∈ E be the outgoing edge of S with the smallest weight (call this edge the minimum outgoing edge of S). Then the MST T* contains e.
+Proof. (exchange argument)
+-By our assumption, w(e’) > w(e).
+21 e S e’ 
+Zhiyi HuangCOMP3251Correctness of Prim's AlgorithmLemma.  Let S ⊆ V be any subset of vertices, and let e ∈ E be the outgoing edge of S with the smallest weight (call this edge the minimum outgoing edge of S). Then the MST T* contains e.
+Proof. (exchange argument)
+-Removing e’ from T* and adding e to it, we get another spanning tree whose total weight of edges is smaller.
+22 e S e’ 
+Zhiyi HuangCOMP3251Prim's Algorithm  [Jarník ’30, Prim ’57, Dijkstra ’59]
+Correctness:  Follow from the previous Lemma.
+Running Time: (leave as exercise)
+-Key question:  How to eﬃciently ﬁnd the edge in step 4?
+-Hint:  This is the similar to the Dijkstra's algorithm.
+-O( (|E| + |V|) log |V| ) if we use a binary heap implementation.
+-O(|E| log|E|/|V| |V|) using d-heap for an appropriate value of d.231)Choose the starting node s arbitrarily;
+2)initialize S = { s } and T = { };
+3)for i = 1 to |V| - 1 :
+4)    add the outgoing edge from S with minimum weight to T;
+5)    add the corresponding new vertex to S.

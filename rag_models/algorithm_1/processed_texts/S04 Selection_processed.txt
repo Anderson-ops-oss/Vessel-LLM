@@ -1,0 +1,203 @@
+COMP3251 Lecture 4: Selection (Chapter 2.4)
+Zhiyi HuangCOMP3251SelectionInput:  A set S of n integers x1, x2, … , xn, and an integer 1 ≤ k ≤ n.
+Output:  The k-th smallest integer x* among x1, x2, … , xn.
+2
+Zhiyi HuangCOMP3251SelectionInput:  A set S of n integers x1, x2, … , xn, and an integer 1 ≤ k ≤ n.
+Output:  The k-th smallest integer x* among x1, x2, … , xn.
+2
+A straight-forward selection algorithm: 1)Find the smallest integer.                     (O(n) time)
+2)Find the 2nd smallest integer.              (O(n-1) time)
+…
+k)Find the k-th smallest integer.              (O(n-k+1) time)
+Zhiyi HuangCOMP3251SelectionInput:  A set S of n integers x1, x2, … , xn, and an integer 1 ≤ k ≤ n.
+Output:  The k-th smallest integer x* among x1, x2, … , xn.
+2
+A straight-forward selection algorithm: 1)Find the smallest integer.                     (O(n) time)
+2)Find the 2nd smallest integer.              (O(n-1) time)
+…
+k)Find the k-th smallest integer.              (O(n-k+1) time)
+Running time: O(nk)
+Zhiyi HuangCOMP3251Example:   Select the 3rd smallest integer among 73, 44, 34, 18, 29, 27. 1)x1, x2, … , x6 = 73, 44, 34, 18, 29, 27;
+2)y1, y2, … , y6 = 18, 27, 29, 34, 44, 73;
+3)k = 3 and x* = y3 = 29.SelectionInput:  A set S of n integers x1, x2, … , xn, and an integer 1 ≤ k ≤ n.
+Output:  The k-th smallest integer x* among x1, x2, … , xn.
+3
+Another straight-forward selection algorithm: 1)Sort the input integers in ascending order (e.g., Merge Sort);  Let y1, … , yn be the sorted list.
+2)Output yk.
+Zhiyi HuangCOMP3251Example:   Select the 3rd smallest integer among 73, 44, 34, 18, 29, 27. 1)x1, x2, … , x6 = 73, 44, 34, 18, 29, 27;
+2)y1, y2, … , y6 = 18, 27, 29, 34, 44, 73;
+3)k = 3 and x* = y3 = 29.SelectionInput:  A set S of n integers x1, x2, … , xn, and an integer 1 ≤ k ≤ n.
+Output:  The k-th smallest integer x* among x1, x2, … , xn.
+3
+Another straight-forward selection algorithm: 1)Sort the input integers in ascending order (e.g., Merge Sort);  Let y1, … , yn be the sorted list.
+2)Output yk.
+Running time: O(n log n)
+Zhiyi HuangCOMP3251A Divide and Conquer Selection Algorithm
+4
+Select(S, k) Divide:        Pick an arbitrary value v among x1, x2, … , xn;                    Divide the input integers into three subsets:                    - SL: The subset of integers that are smaller than v;                    - Sv: The subset of integers that are equal to v;                    - SR: The subset of integers that are greater than v;
+Recurse:    Recurse on the subset that contains x*.Note:  The ranks are for explanation only; we don’t need to sort the numbers.rank123…………integer
+vvvSLSRSv
+Zhiyi HuangCOMP3251A Divide and Conquer Selection Algorithm
+4
+Select(S, k) Divide:        Pick an arbitrary value v among x1, x2, … , xn;                    Divide the input integers into three subsets:                    - SL: The subset of integers that are smaller than v;                    - Sv: The subset of integers that are equal to v;                    - SR: The subset of integers that are greater than v;
+Recurse:    Recurse on the subset that contains x*.Note:  The ranks are for explanation only; we don’t need to sort the numbers.rank123…………integer
+vvvSLSRSv
+Key questions:  Which subset contains x*? What is the rank of x* in the subset?
+Zhiyi HuangCOMP3251A Divide and Conquer Selection Algorithm
+5rank123…………integer
+vvvSLSRSv
+Zhiyi HuangCOMP3251A Divide and Conquer Selection Algorithm
+5rank123…………integer
+vvvSLSRSvCase 1:   k ≤ |SL|.     - x* is the k-th smallest integer in SL.     - Output Select(SL, k).
+Zhiyi HuangCOMP3251A Divide and Conquer Selection Algorithm
+5rank123…………integer
+vvvSLSRSvCase 1:   k ≤ |SL|.     - x* is the k-th smallest integer in SL.     - Output Select(SL, k).Case 2:  |SL| < k ≤ |SL| + |Sv|.     - x* is in Sv.     - Output v. (Note that all numbers in Sv are equal to v.)
+Zhiyi HuangCOMP3251A Divide and Conquer Selection Algorithm
+5rank123…………integer
+vvvSLSRSvCase 1:   k ≤ |SL|.     - x* is the k-th smallest integer in SL.     - Output Select(SL, k).Case 2:  |SL| < k ≤ |SL| + |Sv|.     - x* is in Sv.     - Output v. (Note that all numbers in Sv are equal to v.)Case 3:  |SL| + |Sv| < k ≤ n.     - x* is the (k - |SL| - |Sv|)-th smallest integer in SR.     - Output Select(SR, k - |SL| - |Sv|).
+The 1st number in SR is the  (|SL| + |Sv| + 1)-th number in S.
+So the i-th number in SR is the  (|SL| + |Sv| + i)-th number in S.
+Thus x* is the (k - |SL| - |Sv|)-th smallest integer in SR.
+Zhiyi HuangCOMP3251A Divide and Conquer Selection Algorithm
+6
+Select(S, k) Divide:        Pick an arbitrary value v among x1, x2, … , xn;                    Divide the input integers into three subsets:                    - SL: The subset of integers that are smaller than v;                    - Sv: The subset of integers that are equal to v;                    - SR: The subset of integers that are greater than v;
+Recurse:    1)  If k ≤ |SL|, output Select(SL, k).                    2)  If |SL| < k ≤ |SL| + |Sv|, output v.                    3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR27
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR27
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR7327
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR7327
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR732744
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR732744
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR73274434
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR73274434
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR7327443418
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR7327443418
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR732744341829
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR732744341829
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+7734434182927level 1SvSSLSR732744341829•|SL| = 1
+•|Sv| = 1
+•k = 3 > |SL| + |Sv| and k - |SL| + |Sv| = 1
+•So x* is the 1st number is SR.
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+873443418292727level 1SS’7344342918level 2SvSLSR
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+873443418292727level 1SS’7344342918level 2SvSLSR29
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+873443418292727level 1SS’7344342918level 2SvSLSR29
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+873443418292727level 1SS’7344342918level 2SvSLSR2973
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+873443418292727level 1SS’7344342918level 2SvSLSR2973
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+873443418292727level 1SS’7344342918level 2SvSLSR297344
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+873443418292727level 1SS’7344342918level 2SvSLSR297344
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+873443418292727level 1SS’7344342918level 2SvSLSR29734434
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+873443418292727level 1SS’7344342918level 2SvSLSR29734434
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Sample Run
+873443418292727level 1SS’7344342918level 2SvSLSR29734434•|SL| = 0
+•|Sv| = 1
+•|SL| < k = 1 ≤ |SL| + |Sv|
+•So x* is in Sv and output x* = v = 29.
+1)  If k ≤ |SL|, output Select(SL, k). 2)  If |SL| < k ≤ |SL| + |Sv|, output v. 3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251What is the running time?
+9
+Divide:        Pick an arbitrary value v among x1, x2, … , xn;                    Divide the input integers into three subsets:                    - SL: The subset of integers that are smaller than v;                    - Sv: The subset of integers that are equal to v;                    - SR: The subset of integers that are greater than v;
+Recurse:    1)  If k ≤ |SL|, output Select(SL, k).                    2)  If |SL| < k ≤ |SL| + |Sv|, output v.                    3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251What is the running time?
+9•Divide takes O(n) time.
+Divide:        Pick an arbitrary value v among x1, x2, … , xn;                    Divide the input integers into three subsets:                    - SL: The subset of integers that are smaller than v;                    - Sv: The subset of integers that are equal to v;                    - SR: The subset of integers that are greater than v;
+Recurse:    1)  If k ≤ |SL|, output Select(SL, k).                    2)  If |SL| < k ≤ |SL| + |Sv|, output v.                    3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251What is the running time?
+9•Divide takes O(n) time.•Recurse takes either T(|SL|) time (case 1), or O(1) time (case 2), or T(|SR|) time (case 3).
+Divide:        Pick an arbitrary value v among x1, x2, … , xn;                    Divide the input integers into three subsets:                    - SL: The subset of integers that are smaller than v;                    - Sv: The subset of integers that are equal to v;                    - SR: The subset of integers that are greater than v;
+Recurse:    1)  If k ≤ |SL|, output Select(SL, k).                    2)  If |SL| < k ≤ |SL| + |Sv|, output v.                    3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251What is the running time?
+9•Divide takes O(n) time.•Recurse takes either T(|SL|) time (case 1), or O(1) time (case 2), or T(|SR|) time (case 3).•Note that both |SL| and |SR| are at most n-1. So we have:T(n) ≤ T(n-1) + O(n) ≤ T(n-2) + O(n-1) + O(n) = … = O(1 + 2 + … + n) = O(n2)
+Divide:        Pick an arbitrary value v among x1, x2, … , xn;                    Divide the input integers into three subsets:                    - SL: The subset of integers that are smaller than v;                    - Sv: The subset of integers that are equal to v;                    - SR: The subset of integers that are greater than v;
+Recurse:    1)  If k ≤ |SL|, output Select(SL, k).                    2)  If |SL| < k ≤ |SL| + |Sv|, output v.                    3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251Is it really that bad?
+10
+Zhiyi HuangCOMP3251Is it really that bad?•Yes, if we are extremely unlucky, and pick either the smallest or largest number as v in every round.
+10
+Zhiyi HuangCOMP3251Is it really that bad?•Yes, if we are extremely unlucky, and pick either the smallest or largest number as v in every round.•But, if we are extremely lucky, and pick the n/2 smallest every time, then 
+10
+Zhiyi HuangCOMP3251Is it really that bad?•Yes, if we are extremely unlucky, and pick either the smallest or largest number as v in every round.•But, if we are extremely lucky, and pick the n/2 smallest every time, then T(n) = T(n/2) + O(n) = T(n/4) + O(n/2) + O(n) = … = O(n).
+10
+Zhiyi HuangCOMP3251Is it really that bad?•Yes, if we are extremely unlucky, and pick either the smallest or largest number as v in every round.•But, if we are extremely lucky, and pick the n/2 smallest every time, then T(n) = T(n/2) + O(n) = T(n/4) + O(n/2) + O(n) = … = O(n).•In reality, we cannot be that lucky; on the other hand, we may not be that unlucky to always pick the extreme numbers.
+10
+Zhiyi HuangCOMP3251Is it really that bad?•Yes, if we are extremely unlucky, and pick either the smallest or largest number as v in every round.•But, if we are extremely lucky, and pick the n/2 smallest every time, then T(n) = T(n/2) + O(n) = T(n/4) + O(n/2) + O(n) = … = O(n).•In reality, we cannot be that lucky; on the other hand, we may not be that unlucky to always pick the extreme numbers.
+10
+Idea:  Choose v randomly and hope that v is             “reasonably good” on average?
+Zhiyi HuangCOMP3251A Randomized Divide and Conquer  Selection Algorithm
+11
+Select(S, k) Divide:        Pick value v randomly among x1, x2, … , xn;                    Divide the input integers into three subsets:                    - SL: The subset of integers that are smaller than v;                    - Sv: The subset of integers that are equal to v;                    - SR: The subset of integers that are greater than v;
+Recurse:    1)  If k ≤ |SL|, output Select(SL, k).                    2)  If |SL| < k ≤ |SL| + |Sv|, output v.                    3)  If |SL| + |Sv| < k, output Select(SR, k - |SL| - |Sv|).
+Zhiyi HuangCOMP3251What is “reasonably good”?
+12|S|/2|S|/4|S|/4: “reasonably good”: bad
+Observation 1:  In each round, v is “reasonably good” with probability 1/2.
+Observation 2:  If v is always “reasonably good”, then both  |SL| and |SR| are at most 3n/4, and T(n)  = T(3n/4) + O(n) = O(n)!!
+Zhiyi HuangCOMP3251Expected Running Time Analysis
+13
+In each round, v is “reasonably good” with probability 1/2.
+Zhiyi HuangCOMP3251“bad” pivotExpected Running Time Analysis
+13
+In each round, v is “reasonably good” with probability 1/2.“reasonably good” pivotET(n)≤12(ET(3n4)+ET(n))+O(n)
+Zhiyi HuangCOMP3251“bad” pivotExpected Running Time Analysis
+13
+In each round, v is “reasonably good” with probability 1/2.“reasonably good” pivotET(n)≤12(ET(3n4)+ET(n))+O(n)•Rearranging all  terms to the left:ET(n)ET(n)≤ET(3n4)+O(n)
+Zhiyi HuangCOMP3251“bad” pivotExpected Running Time Analysis
+13
+In each round, v is “reasonably good” with probability 1/2.“reasonably good” pivotET(n)≤12(ET(3n4)+ET(n))+O(n)•Rearranging all  terms to the left:ET(n)ET(n)≤ET(3n4)+O(n)•Viewing  as a function of n, Master Theorem gives:ET(n)ET(n)=O(n)
+Zhiyi HuangCOMP3251Alternative Analysis (from Textbook)
+14
+Zhiyi HuangCOMP3251Alternative Analysis (from Textbook)•In general, we can reason about the running time as follows:T(n) = (time to reduce the array to ≤ 3n/4) + T(3n/4)
+14
+Zhiyi HuangCOMP3251Alternative Analysis (from Textbook)•In general, we can reason about the running time as follows:T(n) = (time to reduce the array to ≤ 3n/4) + T(3n/4)•The expected (average) running time is       E[ T(n) ] = E[ (time to reduce the array to ≤ 3n/4) + T(3n/4) ]                    = E[ (time to reduce the array to ≤ 3n/4) ] + E[ T(3n/4) ]
+14
+Zhiyi HuangCOMP3251Alternative Analysis (from Textbook)•In general, we can reason about the running time as follows:T(n) = (time to reduce the array to ≤ 3n/4) + T(3n/4)•The expected (average) running time is       E[ T(n) ] = E[ (time to reduce the array to ≤ 3n/4) + T(3n/4) ]                    = E[ (time to reduce the array to ≤ 3n/4) ] + E[ T(3n/4) ]•Since v is “reasonably good” with probability 1/2 each round, by Discrete Mathematics, the algorithm gets a “reasonably good” v in every two rounds on average.
+14
+Zhiyi HuangCOMP3251Alternative Analysis (from Textbook)•In general, we can reason about the running time as follows:T(n) = (time to reduce the array to ≤ 3n/4) + T(3n/4)•The expected (average) running time is       E[ T(n) ] = E[ (time to reduce the array to ≤ 3n/4) + T(3n/4) ]                    = E[ (time to reduce the array to ≤ 3n/4) ] + E[ T(3n/4) ]•Since v is “reasonably good” with probability 1/2 each round, by Discrete Mathematics, the algorithm gets a “reasonably good” v in every two rounds on average.•Since process one v takes O(n) time, we conclude thatE[ (time to reduce the array to ≤ 3n/4) ] = O(n)
+14
+Zhiyi HuangCOMP3251Alternative Analysis (from Textbook)•In general, we can reason about the running time as follows:T(n) = (time to reduce the array to ≤ 3n/4) + T(3n/4)•The expected (average) running time is       E[ T(n) ] = E[ (time to reduce the array to ≤ 3n/4) + T(3n/4) ]                    = E[ (time to reduce the array to ≤ 3n/4) ] + E[ T(3n/4) ]•Since v is “reasonably good” with probability 1/2 each round, by Discrete Mathematics, the algorithm gets a “reasonably good” v in every two rounds on average.•Since process one v takes O(n) time, we conclude thatE[ (time to reduce the array to ≤ 3n/4) ] = O(n)•So E[ T(n) ] = O(n) + E[ T(3n/4) ].14
+Zhiyi HuangCOMP3251Alternative Analysis (from Textbook)•In general, we can reason about the running time as follows:T(n) = (time to reduce the array to ≤ 3n/4) + T(3n/4)•The expected (average) running time is       E[ T(n) ] = E[ (time to reduce the array to ≤ 3n/4) + T(3n/4) ]                    = E[ (time to reduce the array to ≤ 3n/4) ] + E[ T(3n/4) ]•Since v is “reasonably good” with probability 1/2 each round, by Discrete Mathematics, the algorithm gets a “reasonably good” v in every two rounds on average.•Since process one v takes O(n) time, we conclude thatE[ (time to reduce the array to ≤ 3n/4) ] = O(n)•So E[ T(n) ] = O(n) + E[ T(3n/4) ].•Let E[ T(n) ] = A(n), we have A(n) = A(3n/4) + O(n) = … = O(n).14

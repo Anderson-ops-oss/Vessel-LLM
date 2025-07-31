@@ -1,0 +1,166 @@
+COMP3251 Lecture 6: Closest Pair
+Zhiyi HuangCOMP3251Closest PairInput:  A set of n points in a plane (x1, y1), (x2, y2), … , (xn, yn).
+Output:  A pair of distinct points whose distance is smallest.
+2
+Zhiyi HuangCOMP3251Closest PairInput:  A set of n points in a plane (x1, y1), (x2, y2), … , (xn, yn).
+Output:  A pair of distinct points whose distance is smallest.
+2
+A straight-forward closest algorithm: 1)Compute the distance of all n(n-1)/2 pairs of distinct points.
+2)Output the pair whose distance is smallest.
+Zhiyi HuangCOMP3251Closest PairInput:  A set of n points in a plane (x1, y1), (x2, y2), … , (xn, yn).
+Output:  A pair of distinct points whose distance is smallest.
+2
+A straight-forward closest algorithm: 1)Compute the distance of all n(n-1)/2 pairs of distinct points.
+2)Output the pair whose distance is smallest.
+Zhiyi HuangCOMP3251Closest PairInput:  A set of n points in a plane (x1, y1), (x2, y2), … , (xn, yn).
+Output:  A pair of distinct points whose distance is smallest.
+2
+A straight-forward closest algorithm: 1)Compute the distance of all n(n-1)/2 pairs of distinct points.
+2)Output the pair whose distance is smallest.1065699
+Zhiyi HuangCOMP3251
+Closest PairInput:  A set of n points in a plane (x1, y1), (x2, y2), … , (xn, yn).
+Output:  A pair of distinct points whose distance is smallest.
+2
+A straight-forward closest algorithm: 1)Compute the distance of all n(n-1)/2 pairs of distinct points.
+2)Output the pair whose distance is smallest.1065699
+Zhiyi HuangCOMP3251
+Closest PairInput:  A set of n points in a plane (x1, y1), (x2, y2), … , (xn, yn).
+Output:  A pair of distinct points whose distance is smallest.
+2
+A straight-forward closest algorithm: 1)Compute the distance of all n(n-1)/2 pairs of distinct points.
+2)Output the pair whose distance is smallest.
+Running time: O(n2)1065699
+Zhiyi HuangCOMP3251Is it possible to do any better?
+3
+Zhiyi HuangCOMP3251
+35726836Is it possible to do any better?
+3
+Zhiyi HuangCOMP3251
+35726836Is it possible to do any better?•If all points are on the same line, we can ﬁrst sort them and then check only the n - 1 neighboring pairs.
+3
+Zhiyi HuangCOMP3251
+35726836Is it possible to do any better?•If all points are on the same line, we can ﬁrst sort them and then check only the n - 1 neighboring pairs.•This takes O(n log n) time.
+3
+Zhiyi HuangCOMP3251
+35726836Is it possible to do any better?•If all points are on the same line, we can ﬁrst sort them and then check only the n - 1 neighboring pairs.•This takes O(n log n) time.
+3
+Idea:  If some pairs of points are obviously too far, then we can simply ignore them.
+Zhiyi HuangCOMP3251A Divide and Conquer Algorithm for Closest PairDivide:  Sort the points by their x-coordinates.               Draw a vertical line L so that n/2 points on each side.
+Assumption (for ease of discussion):  No two points have same x-coordinate.
+4y-axis
+x-axisn/2 pointsn/2 points
+Zhiyi HuangCOMP3251Recurse:  Find the closest pair on each side.
+545A Divide and Conquer Algorithm for Closest Pairy-axis
+x-axis
+Zhiyi HuangCOMP3251Recurse:  Find the closest pair on each side.Combine:  Find the closest pair with one point on each side.                    Output the closest of the three pairs.
+5456A Divide and Conquer Algorithm for Closest Pairy-axis
+x-axis
+Zhiyi HuangCOMP3251
+Recurse:  Find the closest pair on each side.Combine:  Find the closest pair with one point on each side.                    Output the closest of the three pairs.
+5456A Divide and Conquer Algorithm for Closest Pairy-axis
+x-axis
+Zhiyi HuangCOMP3251
+Recurse:  Find the closest pair on each side.Combine:  Find the closest pair with one point on each side.                    Output the closest of the three pairs.
+5456
+Question: How? What is the running time?A Divide and Conquer Algorithm for Closest Pairy-axis
+x-axis
+Zhiyi HuangCOMP3251Closest pair with one point on each side
+6y-axis
+x-axis
+Zhiyi HuangCOMP3251Closest pair with one point on each side
+6A straightforward brute-force approach:  Compare all (n/2)2 pairs with one point on each side, and return the smallest one.y-axis
+x-axis
+Zhiyi HuangCOMP3251Closest pair with one point on each side
+6A straightforward brute-force approach:  Compare all (n/2)2 pairs with one point on each side, and return the smallest one.1) Divide takes O(n log n) time; 2) Recurse takes 2 T(n/2) time;  3) Combine takes O(n2) time. So T(n) = 2 T(n/2) + O(n2) = O(n2).y-axis
+x-axis
+Zhiyi HuangCOMP3251Closest pair with one point on each side
+7Let δL and δR be the distance of the closest pairs on the left and on the right respectively.  Let δ = min (δL, δR).y-axis
+x-axis
+Zhiyi HuangCOMP3251Closest pair with one point on each side
+7Let δL and δR be the distance of the closest pairs on the left and on the right respectively.  Let δ = min (δL, δR).Example:  δL = 4, δR = 5, and δ = 4.45y-axis
+x-axis
+Zhiyi HuangCOMP3251Closest pair with one point on each side
+7Let δL and δR be the distance of the closest pairs on the left and on the right respectively.  Let δ = min (δL, δR).Example:  δL = 4, δR = 5, and δ = 4.Idea:  Focus on pairs with one point in each side and has distance < δ.45y-axis
+x-axis
+Zhiyi HuangCOMP3251Closest pair with one point on each side
+8y-axis
+x-axis
+Zhiyi HuangCOMP3251Closest pair with one point on each side
+8
+Note:  We only need to consider points within δ of the dividing line.δδy-axis
+x-axis
+Zhiyi HuangCOMP3251Closest pair with one point on each side
+8
+Note:  We only need to consider points within δ of the dividing line.1)Sort points in the 2δ-strip in ascending order of the y-coordinate.δδy-axis
+x-axis
+Zhiyi HuangCOMP3251Closest pair with one point on each side
+8
+Note:  We only need to consider points within δ of the dividing line.1)Sort points in the 2δ-strip in ascending order of the y-coordinate.2)For each point a, check the distances to its 7 subsequent points.δδ
+a1234567y-axis
+x-axis
+Zhiyi HuangCOMP3251Closest pair with one point on each side
+8
+Note:  We only need to consider points within δ of the dividing line.1)Sort points in the 2δ-strip in ascending order of the y-coordinate.2)For each point a, check the distances to its 7 subsequent points.3)Output the closest pair found in step 2.δδ
+a1234567y-axis
+x-axis
+Zhiyi HuangCOMP3251Closest pair with one point on each side
+8
+Note:  We only need to consider points within δ of the dividing line.1)Sort points in the 2δ-strip in ascending order of the y-coordinate.2)For each point a, check the distances to its 7 subsequent points.3)Output the closest pair found in step 2.δδ
+a1234567y-axis
+x-axis
+Running time: O(n log n)
+Zhiyi HuangCOMP3251Why is it correct?
+9y axis
+x axis•Let a and b be a pair of points with one point on each side such that their distance is ≤ δ, and a is lower than b in the y-coordinate.
+•We will prove that b is among the 7 subsequent points of a in the sorted list, i.e., b ∈ {1, 2, 3, 4, 5, 6, 7}. Then, the algorithm would have checked and remembered their distance in step 2.δδ
+a1234567
+Zhiyi HuangCOMP3251Why b must be in {1, 2, 3, 4, 5, 6, 7}?Observation 1:  There are at most 4 points in any square of size δ on the left of the dividing line.
+•Why? Recall that δ = min (δL, δR). Thus, δ ≤ δL.
+10
+Zhiyi HuangCOMP3251Why b must be in {1, 2, 3, 4, 5, 6, 7}?Observation 1:  There are at most 4 points in any square of size δ on the left of the dividing line.
+•Why? Recall that δ = min (δL, δR). Thus, δ ≤ δL.
+10δδ1)Consider any square of size δ  on the left the dividing line
+Zhiyi HuangCOMP3251Why b must be in {1, 2, 3, 4, 5, 6, 7}?Observation 1:  There are at most 4 points in any square of size δ on the left of the dividing line.
+•Why? Recall that δ = min (δL, δR). Thus, δ ≤ δL.
+10δδ1)Consider any square of size δ  on the left the dividing line2)Divide the square into 4  sub-squares of size δ/2δ/2δ/2δ/2δ/2
+Zhiyi HuangCOMP3251Why b must be in {1, 2, 3, 4, 5, 6, 7}?Observation 1:  There are at most 4 points in any square of size δ on the left of the dividing line.
+•Why? Recall that δ = min (δL, δR). Thus, δ ≤ δL.
+10δδ1)Consider any square of size δ  on the left the dividing line2)Divide the square into 4  sub-squares of size δ/2δ/2δ/2δ/2δ/2
+3)Points in the same sub-square are at most                         apart.
+
+Zhiyi HuangCOMP3251Why b must be in {1, 2, 3, 4, 5, 6, 7}?Observation 1:  There are at most 4 points in any square of size δ on the left of the dividing line.
+•Why? Recall that δ = min (δL, δR). Thus, δ ≤ δL.
+10δδ1)Consider any square of size δ  on the left the dividing line2)Divide the square into 4  sub-squares of size δ/2δ/2δ/2δ/2δ/24)Points on the left of the dividing line are at least δL apart. So there are ≤ 1 point in each sub-square, and ≤ 4 points in the square.
+3)Points in the same sub-square are at most                         apart.
+
+Zhiyi HuangCOMP3251Why b must be in {1, 2, 3, 4, 5, 6, 7}?Observation 1:  There are at most 4 points in any square of size δ on the left of the dividing line.
+Observation 2:  There are at most 4 points in any square of size δ on the right of the dividing line. (Same argument)
+11δδaδb1)Recall that the distance between a and b is ≤ δ and a is lower than b in the y-coordinate.2)b must be in the shaded area, which is comprised of two squares of size δ.3)There are ≤ 4 points in each square, and thus ≤ 8 points in the shaded area.4)There are ≤ 7 points in the shaded area  other than point a. So b must be one of  1, 2, 3, 4, 5, 6, 7.
+Zhiyi HuangCOMP3251An O(n log2n) Time Divide and Conquer Algorithm for Closest Pair
+12
+Divide:      
+1)Sort the points by their x-coordinates.
+2)Draw a vertical line L so that n/2 points on each side.
+Recurse:   
+3)Find the closest pair on the left of L, let δL be the distance.
+4)Find the closest pair on the right of L, let δR be the distance.
+Combine:  
+5)Let δ = min (δL, δR). 
+6)Let S be the set of points that are at most δ from L.
+7)Sort points in S in the y-coordinate and check the distance between each point and next 7 points. 
+8)Return the closest pair among step 3, 4, and 7
+Zhiyi HuangCOMP3251Running Time Analysis•How to analyze T(n)?
+-Divide step takes O(n log n) time (bottleneck is sorting).
+-Recurse step take 2 T(n/2) time.
+-Combine step takes O(n log n) time (bottleneck is sorting).
+•T(n) = 2 T(n/2) + O(n log n) = O(n log2 n) 
+-Intuition: 
+•If T(n) = 2 T(n/2) + O(n), then T(n) = O(n log n).
+•The extra log factor in the recurrence relation becomes an extra log factor in the ﬁnal answer.
+-Note that we cannot directly use the Master theorem here.
+-We can prove it either by repeatedly expanding T(.) using the recurrence relation, or by mathematical induction.13
+Zhiyi HuangCOMP3251Optional Reading•We can actually implement the same algorithm in O(n log n) time, with some extra eﬀorts
+•See, e.g., the slides below: https://www.cs.purdue.edu/homes/ayg/CS251/slides/chap15d.pdf
+•YouTube video by Tim Roughgarden: https://www.youtube.com/watch?v=jAigdwcATNw
+•There is a ton of other resources available online
+14

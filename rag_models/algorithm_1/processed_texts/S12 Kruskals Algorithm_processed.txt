@@ -1,0 +1,222 @@
+COMP3251 Lecture 12: Kruskal's Algorithm (Chapter 5.1)
+Zhiyi HuangCOMP3251Minimum Spanning TreeDeﬁnition:  Given a connected undirected graph G = (V, E) in which every edge e ∈ E is associated with a positive weight w(e), a minimum spanning tree (MST) is a subset of edges T ⊆ E s.t.
+(i)T forms a spanning tree; and
+(ii)the sum of edge weights of T is minimized.
+Example:
+26531217345317w(T) = 16
+Zhiyi HuangCOMP3251Two Greedy Algorithms for MSTPrim’s algorithm (last lecture) -Start with some root node s and grow a tree T outward. 
+-At each step, add the minimum weight outgoing edge. 
+-This algorithm is almost the same as the Dijkstra's algorithm, except that we add the outgoing edge with the minimum weight, not the one with minimum T-distance.
+Kruskal’s algorithm (this lecture) -Start with T being the empty forest. 
+-Consider edges in ascending order of cost; insert edge e in T unless doing so would create a cycle.3
+Zhiyi HuangCOMP3251Kruskal’s Algorithm (Chapter 5.1.3)
+41)Start from an empty forest T. 
+2)for all edges e in ascending order of weights :
+3)    insert edge e in T unless doing so would create a cycle.
+Zhiyi HuangCOMP3251Kruskal’s Algorithm (Chapter 5.1.3)
+5653121734Initially, T contains no edges.1)Start from an empty forest T. 
+2)for all edges e in ascending order of weights :
+3)    insert edge e in T unless doing so would create a cycle.
+Zhiyi HuangCOMP3251Kruskal’s Algorithm (Chapter 5.1.3)
+6653121734At step 1, the minimum weight edge  we could add has weight 1.11)Start from an empty forest T. 
+2)for all edges e in ascending order of weights :
+3)    insert edge e in T unless doing so would create a cycle.
+Zhiyi HuangCOMP3251Kruskal’s Algorithm (Chapter 5.1.3)
+765312173431At step 2, the minimum weight edge  we could add has weight 3.1)Start from an empty forest T. 
+2)for all edges e in ascending order of weights :
+3)    insert edge e in T unless doing so would create a cycle.
+Zhiyi HuangCOMP3251Kruskal’s Algorithm (Chapter 5.1.3)
+8653121734531At step 3, the minimum weight edge  we could add has weight 5.1)Start from an empty forest T. 
+2)for all edges e in ascending order of weights :
+3)    insert edge e in T unless doing so would create a cycle.
+Zhiyi HuangCOMP3251Kruskal’s Algorithm (Chapter 5.1.3)
+96531217345317At step 4, the edge with weight 6 creates a cycle,  so we add the edge with weight 7 instead.1)Start from an empty forest T. 
+2)for all edges e in ascending order of weights :
+3)    insert edge e in T unless doing so would create a cycle.
+Zhiyi HuangCOMP3251Correctness of Kruskal’s AlgorithmProof by picture: -Recall that if e is the minimum weight outgoing edge of some subset of vertices S, then the MST must contain e.
+-For every edge e we add in the sample run, we will explain the subset of vertices S for which e is the minimum weight outgoing edge of S, certifying e must be in the MST.
+10cgdfe7214910bhai481182714
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+11cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+12cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14(h,g) is the minimum weight edge  going out from S = { h }.
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+13cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14(i,c) is the minimum weight edge  going out from S = { c }.
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+14cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14(g,f) is the minimum weight edge  going out from S = { f }.
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+15cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14(a,b) is the minimum weight edge  going out from S = { a }.
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+16cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+16cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14(c,f) is the minimum weight edge  going out from S = { c, i }.
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+17cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+17cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14(c,d) is the minimum weight edge  going out from S = { d }.
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+18cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+18cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14(h,i) cannot be added to the solution because doing so would create a cycle.
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+19cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+19cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14(b,c) is the minimum weight edge  going out from S = { a, b }.
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+20cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+20cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14(a,h) cannot be added to the solution because doing so would create a cycle.
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+21cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+21cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14(d,e) is the minimum weight edge  going out from S = { e }.
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+22cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14
+Zhiyi HuangCOMP3251Correctness of Kruskal’s Algorithm
+22cgdfe63141011bhai491282715(h,g)1(i,c)2(g,f)3(a,b)4(c,f)5(c,d)6(h,i)7(b,c)8(a,h)9(d,e)10(e,f)11(b,h)12(d,f)14We already have |V|-1 edges. So adding any  of the remaining edges would create a cycle.
+Zhiyi HuangCOMP3251Correctness of Kruskal’s AlgorithmFact 1.  The algorithm adds an edge only if it is in the MST. Key question:  Why we can always ﬁnd a subset of vertices S such that e is the minimum weight outgoing edge from S? -Throughout the algorithm, we have a set of subtrees.
+-We add an edge e only if it does not create any cycle.
+-So the two endpoints of e cannot be in the same subtree. That is, e connects two diﬀerent subtrees, say T1 and T2 
+-So e is an outgoing edges of T1. Further, the algorithm has not processed any outgoing edges of T1 when we add e.
+-Choosing S = T1 suﬃces because by our choice of e,  it must have the minimum edge weight among them. 23
+Zhiyi HuangCOMP3251Correctness of Kruskal’s AlgorithmFact 2.  Each edge in the MST will be added by the algorithm. Proof:  Consider an edge e in the MST.
+-Since the algorithm checks all edges before it stops, it must have checked edge e.
+-Since the only edges added by the algorithm are those in the MST, e cannot create a cycle.
+-So the algorithm would have added edge e to the solution.
+24
+ Implementing Kruskal’s Algorithm  (A Data Structure for Disjoint Sets)
+Zhiyi HuangCOMP3251Implementing Kruskal’s Algorithm•Note that log |E| = O(log |V|) because |E| = O(|V|2).
+•Sorting the edges in ascending order takes O(|E| log |E|) =  O(|E| log |V|) time.
+•The for loop has |E| iterations.
+•Key questions:  
+-How to implement an iteration of the for loop? 
+-How to determine if adding an edge creates a cycle?261)Start from an empty forest T. 
+2)for all edges e in ascending order of weights :
+3)    insert edge e in T unless doing so would create a cycle.
+Zhiyi HuangCOMP3251Observation:  During the execution of the algorithm, the set of edges added to the solution (red edges) forms a set of disjoint sub-trees of the MST.
+-To determine if adding an edge creates a cycle is the same as to determine if its end points are in the same sub-tree.Implementing Kruskal’s Algorithm
+27cgdfebhaiIn this step, there are 4 disjoint sub-trees.
+Zhiyi HuangCOMP3251Observation:  During the execution of the algorithm, the set of edges added to the solution (red edges) forms a set of disjoint sub-trees of the MST.
+-To determine if adding an edge creates a cycle is the same as to determine if its end points are in the same sub-tree.
+Implementing Kruskal’s Algorithm
+27cgdfebhaiIn this step, there are 4 disjoint sub-trees.
+Zhiyi HuangCOMP3251Observation:  During the execution of the algorithm, the set of edges added to the solution (red edges) forms a set of disjoint sub-trees of the MST.
+-To determine if adding an edge creates a cycle is the same as to determine if its end points are in the same sub-tree.
+Implementing Kruskal’s Algorithm
+27cgdfebhaiIn this step, there are 4 disjoint sub-trees.
+Zhiyi HuangCOMP3251Observation:  During the execution of the algorithm, the set of edges added to the solution (red edges) forms a set of disjoint sub-trees of the MST.
+-To determine if adding an edge creates a cycle is the same as to determine if its end points are in the same sub-tree.
+Implementing Kruskal’s Algorithm
+27cgdfebhaiIn this step, there are 4 disjoint sub-trees.
+Zhiyi HuangCOMP3251Observation:  During the execution of the algorithm, the set of edges added to the solution (red edges) forms a set of disjoint sub-trees of the MST.
+-To determine if adding an edge creates a cycle is the same as to determine if its end points are in the same sub-tree.
+Implementing Kruskal’s Algorithm
+27cgdfebhaiIn this step, there are 4 disjoint sub-trees.
+Zhiyi HuangCOMP3251Idea:  Design a data structure that remembers the current set of disjoint sub-trees such that we can eﬃciently
+1)ﬁnd the subtree that a vertex, say, c, belongs to, through a procedure ﬁnd-set(c); and
+2)merge two subtrees through union(ﬁnd-set(c), ﬁnd-set(d)).
+Implementing Kruskal’s Algorithm
+28cgdfebhai
+Zhiyi HuangCOMP3251Implementing Kruskal’s Algorithm
+Running Time: •# of make-set: |V|;  # of ﬁnd-set: 2|E|;  # of union: |V|-1.
+•Suppose the data structure implements these subroutine in O(log |V|) time, then the total running time is O(|E| log |V|).291)initialize T = { }. 
+2)for all vertices v : initialize a sub-tree for v via make-set(v).
+3)for all edges (u, v) in ascending order of weights :
+4)    if ﬁnd-set(u) ≠ ﬁnd-set(v) :
+5)        add (u, v) to T;
+6)        union(ﬁnd-set(u), ﬁnd-set(v)).
+Zhiyi HuangCOMP3251A Data Structure of Disjoint SetsWe need to maintain a collection of sets from n elements (vertices). Our data structure must support the followings:
+-Given any two elements x, y, we need to determine whether ﬁnd-set(x) = ﬁnd-set(y), i.e., to determine whether x and y belongs to the same set.
+-Given any two sets in the current collection, we need to replace these two sets by its union.
+30
+Zhiyi HuangCOMP3251High-Level ApproachIdea:  Maintain a tree for the vertices in each set and name each set after the root vertex.
+-For ﬁnd-set(x), we just trace back to the root.
+-To union two sets, we append the root of one set to be a child of the root of the other set.
+31
+Zhiyi HuangCOMP3251Sample Run
+32abcdefg{a} {b} {c} {d} {e} {f} {g}union( ﬁnd(a), ﬁnd(e) )
+Zhiyi HuangCOMP3251Sample Run
+32abcdefg{a} {b} {c} {d} {e} {f} {g}union( ﬁnd(a), ﬁnd(e) )abcdefg
+Zhiyi HuangCOMP3251Sample Run
+33abcdfgunion( ﬁnd(d), ﬁnd(g) )e{a, e} {b} {c} {d} {f} {g}
+Zhiyi HuangCOMP3251Sample Run
+33abcdfgunion( ﬁnd(d), ﬁnd(g) )e{a, e} {b} {c} {d} {f} {g}
+abcdefg
+Zhiyi HuangCOMP3251Sample Run
+34abcdfunion( ﬁnd(e), ﬁnd(g) )eg{a, e} {b} {c} {d, g} {f}
+Zhiyi HuangCOMP3251Sample Run
+34abcdfunion( ﬁnd(e), ﬁnd(g) )eg{a, e} {b} {c} {d, g} {f}
+abcdefg
+Zhiyi HuangCOMP3251•To execute ﬁnd-set(x), we traverse the parent pointers from x up to the root, and the root is used as the name of the set.
+•So, ﬁnd-set(x) = ﬁnd-set(y) if and only if the root returned by ﬁnd-set(x) is equal to that returned by ﬁnd-set(y).
+•To execute union(r1, r2), we make a root to be the child of the other root.Summary
+35r1r2r1r2
+Question:  Which vertex shall be the new root?
+Zhiyi HuangCOMP3251Running Time AnalysisTo answer the question, we need to ﬁrst understand how the running time of ﬁnd-set and union depends on the structure of the trees that we maintain.
+-Running time for a union operation: O(1).
+-Running time for a ﬁnd-set(x):  the height of the tree containing x, which can be O(n).
+36abcdef
+Zhiyi HuangCOMP3251Running Time AnalysisTo answer the question, we need to ﬁrst understand how the running time of ﬁnd-set and union depends on the structure of the trees that we maintain.
+-Running time for a union operation: O(1).
+-Running time for a ﬁnd-set(x):  the height of the tree containing x, which can be O(n).
+36abcdefunion(ﬁnd-set(e), ﬁnd-set(f))
+Zhiyi HuangCOMP3251Running Time AnalysisTo answer the question, we need to ﬁrst understand how the running time of ﬁnd-set and union depends on the structure of the trees that we maintain.
+-Running time for a union operation: O(1).
+-Running time for a ﬁnd-set(x):  the height of the tree containing x, which can be O(n).
+36abcdefunion(ﬁnd-set(e), ﬁnd-set(f))union(ﬁnd-set(d), ﬁnd-set(e))
+Zhiyi HuangCOMP3251Running Time AnalysisTo answer the question, we need to ﬁrst understand how the running time of ﬁnd-set and union depends on the structure of the trees that we maintain.
+-Running time for a union operation: O(1).
+-Running time for a ﬁnd-set(x):  the height of the tree containing x, which can be O(n).
+36abcdefunion(ﬁnd-set(e), ﬁnd-set(f))union(ﬁnd-set(d), ﬁnd-set(e))union(ﬁnd-set(c), ﬁnd-set(d))
+Zhiyi HuangCOMP3251Running Time AnalysisTo answer the question, we need to ﬁrst understand how the running time of ﬁnd-set and union depends on the structure of the trees that we maintain.
+-Running time for a union operation: O(1).
+-Running time for a ﬁnd-set(x):  the height of the tree containing x, which can be O(n).
+36abcdefunion(ﬁnd-set(e), ﬁnd-set(f))union(ﬁnd-set(d), ﬁnd-set(e))union(ﬁnd-set(c), ﬁnd-set(d))union(ﬁnd-set(b), ﬁnd-set(c))
+Zhiyi HuangCOMP3251Running Time AnalysisTo answer the question, we need to ﬁrst understand how the running time of ﬁnd-set and union depends on the structure of the trees that we maintain.
+-Running time for a union operation: O(1).
+-Running time for a ﬁnd-set(x):  the height of the tree containing x, which can be O(n).
+36abcdefunion(ﬁnd-set(e), ﬁnd-set(f))union(ﬁnd-set(d), ﬁnd-set(e))union(ﬁnd-set(c), ﬁnd-set(d))union(ﬁnd-set(b), ﬁnd-set(c))union(ﬁnd-set(a), ﬁnd-set(b))
+Zhiyi HuangCOMP3251Running Time AnalysisTo answer the question, we need to ﬁrst understand how the running time of ﬁnd-set and union depends on the structure of the trees that we maintain.
+-Running time for a union operation: O(1).
+-Running time for a ﬁnd-set(x):  the height of the tree containing x, which can be O(n).
+36abcdefunion(ﬁnd-set(e), ﬁnd-set(f))union(ﬁnd-set(d), ﬁnd-set(e))union(ﬁnd-set(c), ﬁnd-set(d))union(ﬁnd-set(b), ﬁnd-set(c))union(ﬁnd-set(a), ﬁnd-set(b))
+Then, ﬁnd-set(f)  takes n-1 steps.
+Zhiyi HuangCOMP3251Can we guarantee small height?•If we could implement union such that the trees have small height, then ﬁnd-set would have small running time.
+•How? One way to do it is the union-by-size heuristic:
+-To union(s1, s2), we make the tree with smaller size the child of the one with larger size.
+-Break ties arbitrarily.
+-Example:
+37r123  nodesr25  nodesr123  nodesr25  nodes✔✘
+Zhiyi HuangCOMP3251Revisiting the O(n)-Time Exampleunion(ﬁnd-set(e), ﬁnd-set(f)), union(ﬁnd-set(d), ﬁnd-set(e)), union(ﬁnd-set(c), ﬁnd-set(d)), union(ﬁnd-set(b), ﬁnd-set(c)), union(ﬁnd-set(a), ﬁnd-set(b))
+38abcdef
+Zhiyi HuangCOMP3251Revisiting the O(n)-Time Exampleunion(ﬁnd-set(e), ﬁnd-set(f)), union(ﬁnd-set(d), ﬁnd-set(e)), union(ﬁnd-set(c), ﬁnd-set(d)), union(ﬁnd-set(b), ﬁnd-set(c)), union(ﬁnd-set(a), ﬁnd-set(b))
+39abcdef
+Zhiyi HuangCOMP3251Revisiting the O(n)-Time Exampleunion(ﬁnd-set(e), ﬁnd-set(f)), union(ﬁnd-set(d), ﬁnd-set(e)), union(ﬁnd-set(c), ﬁnd-set(d)), union(ﬁnd-set(b), ﬁnd-set(c)), union(ﬁnd-set(a), ﬁnd-set(b))
+40abcdef
+Zhiyi HuangCOMP3251Revisiting the O(n)-Time Exampleunion(ﬁnd-set(e), ﬁnd-set(f)), union(ﬁnd-set(d), ﬁnd-set(e)), union(ﬁnd-set(c), ﬁnd-set(d)), union(ﬁnd-set(b), ﬁnd-set(c)), union(ﬁnd-set(a), ﬁnd-set(b))
+41abcdef
+Zhiyi HuangCOMP3251Revisiting the O(n)-Time Exampleunion(ﬁnd-set(e), ﬁnd-set(f)), union(ﬁnd-set(d), ﬁnd-set(e)), union(ﬁnd-set(c), ﬁnd-set(d)), union(ﬁnd-set(b), ﬁnd-set(c)), union(ﬁnd-set(a), ﬁnd-set(b))
+42abcdef
+Zhiyi HuangCOMP3251Revisiting the O(n)-Time Exampleunion(ﬁnd-set(e), ﬁnd-set(f)), union(ﬁnd-set(d), ﬁnd-set(e)), union(ﬁnd-set(c), ﬁnd-set(d)), union(ﬁnd-set(b), ﬁnd-set(c)), union(ﬁnd-set(a), ﬁnd-set(b))
+43abcdef
+Zhiyi HuangCOMP3251Revisiting the O(n)-Time Exampleunion(ﬁnd-set(e), ﬁnd-set(f)), union(ﬁnd-set(d), ﬁnd-set(e)), union(ﬁnd-set(c), ﬁnd-set(d)), union(ﬁnd-set(b), ﬁnd-set(c)), union(ﬁnd-set(a), ﬁnd-set(b))
+43abcdef
+The union-by-size heuristic  gives a tree with height 1!
+Zhiyi HuangCOMP3251Analyzing the Union-By-Size Heuristic Claim.  If we use union-by-size, then any tree with height h must have at least 2h nodes.
+Proof (by induction). Base case: h = 0 is true as any tree has at least 1 node.
+Inductive hypothesis:  The claim is true for trees with height h.
+Inductive step:  We will show it is true for trees with height h+1.
+-Key observation:  We get a tree with height h+1 only when we union two trees and one of them has hight h.
+44r1≥ 2h  nodesr2≥ 2h  nodesheight htotal height h+1 ≥ 2h+1 nodesbecause it is 
+the larger tree
+Zhiyi HuangCOMP3251Analyzing the Union-By-Size Heuristic Claim.  If we use union-by-size, then any tree with height h must have at least 2h nodes.
+Corollary.  If we use union-by-size, then any tree must have height h ≤ log n.
+Proof. -Since there are only n nodes, the size of any tree is ≤ n.  
+-Together with the above claim, we have n ≥ tree size ≥ 2h.
+-Equivalently, we have log n ≥ log(tree size) ≥ h.
+45
+Zhiyi HuangCOMP3251Summary•If we implement the Disjoint Sets data structure using the union-by-size heuristic, then 
+-ﬁnd-set runs in time O(log n);
+-union runs in time O(1).
+•Substitute these bounds in our analysis of the running time, we conclude that Kruskal's algorithm runs in O(m log n) time.
+46

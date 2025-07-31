@@ -1,0 +1,165 @@
+COMP3251 Lecture 1: Introduction
+Zhiyi HuangCOMP3251Welcome to COMP3251Instructor: -HUANG, Zhiyi (zhiyi@cs.hku.hk)
+-423 Chow Yei Ching Building
+-Tuesday, 4:00pm to 5:00pm
+-Other time slots may be available by appointment
+Tutors: -LI, Dongchen (dongchen.li@connect.hku.hk)
+-SUN, Enze (sunenze@connect.hku.hk)
+-YANG, Peilin (peilinyang@connect.hku.hk)
+-LG101 Chow Yei Ching Building
+-Wednesday and Friday, 4:00pm to 5:00pm2
+What are algorithms?
+Zhiyi HuangCOMP32514An algorithm is a set of precise step-by-step rules for solving a speciﬁc computational problem.
+Zhiyi HuangCOMP32514An algorithm is a set of precise step-by-step rules for solving a speciﬁc computational problem.Examples:  Multiplying two numbers, say, 1234 and 5678.
+Zhiyi HuangCOMP32514An algorithm is a set of precise step-by-step rules for solving a speciﬁc computational problem.Examples:  Multiplying two numbers, say, 1234 and 5678.5678⨉1234
+Zhiyi HuangCOMP32514An algorithm is a set of precise step-by-step rules for solving a speciﬁc computational problem.
+22712Examples:  Multiplying two numbers, say, 1234 and 5678.5678⨉1234
+Zhiyi HuangCOMP32514An algorithm is a set of precise step-by-step rules for solving a speciﬁc computational problem.
+2271217034Examples:  Multiplying two numbers, say, 1234 and 5678.5678⨉1234
+Zhiyi HuangCOMP32514An algorithm is a set of precise step-by-step rules for solving a speciﬁc computational problem.
+227121703411356Examples:  Multiplying two numbers, say, 1234 and 5678.5678⨉1234
+Zhiyi HuangCOMP32514An algorithm is a set of precise step-by-step rules for solving a speciﬁc computational problem.
+2271217034113565678Examples:  Multiplying two numbers, say, 1234 and 5678.5678⨉1234
+Zhiyi HuangCOMP32514An algorithm is a set of precise step-by-step rules for solving a speciﬁc computational problem.
+22712170341135656787006652Examples:  Multiplying two numbers, say, 1234 and 5678.5678⨉1234
+Zhiyi HuangCOMP3251In primary school, we learnt this as “the correct way” of calculating the multiplication of two numbers. 
+4An algorithm is a set of precise step-by-step rules for solving a speciﬁc computational problem.
+22712170341135656787006652Examples:  Multiplying two numbers, say, 1234 and 5678.5678⨉1234
+Zhiyi HuangCOMP3251In primary school, we learnt this as “the correct way” of calculating the multiplication of two numbers. In this course: -How good is this algorithm?
+-Can we do better?4An algorithm is a set of precise step-by-step rules for solving a speciﬁc computational problem.
+22712170341135656787006652Examples:  Multiplying two numbers, say, 1234 and 5678.5678⨉1234
+Zhiyi HuangCOMP3251An alternative multiplication algorithmExamples:  Multiplying two numbers, say, 1234 and 5678.
+5
+Zhiyi HuangCOMP3251An alternative multiplication algorithmExamples:  Multiplying two numbers, say, 1234 and 5678.1)Partition (1234) into two numbers (12) and (34).
+5
+Zhiyi HuangCOMP3251An alternative multiplication algorithmExamples:  Multiplying two numbers, say, 1234 and 5678.1)Partition (1234) into two numbers (12) and (34).2)Partition (5678) into two numbers (56) and (78).
+5
+Zhiyi HuangCOMP3251An alternative multiplication algorithmExamples:  Multiplying two numbers, say, 1234 and 5678.1)Partition (1234) into two numbers (12) and (34).2)Partition (5678) into two numbers (56) and (78).3)Multiply (12) and (56) and get (672).
+5
+Zhiyi HuangCOMP3251An alternative multiplication algorithmExamples:  Multiplying two numbers, say, 1234 and 5678.1)Partition (1234) into two numbers (12) and (34).2)Partition (5678) into two numbers (56) and (78).3)Multiply (12) and (56) and get (672).4)Multiply (34) and (78) and get (2652).
+5
+Zhiyi HuangCOMP3251An alternative multiplication algorithmExamples:  Multiplying two numbers, say, 1234 and 5678.1)Partition (1234) into two numbers (12) and (34).2)Partition (5678) into two numbers (56) and (78).3)Multiply (12) and (56) and get (672).4)Multiply (34) and (78) and get (2652).5)Multiply (12)+(34)=(46) and (56)+(78)=(134) and get (6164).
+5
+Zhiyi HuangCOMP3251An alternative multiplication algorithmExamples:  Multiplying two numbers, say, 1234 and 5678.1)Partition (1234) into two numbers (12) and (34).2)Partition (5678) into two numbers (56) and (78).3)Multiply (12) and (56) and get (672).4)Multiply (34) and (78) and get (2652).5)Multiply (12)+(34)=(46) and (56)+(78)=(134) and get (6164).6)Subtract the ﬁrst two numbers from the third one and get (6164)-(672)-(2652)=(2840).
+5
+Zhiyi HuangCOMP3251An alternative multiplication algorithmExamples:  Multiplying two numbers, say, 1234 and 5678.1)Partition (1234) into two numbers (12) and (34).2)Partition (5678) into two numbers (56) and (78).3)Multiply (12) and (56) and get (672).4)Multiply (34) and (78) and get (2652).5)Multiply (12)+(34)=(46) and (56)+(78)=(134) and get (6164).6)Subtract the ﬁrst two numbers from the third one and get (6164)-(672)-(2652)=(2840).7)Sum up (6720000) (1st number padded with four 0’s), (2652) (2nd number), and (284000) (4th number padded with two 0’s), and get5
+Zhiyi HuangCOMP3251An alternative multiplication algorithmExamples:  Multiplying two numbers, say, 1234 and 5678.1)Partition (1234) into two numbers (12) and (34).2)Partition (5678) into two numbers (56) and (78).3)Multiply (12) and (56) and get (672).4)Multiply (34) and (78) and get (2652).5)Multiply (12)+(34)=(46) and (56)+(78)=(134) and get (6164).6)Subtract the ﬁrst two numbers from the third one and get (6164)-(672)-(2652)=(2840).7)Sum up (6720000) (1st number padded with four 0’s), (2652) (2nd number), and (284000) (4th number padded with two 0’s), and get(6720000) + (2652) + (284000) = (7006652).5
+Zhiyi HuangCOMP3251An alternative multiplication algorithm
+Examples:  Multiplying two numbers, say, 1234 and 5678.
+1)Partition (1234) into two numbers (12) and (34).
+2)Partition (5678) into two numbers (56) and (78).
+3)Multiply (12) and (56) and get (672).
+4)Multiply (34) and (78) and get (2652).
+5)Multiply (12)+(34)=(46) and (56)+(78)=(134) and get (6164).
+6)Subtract the ﬁrst two numbers from the third one and get (6164)-(672)-(2652)=(2840).
+7)Sum up (6720000) (1st number padded with four 0’s), (2652) (2nd number), and (284000) (4th number padded with two 0’s), and get
+(6720000) + (2652) + (284000) = (7006652).
+6
+Cannot make any sense?
+Zhiyi HuangCOMP3251An alternative multiplication algorithm
+Examples:  Multiplying two numbers, say, 1234 and 5678.
+1)Partition (1234) into two numbers (12) and (34).
+2)Partition (5678) into two numbers (56) and (78).
+3)Multiply (12) and (56) and get (672).
+4)Multiply (34) and (78) and get (2652).
+5)Multiply (12)+(34)=(46) and (56)+(78)=(134) and get (6164).
+6)Subtract the ﬁrst two numbers from the third one and get (6164)-(672)-(2652)=(2840).
+7)Sum up (6720000) (1st number padded with four 0’s), (2652) (2nd number), and (284000) (4th number padded with two 0’s), and get
+(6720000) + (2652) + (284000) = (7006652).
+6
+Cannot make any sense?•That’s expected for now!
+Zhiyi HuangCOMP3251An alternative multiplication algorithm
+Examples:  Multiplying two numbers, say, 1234 and 5678.
+1)Partition (1234) into two numbers (12) and (34).
+2)Partition (5678) into two numbers (56) and (78).
+3)Multiply (12) and (56) and get (672).
+4)Multiply (34) and (78) and get (2652).
+5)Multiply (12)+(34)=(46) and (56)+(78)=(134) and get (6164).
+6)Subtract the ﬁrst two numbers from the third one and get (6164)-(672)-(2652)=(2840).
+7)Sum up (6720000) (1st number padded with four 0’s), (2652) (2nd number), and (284000) (4th number padded with two 0’s), and get
+(6720000) + (2652) + (284000) = (7006652).
+6
+Cannot make any sense?•That’s expected for now!•After a few classes, you will understand this alternative multiplication algorithm. 
+Zhiyi HuangCOMP3251An alternative multiplication algorithm
+Examples:  Multiplying two numbers, say, 1234 and 5678.
+1)Partition (1234) into two numbers (12) and (34).
+2)Partition (5678) into two numbers (56) and (78).
+3)Multiply (12) and (56) and get (672).
+4)Multiply (34) and (78) and get (2652).
+5)Multiply (12)+(34)=(46) and (56)+(78)=(134) and get (6164).
+6)Subtract the ﬁrst two numbers from the third one and get (6164)-(672)-(2652)=(2840).
+7)Sum up (6720000) (1st number padded with four 0’s), (2652) (2nd number), and (284000) (4th number padded with two 0’s), and get
+(6720000) + (2652) + (284000) = (7006652).
+6
+Cannot make any sense?•That’s expected for now!•After a few classes, you will understand this alternative multiplication algorithm. •By the end of the semester, you will be able to design algorithms like this one (and other fancy techniques too).
+Why study algorithms?
+Zhiyi HuangCOMP3251Useful for all areas in CS
+8
+Zhiyi HuangCOMP3251Useful for all areas in CS
+8
+database
+Zhiyi HuangCOMP3251Useful for all areas in CS
+8
+database
+networking
+Zhiyi HuangCOMP3251Useful for all areas in CS
+8
+database
+networking
+machine learning
+Zhiyi HuangCOMP3251Useful for all areas in CS
+8
+database
+networking
+computer vision
+machine learning
+Zhiyi HuangCOMP3251Algorithms that run the world
+9
+Page Rank
+Zhiyi HuangCOMP3251Algorithms that run the world
+10
+Shortest Path Algorithms
+Zhiyi HuangCOMP3251Algorithms that run the world
+11
+Online Advertisement
+Zhiyi HuangCOMP3251Online Advertisement is Big!
+12
+
+Zhiyi HuangCOMP3251LeetCode Prep Course?
+13
+
+Zhiyi HuangCOMP3251What you will get from this course?•Become a better programmer •Sharpen your analytical and mathematical skills •Ace the algorithm questions in your job interviews •Think “algorithmically”
+14
+Zhiyi HuangCOMP3251TextbookLecture notes: -Self-contained
+-Available on Moodle before each lecture
+Textbook (required supplementary readings): -Algorithms S. Dasgupta, C. H. Papadimitriou, and U. Vazirani
+Other resources (optional): -Algorithm Design E. Tardos and J. Kleinberg
+-Introduction to Algorithms T. H. Cormen, C. E. Leiserson, R. L. Rivest, and C. Stein
+-Online course by Tim Roughgarden15
+Zhiyi HuangCOMP3251Course TopicsAlgorithm design paradigms: -Divide and conquer (DPV Ch. 2)
+-Greedy (DPV Ch. 5)
+-Dynamic programming (DPV Ch. 6)
+Graph algorithms: -Graph decomposition (DPV Ch. 3)
+-Shortest path (DPV Ch. 4)
+-Max ﬂow (DPV Ch. 7.2, supplementary materials will be available on Moodle)
+Complexity theory: -NP-completeness and reduction (DPV Ch. 8)16
+Zhiyi HuangCOMP3251Assessment•Homework assignments (40%)
+-5 assignments 
+-Count best 4 out of 5
+-No late submission: If you happen to be extremely busy before one of the deadlines, that’s your worst 1 out of 5 
+-About 4 problems in each assignment
+•Midterm (10%)
+-90 min, semi-open book (2 sheets of A4), in class
+-Most likely in the week after the reading week
+•Final (50%)
+-3 hours, 4-5 questions, semi-open book (2 sheets of A4)17
+Zhiyi HuangCOMP3251Collaboration Policy for Homework AssignmentsYES:Discuss with friends, ask ChatGPT, acknowledge them,  write your own solutions.
+NO:Copy solutions word-for-word or with minor modiﬁcations (from your friends, from the Internet, from past-year, etc.)
+Note:  I strongly recommend that you try to complete the homework assignments on your own.
+18
+Zhiyi HuangCOMP32513251 (Regular Class) vs. 3252 (Advanced Class)•COMP3251 focuses on
+-How basic algorithms work
+-Applications of algorithms •COMP3252 emphasizes more on
+-Problem solving skills
+-Mathematical proofs
+19
