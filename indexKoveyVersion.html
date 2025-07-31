@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 设置页面标题为 "OOCL Offline LLM Chat" -->
+    <title>OOCL Offline LLM Chat</title>
+    <!-- 设置页面图标为 OOCL 的 logo -->
+    <link rel="icon" href="OOCL_logo_slogan.png" type="image/png">
+    <!-- 引入外部 CSS 文件 Tailwind CSS 框架，用于控制页面的样式 -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* CSS 样式 */
+        body { 
+            /* 页面背景色和文字颜色过渡动画，持续 0.3 秒 */
+            transition: background-color 0.3s, color 0.3s;
+            position: relative;
+            overflow-x: hidden;
+        }
+        .dark { 
+            /* 暗模式样式：深色背景和浅色文字 */
+            background-color: #111827; 
+            color: #e2e8f0; 
+        }
+        .light { 
+            /* 亮模式样式：浅色背景和深色文字 */
+            background-color: #f9fafb; 
+            color: #1f2937; 
+        }
+        #chat-container { 
+            /* 聊天容器最大高度为视口高度减去 220px，支持垂直滚动，内边距 1rem */
+            max-height: calc(100vh - 220px); 
+            overflow-y: auto; 
+            padding: 1rem; 
+        }
+        .chat-bubble { 
+            /* 聊天气泡样式 ：最大宽度 95%，底部外边距 1rem，圆角 0.75rem，z-index 确保显示在背景之上*/
+            max-width: 95%; 
+            margin-bottom: 1rem; 
+            padding: 1rem; 
+            border-radius: 0.75rem; 
+            position: relative;
+            z-index: 10;
+        }
+        .user-bubble { 
+            /* 用户消息气泡样式：蓝色背景，白色文字，右对齐，带阴影效果 */
+            background-color: #3b82f6; 
+            color: white; 
+            margin-left: auto; 
+            box-shadow: 0 2px 10px rgba(59, 130, 246, 0.3);
+        }
+        .ai-bubble { 
+            /* AI 消息气泡样式：浅灰色背景，深色文字，左对齐，带阴影效果 */
+            background-color: #e2e8f0; 
+            color: #1f2937; 
+            margin-right: auto; 
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+        .thinking-bubble { 
+            /* 思考中气泡样式：淡灰色背景，深色文字，左对齐，斜体 */
+            background-color: #edf2f7; 
+            color: #4a5568; 
+            margin-right: auto; 
+            font-style: italic; 
+        }
+        .dark .ai-bubble { 
+            /* 暗模式 AI 消息气泡样式：深色背景，浅色文字 */
+            background-color: #1e293b; 
+            color: #e2e8f0; 
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        .dark .thinking-bubble { 
+            /* 暗模式思考中气泡样式：深色背景，浅色文字 */
+            background-color: #1e293b; 
+            color: #94a3b8; 
+        }
+        
+        /* 背景动画样式 */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.1;
+            pointer-events: none;
+        }
+
+        /* 亮模式背景（多彩渐变） */
+        #light-bg {
+            /* 亮模式背景透明度 */
+            opacity: 0.1;
+        }
+        #light-bg svg {
+            /* SVG 背景覆盖整个容器 */
+            width: 100%;
+            height: 100%;
+        }
+        #light-bg rect {
+            /* 矩形渐变透明度 */
+            opacity: 0.8;
+        }
+
+        /* 暗模式背景（萤火虫） */
+        .firefly {
+            /* 萤火虫效果：小圆点，固定定位，带动画，不响应鼠标事件 */
+            position: fixed;
+            left: 50%;
+            top: 50%;
+            width: 0.4vw;
+            height: 0.4vw;
+            margin: -0.2vw 0 0 9.8vw;
+            animation: ease 200s alternate infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .firefly::before,
+        .firefly::after {
+            /* 萤火虫伪元素的圆形样式，变换原点偏移 */
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            transform-origin: -10vw;
+        }
+        .firefly::before {
+            /* 萤火虫暗部：黑色背景，低透明度，漂移动画 */
+            background: black;
+            opacity: 0.4;
+            animation: drift ease alternate infinite;
+        }
+        .firefly::after {
+            /* 萤火虫亮部：白色背景，初始透明，带发光动画和漂移动画 */
+            background: white;
+            opacity: 0;
+            box-shadow: 0 0 0vw 0vw yellow;
+            animation: drift ease alternate infinite, flash ease infinite;
+        }
+
+        /* 萤火虫动画 */
+        @keyframes drift {
+            /* 漂移动画：360 度旋转 */
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes flash {
+            /* 闪烁动画：短暂显示黄色光晕 */
+            0%, 30%, 100% {
+                opacity: 0;
+                box-shadow: 0 0 0vw 0vw yellow;
+            }
+            5% {
+                opacity: 1;
+                box-shadow: 0 0 2vw 0.4vw yellow;
+            }
+        }
+        
+        /* 输入框样式 */
+        .dark #question-input,
+        .dark #chat-question-input {
+            /* 暗模式输入框：深色背景，浅色文字，灰色边框 */
+            background-color: #1e293b !important;
+            color: #e2e8f0 !important;
+            border: 1px solid #334155;
+        }
+        .light #question-input,
+        .light #chat-question-input {
+            /* 亮模式输入框：白色背景，深色文字，浅灰边框 */
+            background-color: #fff !important;
+            color: #1f2937 !important;
+            border: 1px solid #d1d5db;
+        }
+        #question-input:focus, #chat-question-input:focus {
+            /* 输入框聚焦时的蓝色轮廓和阴影 */
+            outline: 2px solid #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        /* 文件上传按钮样式 */
+        .dark label[for="file-input"],
+        .dark label[for="chat-file-input"] {
+            /* 暗模式文件上传按钮：深色背景，浅色文字，灰色边框 */
+            background-color: #1e293b !important;
+            color: #e2e8f0 !important;
+            border: 1px solid #334155;
+        }
+        .dark label[for="file-input"]:hover,
+        .dark label[for="chat-file-input"]:hover {
+            /* 暗模式下鼠标悬停时的背景色 */
+            background-color: #334155 !important;
+        }
+        .light label[for="file-input"],
+        .light label[for="chat-file-input"] {
+            /* 亮模式文件上传按钮：白色背景，深色文字，浅灰边框 */
+            background-color: #fff !important;
+            color: #1f2937 !important;
+            border: 1px solid #d1d5db;
+        }
+        .light label[for="file-input"]:hover,
+        .light label[for="chat-file-input"]:hover {
+            /* 亮模式下鼠标悬停时的背景色 */
+            background-color: #f3f4f6 !important;
+        }
+
+        /* 欢迎界面 */
+        .welcome-container {
+            /* 欢迎界面：相对定位，z-index 确保显示在背景之上，透明度过渡动画 */
+            position: relative;
+            z-index: 10;
+            opacity: 1;
+            transition: opacity 0.3s ease;
+        }
+        .hidden {
+            /* 隐藏元素的通用类 */
+            display: none;
+        }
+        .fade-out {
+            /* 淡出效果 */
+            opacity: 0;
+        }
+
+        /* 文件上传区域样式 */
+        .folder-upload-area {
+            /* 文件夹上传区域：蓝色虚线边框，圆角，居中文本，可点击，带过渡动画 */
+            border: 2px dashed #3b82f6;
+            border-radius: 0.5rem;
+            padding: 2rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin: 1rem 0;
+        }
+        /* 拖拽激活时：绿色边框，浅绿色背景 */
+        .folder-upload-area.drag-active {
+            border-color: #10b981;
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+        /* 鼠标悬停时：深蓝色边框，浅蓝色背景 */
+        .folder-upload-area:hover {
+            border-color: #2563eb;
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        /* RAG 模型列表项样式 */
+        .rag-model-item {
+            /* 模型列表项：0.2 秒过渡动画 */
+            transition: all 0.2s;
+        }
+        
+        .rag-model-item:hover {
+            /* 鼠标悬停时：向上移动 2px */
+            transform: translateY(-2px);
+        }
+        
+        .rag-model-item.active {
+            /* 选中状态：蓝色边框，浅蓝色背景 */
+            border-color: #3b82f6;
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        /* 模态框样式 */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 50;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+            /* 模态框遮罩：全屏覆盖，半透明黑色背景，居中显示，初始隐藏，透明度过渡 */
+        }
+        
+        .modal-overlay.active {
+            /* 激活模态框：显示并启用鼠标事件 */
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        .modal-container {
+            /* 模态框内容：白色背景，圆角，最大宽度 500px，垂直滚动，初始向上偏移 */
+            background-color: white;
+            padding: 1.5rem;
+            border-radius: 0.5rem;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(-20px);
+            transition: transform 0.3s;
+        }
+        
+        .dark .modal-container {
+            /* 暗模式模态框：深色背景，浅色文字 */
+            background-color: #1e293b;
+            color: #e2e8f0;
+        }
+        
+        .modal-overlay.active .modal-container {
+            /* 模态框激活时：恢复正常位置 */
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<!-- 页面主体，默认启用暗模式 -->
+<body class="dark min-h-screen">
+    <!-- 背景图案 -->
+    <div id="dark-bg" class="bg-pattern">
+        <!-- 暗模式背景容器，萤火虫效果将通过 JavaScript 动态添加 -->
+    </div>
+    <!-- 亮模式背景容器，初始隐藏 -->
+    <div id="light-bg" class="bg-pattern hidden">
+        <!-- SVG 背景，定义多彩渐变效果 -->
+        <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+            <defs>
+                <!-- 定义多个径向渐变 -->
+                <radialGradient id="Gradient1" cx="50%" cy="50%" fx="0.441602%" fy="50%" r=".5">
+                    <animate attributeName="fx" dur="34s" values="0%;3%;0%" repeatCount="indefinite"></animate>
+                    <stop offset="0%" stop-color="rgba(255, 0, 255, 1)"></stop>
+                    <stop offset="100%" stop-color="rgba(255, 0, 255, 0)"></stop>
+                </radialGradient>
+                <!-- 定义其他渐变 Gradient2 到 Gradient6，颜色分别为黄、青、绿、蓝、红 -->
+                <radialGradient id="Gradient2" cx="50%" cy="50%" fx="2.68147%" fy="50%" r=".5">
+                    <animate attributeName="fx" dur="23.5s" values="0%;3%;0%" repeatCount="indefinite"></animate>
+                    <stop offset="0%" stop-color="rgba(255, 255, 0, 1)"></stop>
+                    <stop offset="100%" stop-color="rgba(255, 255, 0, 0)"></stop>
+                </radialGradient>
+                <!-- 矩形填充渐变，并带有旋转、位移动画 -->
+                <radialGradient id="Gradient3" cx="50%" cy="50%" fx="0.836536%" fy="50%" r=".5">
+                    <animate attributeName="fx" dur="21.5s" values="0%;3%;0%" repeatCount="indefinite"></animate>
+                    <stop offset="0%" stop-color="rgba(0, 255, 255, 1)"></stop>
+                    <stop offset="100%" stop-color="rgba(0, 255, 255, 0)"></stop>
+                </radialGradient>
+                <radialGradient id="Gradient4" cx="50%" cy="50%" fx="4.56417%" fy="50%" r=".5">
+                    <animate attributeName="fx" dur="23s" values="0%;5%;0%" repeatCount="indefinite"></animate>
+                    <stop offset="0%" stop-color="rgba(0, 255, 0, 1)"></stop>
+                    <stop offset="100%" stop-color="rgba(0, 255, 0, 0)"></stop>
+                </radialGradient>
+                <radialGradient id="Gradient5" cx="50%" cy="50%" fx="2.65405%" fy="50%" r=".5">
+                    <animate attributeName="fx" dur="24.5s" values="0%;5%;0%" repeatCount="indefinite"></animate>
+                    <stop offset="0%" stop-color="rgba(0,0,255, 1)"></stop>
+                    <stop offset="100%" stop-color="rgba(0,0,255, 0)"></stop>
+                </radialGradient>
+                <radialGradient id="Gradient6" cx="50%" cy="50%" fx="0.981338%" fy="50%" r=".5">
+                    <animate attributeName="fx" dur="25.5s" values="0%;5%;0%" repeatCount="indefinite"></animate>
+                    <stop offset="0%" stop-color="rgba(255,0,0, 1)"></stop>
+                    <stop offset="100%" stop-color="rgba(255,0,0, 0)"></stop>
+                </radialGradient>
+            </defs>
+            <rect x="13.744%" y="1.18473%" width="100%" height="100%" fill="url(#Gradient1)" transform="rotate(334.41 50 50)">
+                <animate attributeName="x" dur="20s" values="25%;0%;25%" repeatCount="indefinite"></animate>
+                <animate attributeName="y" dur="21s" values="0%;25%;0%" repeatCount="indefinite"></animate>
+                <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="7s" repeatCount="indefinite"></animateTransform>
+            </rect>
+            <rect x="-2.17916%" y="35.4267%" width="100%" height="100%" fill="url(#Gradient2)" transform="rotate(255.072 50 50)">
+                <animate attributeName="x" dur="23s" values="-25%;0%;-25%" repeatCount="indefinite"></animate>
+                <animate attributeName="y" dur="24s" values="0%;50%;0%" repeatCount="indefinite"></animate>
+                <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="12s" repeatCount="indefinite"></animateTransform>
+            </rect>
+            <rect x="9.00483%" y="14.5733%" width="100%" height="100%" fill="url(#Gradient3)" transform="rotate(139.903 50 50)">
+                <animate attributeName="x" dur="25s" values="0%;25%;0%" repeatCount="indefinite"></animate>
+                <animate attributeName="y" dur="12s" values="0%;25%;0%" repeatCount="indefinite"></animate>
+                <animateTransform attributeName="transform" type="rotate" from="360 50 50" to="0 50 50" dur="9s" repeatCount="indefinite"></animateTransform>
+            </rect>
+        </svg>
+    </div>
+    
+    <!-- 主要内容区域 -->
+     <!-- 主容器：相对定位，最大宽度 4xl，居中，内边距 4，垂直布局 -->
+    <div class="relative z-10 max-w-4xl mx-auto p-4 h-screen flex flex-col">
+        <!-- 头部：左右布局，带模糊背景和阴影 -->
+        <header class="flex justify-between items-center mb-4 p-4 rounded-lg backdrop-blur-sm bg-white/30 dark:bg-gray-800/30 shadow-sm">
+            <!-- Logo 和标题区域 -->
+            <div class="flex items-center space-x-3">
+                <!-- Logo 图片，高度 10，宽度自适应 -->
+                <img src="OOCL_logo_slogan.png" alt="OOCL Logo" class="h-10 w-auto">
+                <!-- 标题：OOCL AI Assistant，字体加粗，根据主题切换颜色 -->
+                <h1 class="text-xl font-bold dark:text-white text-gray-800">OOCL AI Assistant</h1>
+            </div>
+            <!-- 功能按钮区域 -->
+            <div class="flex items-center space-x-2">
+                <!-- 上下文管理按钮 -->
+                <button id="show-context-btn" class="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-sm hover:bg-blue-100 dark:hover:bg-blue-900 text-xs" title="Show Context">
+                    Context (0)
+                </button>
+                <button id="clear-context-btn" class="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-sm hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-300 text-xs" title="Clear Context">
+                    Clear
+                </button>
+                <!-- 清除聊天按钮：红色图标，悬停时变色 -->
+                <button id="clear-chat" class="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-sm hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-300 transition-colors" title="Clear Chat">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+                <!-- 主题切换按钮：显示太阳或月亮图标 -->
+                <button id="theme-toggle" class="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-sm">
+                    <svg id="dark-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 dark:text-yellow-300 text-gray-700" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                    </svg>
+                    <svg id="light-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+                </svg>
+                </button>
+                <!-- RAG 模式切换按钮 -->
+                <button id="rag-toggle" class="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-sm ml-2">
+                    <span class="text-sm font-medium">RAG</span>
+                    <!-- RAG 状态指示器：灰色表示关闭，绿色表示开启 -->
+                    <span id="rag-status" class="ml-1 inline-block w-3 h-3 rounded-full bg-gray-400"></span>
+                </button>
+                <!-- 管理 RAG 模型按钮 -->
+                <button id="rag-models-btn" class="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-sm ml-2" title="Manage RAG Models">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- 欢迎界面 -->
+         <!-- 欢迎界面：垂直居中，包含 Logo、标题和输入区域 -->
+        <div id="welcome-screen" class="welcome-container flex-1 flex flex-col items-center justify-center p-4 text-center">
+            <div class="mb-8">
+                <img src="OOCL_logo_slogan.png" alt="OOCL Logo" class="h-32 w-auto mx-auto mb-6">
+                <h2 class="text-3xl font-bold dark:text-white text-gray-800 mb-3">Welcome to OOCL AI</h2>
+                <p class="dark:text-gray-300 text-gray-600 max-w-lg">Ask questions or upload documents to get insights from our AI assistant.</p>
+            </div>
+            <!-- 训练进度显示 -->
+            <div id="main-training-progress" class="hidden w-full max-w-lg mt-4">
+                <h3 class="text-lg font-medium dark:text-white text-gray-800 mb-2">Training RAG Model</h3>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                    <div id="main-training-progress-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="main-training-status" class="text-center mt-2 text-sm">Preparing files...</p>
+            </div>
+            <!-- 输入区域：最大宽度 lg -->
+            <div class="w-full max-w-lg">
+                <div class="relative mb-4">
+                    <textarea id="question-input" rows="3" class="w-full p-4 rounded-xl shadow-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500" placeholder="Type your question here..."></textarea>
+                    <button id="send-button" class="absolute right-3 bottom-3 p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <!-- 文件上传区域 -->
+                <div class="flex items-center justify-center">
+                    <input type="file" id="file-input" accept=".docx,.pdf,.xlsx,.txt" multiple class="hidden">
+                    <label for="file-input" id="file-input-label" class="flex items-center px-4 py-2 rounded-lg dark:bg-gray-700/80 bg-white/80 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600/80 transition-colors cursor-pointer mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <span>Upload Files</span>
+                    </label>
+                    <div id="file-info" class="text-sm dark:text-gray-400 text-gray-500"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 聊天界面 -->
+        <div id="chat-interface" class="hidden flex-1 flex flex-col">
+            <div id="chat-container" class="flex-1 overflow-y-auto p-4"></div>
+            <!-- 训练进度显示 -->
+            <div id="main-training-progress" class="hidden w-full max-w-lg mt-4">
+                <h3 class="text-lg font-medium dark:text-white text-gray-800 mb-2">Training RAG Model</h3>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                    <div id="main-training-progress-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="main-training-status" class="text-center mt-2 text-sm">Preparing files...</p>
+            </div>
+            <div class="p-4 rounded-lg backdrop-blur-sm bg-white/30 dark:bg-gray-800/30 shadow-sm mt-auto">
+                <div class="relative">
+                    <textarea id="chat-question-input" rows="3" class="w-full p-4 rounded-xl shadow-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500" placeholder="Type your question here..."></textarea>
+                    <div class="flex items-center justify-between mt-2">
+                        <div class="flex items-center">
+                            <input type="file" id="chat-file-input" accept=".docx,.pdf,.xlsx,.txt" multiple class="hidden">
+                            <label for="chat-file-input" id="chat-file-input-label" class="flex items-center px-3 py-2 rounded-lg dark:bg-gray-700/80 bg-white/80 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600/80 transition-colors cursor-pointer text-sm mr-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                                Attach Files
+                            </label>
+                            <div id="chat-file-info" class="text-xs dark:text-gray-400 text-gray-500"></div>
+                        </div>
+                        <button id="chat-send-button" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- RAG 模型模态框 -->
+    <div id="rag-models-modal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold dark:text-white text-gray-800">RAG Models</h3>
+                <button id="close-rag-modal" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mb-4">
+                <p class="text-sm dark:text-gray-300 text-gray-600 mb-2">Select a RAG model to use for answering questions:</p>
+                <div id="rag-models-list" class="space-y-2 max-h-60 overflow-y-auto">
+                    <div class="p-3 text-center text-sm dark:text-gray-400 text-gray-500">
+                        Loading models...
+                    </div>
+                </div>
+            </div>
+            <!-- 训练进度显示 -->
+            <div id="modal-training-progress" class="hidden mb-4">
+                <h3 class="text-lg font-medium dark:text-white text-gray-800 mb-2">Training RAG Model</h3>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                    <div id="modal-training-progress-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="modal-training-status" class="text-center mt-2 text-sm">Preparing files...</p>
+            </div>
+            <!-- 新模型训练区域 -->
+            <div class="mt-6 border-t dark:border-gray-700 border-gray-200 pt-4">
+                <h4 class="font-medium mb-2">Train new model</h4>
+                <div class="mb-3">
+                    <!-- 模型名称标签 -->
+                    <label for="new-rag-name" class="block text-sm mb-1 dark:text-gray-300 text-gray-600">Model name</label>
+                    <!-- 模型名称输入框 -->
+                    <input type="text" id="new-rag-name" class="w-full p-2 rounded border dark:border-gray-700 border-gray-300 dark:bg-gray-800 bg-white" placeholder="Enter a name for your model">
+                </div>
+                <div class="mb-3">
+                    <!-- 文件夹上传区域 -->
+                    <div id="modal-folder-upload" class="border-2 border-dashed border-blue-500 rounded-lg p-4 text-center cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                        <input type="file" id="modal-folder-input" webkitdirectory directory multiple class="hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto text-blue-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v6m-3-3h6" />
+                        </svg>
+                        <p class="text-sm">Upload folder with documents</p>
+                    </div>
+                    <div id="modal-folder-info" class="text-xs dark:text-gray-400 text-gray-500 mt-1"></div>
+                </div>
+                <button id="train-rag-btn" class="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    Train Model
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+// DOM elements
+    const chatContainer = document.getElementById('chat-container');
+    const welcomeScreen = document.getElementById('welcome-screen');
+    const chatInterface = document.getElementById('chat-interface');
+    const questionInput = document.getElementById('question-input');
+    const chatQuestionInput = document.getElementById('chat-question-input');
+    const fileInput = document.getElementById('file-input');
+    const chatFileInput = document.getElementById('chat-file-input');
+    const sendButton = document.getElementById('send-button');
+    const chatSendButton = document.getElementById('chat-send-button');
+    const themeToggle = document.getElementById('theme-toggle');
+    const darkIcon = document.getElementById('dark-icon');
+    const lightIcon = document.getElementById('light-icon');
+    const fileInfo = document.getElementById('file-info');
+    const chatFileInfo = document.getElementById('chat-file-info');
+    const darkBg = document.getElementById('dark-bg');
+    const lightBg = document.getElementById('light-bg');
+    const ragToggle = document.getElementById('rag-toggle');
+    const ragStatus = document.getElementById('rag-status');
+    const fileInputLabel = document.getElementById('file-input-label');
+    const chatFileInputLabel = document.getElementById('chat-file-input-label');
+    const clearChatButton = document.getElementById('clear-chat');
+    const showContextBtn = document.getElementById('show-context-btn');
+    const clearContextBtn = document.getElementById('clear-context-btn');
+    const folderUploadArea = document.getElementById('folder-upload-area');
+    const folderInput = document.getElementById('folder-input');
+    const folderInfo = document.getElementById('folder-info');
+    const ragModelsBtn = document.getElementById('rag-models-btn');
+    const ragModelsModal = document.getElementById('rag-models-modal');
+    const closeRagModalBtn = document.getElementById('close-rag-modal');
+    const ragModelsList = document.getElementById('rag-models-list');
+    const newRagName = document.getElementById('new-rag-name');
+    const modalFolderUpload = document.getElementById('modal-folder-upload');
+    const modalFolderInput = document.getElementById('modal-folder-input');
+    const modalFolderInfo = document.getElementById('modal-folder-info');
+    const trainRagBtn = document.getElementById('train-rag-btn');
+    const trainingProgressContainer = document.getElementById('training-progress-container');
+    const trainingProgress = document.getElementById('training-progress');
+    const trainingStatus = document.getElementById('training-status');
+    const mainTrainingProgress = document.getElementById('main-training-progress');
+    const mainTrainingProgressBar = document.getElementById('main-training-progress-bar');
+    const mainTrainingStatus = document.getElementById('main-training-status');
+    const chatTrainingProgress = document.getElementById('chat-training-progress');
+    const chatTrainingProgressBar = document.getElementById('chat-training-progress-bar');
+    const chatTrainingStatus = document.getElementById('chat-training-status');
+    const modalTrainingProgress = document.getElementById('modal-training-progress');
+    const modalTrainingProgressBar = document.getElementById('modal-training-progress-bar');
+    const modalTrainingStatus = document.getElementById('modal-training-status');
+
+    // 状态变量
+    let isDarkMode = true;
+    let isRagEnabled = false;
+    let currentRagModel = 'None'; 
+    let availableRagModels = [];
+    let isTraining = false; 
+    let isStreamingEnabled = true;
+    let messageCount = 0; 
+    let currentSessionId = localStorage.getItem('oocl_session_id') || null;
+
+    // 生成或获取session ID
+    function getOrCreateSessionId() {
+        if (!currentSessionId) {
+            currentSessionId = 'oocl_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('oocl_session_id', currentSessionId);
+        }
+        return currentSessionId;
+    }
+
+    // 更新上下文按钮显示
+    function updateContextButton() {
+        if (showContextBtn) {
+            showContextBtn.textContent = `Context (${Math.floor(messageCount / 2)})`;
+        }
+    }
+
+    // 后端 API 基础 URL
+    const BASE_URL = 'http://localhost:5000';
+
+    // 初始化事件监听器
+    function initializeEventListeners() {
+        // 发送按钮事件
+        sendButton?.addEventListener('click', () => sendMessage(questionInput, fileInput));
+        chatSendButton?.addEventListener('click', () => sendMessage(chatQuestionInput, chatFileInput));
+
+        // 输入框回车键事件
+        questionInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(questionInput, fileInput);
+            }
+        });
+        chatQuestionInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage(chatQuestionInput, chatFileInput);
+            }
+        });
+
+        // 文件输入事件
+        fileInput?.addEventListener('change', updateFileInfo);
+        chatFileInput?.addEventListener('change', updateChatFileInfo);
+
+        // 主题切换
+        themeToggle?.addEventListener('click', toggleTheme);
+
+        // 清除聊天
+        clearChatButton?.addEventListener('click', clearChat);
+
+        // RAG 模式切换
+        ragToggle?.addEventListener('click', toggleRagMode);
+
+        // RAG 模型模态框事件
+        ragModelsBtn?.addEventListener('click', openRagModelsModal);
+        closeRagModalBtn?.addEventListener('click', closeRagModelsModal);
+        modalFolderUpload?.addEventListener('click', () => modalFolderInput?.click());
+        modalFolderInput?.addEventListener('change', () => {
+            const fileCount = modalFolderInput.files.length;
+            modalFolderInfo.textContent = fileCount > 0 ? `${fileCount} files selected` : '';
+            trainRagBtn.disabled = !newRagName.value || fileCount === 0 || isTraining;
+        });
+        newRagName?.addEventListener('input', () => {
+            trainRagBtn.disabled = !newRagName.value || modalFolderInput.files.length === 0 || isTraining;
+        });
+        trainRagBtn?.addEventListener('click', startRagTraining);
+
+        // 添加新按钮的事件监听器
+        console.log('showContextBtn element:', showContextBtn); // 调试信息
+        console.log('clearContextBtn element:', clearContextBtn); // 调试信息
+        
+        if (showContextBtn) {
+            showContextBtn.addEventListener('click', showContext);
+            console.log('showContext event listener added'); // 调试信息
+        } else {
+            console.error('showContextBtn element not found!'); // 调试信息
+        }
+        
+        if (clearContextBtn) {
+            clearContextBtn.addEventListener('click', clearContext);
+            console.log('clearContext event listener added'); // 调试信息
+        } else {
+            console.error('clearContextBtn element not found!'); // 调试信息
+        }
+
+        // 添加 SSE 监听以获取训练进度
+        const source = new EventSource(`${BASE_URL}/training_progress`);
+        source.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+            if (data.is_training || data.percentage > 0) {
+                updateTrainingProgress(data.percentage, data.status, !!data.error);
+            } else {
+                mainTrainingProgress?.classList.add('hidden');
+                chatTrainingProgress?.classList.add('hidden');
+                modalTrainingProgress?.classList.add('hidden');
+            }
+            if (data.error) {
+                displayMessage('error', data.error);
+                isTraining = false;
+                trainRagBtn.disabled = false;
+            }
+        };
+        source.onerror = () => {
+            console.error('SSE connection error');
+            updateTrainingProgress(100, 'Error: Lost connection to server', true);
+            setTimeout(() => {
+                mainTrainingProgress?.classList.add('hidden');
+                chatTrainingProgress?.classList.add('hidden');
+                modalTrainingProgress?.classList.add('hidden');
+                mainTrainingProgressBar.classList.remove('bg-red-500');
+                chatTrainingProgressBar.classList.remove('bg-red-500');
+                modalTrainingProgressBar.classList.remove('bg-red-500');
+                mainTrainingProgressBar.style.width = '0%';
+                chatTrainingProgressBar.style.width = '0%';
+                modalTrainingProgressBar.style.width = '0%';
+                isTraining = false;
+                trainRagBtn.disabled = false;
+            }, 3000);
+        };
+    }
+    // 显示对话上下文
+    async function showContext() {
+        console.log('showContext function called'); // 调试信息
+        try {
+            const sessionId = getOrCreateSessionId();
+            console.log('Session ID:', sessionId); // 调试信息
+            
+            const response = await fetch(`${BASE_URL}/get-context?session_id=${sessionId}`);
+            console.log('Response status:', response.status); // 调试信息
+            
+            const data = await response.json();
+            console.log('Response data:', data); // 调试信息
+            
+            if (data.context && data.context.length > 0) {
+                let contextDisplay = `Context (${data.context.length} messages):\n\n`;
+                data.context.forEach((msg, index) => {
+                    contextDisplay += `${index + 1}. ${msg.role}: ${msg.content}\n\n`;
+                });
+                console.log('Displaying context:', contextDisplay); // 调试信息
+                displayMessage('system', contextDisplay);
+            } else {
+                console.log('No context available'); // 调试信息
+                displayMessage('system', 'No conversation context available.');
+            }
+        } catch (error) {
+            console.error('Error in showContext:', error); // 调试信息
+            displayMessage('error', `Error fetching context: ${error.message}`);
+        }
+    }
+
+    // 清除对话上下文
+    async function clearContext() {
+        try {
+            const sessionId = getOrCreateSessionId();
+            const response = await fetch(`${BASE_URL}/clear-context`, { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId })
+            });
+            const data = await response.json();
+            
+            if (data.status === 'success') {
+                messageCount = 0;
+                updateContextButton(); // 更新按钮显示
+                displayMessage('system', 'Conversation context cleared successfully.');
+            } else {
+                displayMessage('error', 'Failed to clear context.');
+            }
+        } catch (error) {
+            displayMessage('error', `Error clearing context: ${error.message}`);
+        }
+    }
+
+    // 发送消息（问题和可选文件）
+    async function sendMessage(inputElement, fileInputElement) {
+        const question = inputElement.value.trim();
+        const files = fileInputElement.files;
+        if (!question && files.length === 0) {
+            displayMessage('error', 'Please enter a question or upload files.');
+            return;
+        }
+
+        if (inputElement === questionInput) {
+            showChatInterface();
+        }
+        // 禁用输入控件
+        setInputControlsDisabled(true, inputElement === chatQuestionInput);
+
+        // 显示用户消息并清空输入
+        if (question) {
+            displayMessage('user', question);
+            saveMessage('user', question);
+            inputElement.value = ''; // Clear input immediately after sending
+            messageCount++;
+            updateContextButton(); // 更新按钮显示
+        }
+        if (files.length > 0) {
+            displayMessage('system', `Uploading ${files.length} file(s)...`);
+        }
+
+        // 显示思考中消息
+        const thinkingId = Date.now();
+        displayThinkingMessage(thinkingId);
+
+        try {
+            // 检查是否使用流式响应
+            if (isStreamingEnabled && files.length === 0) {
+                // 使用流式响应
+                const sessionId = getOrCreateSessionId();
+                const endpoint = isRagEnabled ? '/rag_ask' : '/ask-stream';
+                const response = await fetch(`${BASE_URL}${endpoint}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        question, 
+                        model_id: currentRagModel,
+                        session_id: sessionId
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                removeThinkingMessage(thinkingId);
+
+                // 创建AI消息容器
+                const messageDiv = createMessageElement('ai', '');
+                chatContainer.appendChild(messageDiv);
+                scrollToBottom();
+
+                // 读取流式响应
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let fullResponse = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') {
+                                break;
+                            }
+                            try {
+                                const parsed = JSON.parse(data);
+                                if (parsed.content) {
+                                    fullResponse += parsed.content;
+                                    const messageContent = messageDiv.querySelector('.message-content');
+                                    messageContent.textContent = fullResponse;
+                                    scrollToBottom();
+                                }
+                            } catch (e) {
+                                // 忽略解析错误
+                            }
+                        }
+                    }
+                }
+
+                // 保存完整响应
+                saveMessage('ai', fullResponse);
+                messageCount++;
+                updateContextButton(); // 更新按钮显示
+
+            } else {
+                // 使用非流式响应
+                const sessionId = getOrCreateSessionId();
+                let response;
+                if (files.length > 0 && !isRagEnabled) {
+                    // 发送文件和问题
+                    const formData = new FormData();
+                    formData.append('question', question);
+                    formData.append('session_id', sessionId);
+                    for (let file of files) {
+                        formData.append('file', file);
+                    }
+                    response = await fetch(`${BASE_URL}/upload_and_ask`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                } else {
+                    // 使用 RAG 或普通问题
+                    const endpoint = isRagEnabled ? '/rag_ask' : '/ask';
+                    response = await fetch(`${BASE_URL}${endpoint}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ 
+                            question, 
+                            model_id: currentRagModel,
+                            session_id: sessionId
+                        })
+                    });
+                }
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                removeThinkingMessage(thinkingId);
+
+                if (data.error) {
+                    displayMessage('error', `Error: ${data.error}`);
+                    return;
+                }
+
+                // 显示思考细节
+                if (data.thinking) {
+                    displayMessage('system', `(Thinking: ${data.thinking})`, true);
+                    saveMessage('system', `(Thinking: ${data.thinking})`, true);
+                }
+
+                // 显示 AI 响应
+                displayMessage('ai', data.response);
+                saveMessage('ai', data.response);
+                messageCount++;
+                updateContextButton(); // 更新按钮显示
+            }
+
+            // 清空文件输入
+            fileInputElement.value = '';
+            if (fileInputElement === fileInput) {
+                fileInfo.textContent = '';
+            } else {
+                chatFileInfo.textContent = '';
+            }
+        } catch (error) {
+            removeThinkingMessage(thinkingId);
+            displayMessage('error', `Error: ${error.message}`);
+        } finally {
+            setInputControlsDisabled(false, inputElement === chatQuestionInput);
+        }
+    }
+
+    // 更新文件信息显示
+    function updateFileInfo() {
+        const files = fileInput.files;
+        fileInfo.textContent = files.length > 0 ? `${files.length} file(s) selected` : '';
+    }
+
+    function updateChatFileInfo() {
+        const files = chatFileInput.files;
+        chatFileInfo.textContent = files.length > 0 ? `${files.length} file(s) selected` : '';
+    }
+
+    // 清除聊天历史
+    function clearChat() {
+        chatContainer.innerHTML = '';
+        localStorage.removeItem('chatHistory');
+        displayMessage('system', 'Chat history cleared.');
+    }
+
+    // 切换主题
+    function toggleTheme() {
+        isDarkMode = !isDarkMode;
+        document.body.classList.toggle('dark', isDarkMode);
+        document.body.classList.toggle('light', !isDarkMode);
+        darkIcon?.classList.toggle('hidden', !isDarkMode);
+        lightIcon?.classList.toggle('hidden', isDarkMode);
+        darkBg?.classList.toggle('hidden', !isDarkMode);
+        lightBg?.classList.toggle('hidden', isDarkMode);
+        localStorage.setItem('darkMode', isDarkMode);
+        if (isDarkMode) {
+            darkBg.innerHTML = ''; 
+            createFireflies(); 
+        }
+    }
+
+    // 切换 RAG 模式
+    function toggleRagMode() {
+        if(currentRagModel === 'None') {
+            displayMessage('system', 'Please select a RAG model first.');
+            return;
+        }
+        isRagEnabled = !isRagEnabled;
+        ragStatus.className = `ml-1 inline-block w-3 h-3 rounded-full ${isRagEnabled ? 'bg-green-500' : 'bg-gray-400'}`;
+        if (isRagEnabled) {
+            fileInputLabel?.classList.add('opacity-50', 'pointer-events-none');
+            chatFileInputLabel?.classList.add('opacity-50', 'pointer-events-none');
+            fileInput.value = '';
+            chatFileInput.value = '';
+            fileInfo.textContent = '';
+            chatFileInfo.textContent = '';
+            displayMessage('system', `RAG mode enabled with model: ${currentRagModel}`);
+        } else {
+            fileInputLabel?.classList.remove('opacity-50', 'pointer-events-none');
+            chatFileInputLabel?.classList.remove('opacity-50', 'pointer-events-none');
+            displayMessage('system', 'RAG mode disabled.');
+        }
+    }
+
+
+
+    // 打开 RAG 模型模态框
+    function openRagModelsModal() {
+        loadRagModels();
+        ragModelsModal?.classList.add('active');
+    }
+
+    // 关闭 RAG 模型模态框
+    function closeRagModelsModal() {
+        ragModelsModal?.classList.remove('active');
+    }
+
+    // 加载 RAG 模型
+    async function loadRagModels() {
+        try {
+            const response = await fetch(`${BASE_URL}/rag_models`);
+            const data = await response.json();
+            if (data.error) {
+                ragModelsList.innerHTML = `<div class="p-3 text-center text-red-500">Error: ${data.error}</div>`;
+                return;
+            }
+
+            availableRagModels = data.models || [];
+            if (availableRagModels.length === 0) {
+                ragModelsList.innerHTML = `<div class="p-3 text-center text-sm">No models available. Train a new model below.</div>`;
+                return;
+            }
+
+            ragModelsList.innerHTML = availableRagModels.map(model => `
+                <div class="rag-model-item p-3 border dark:border-gray-700 border-gray-300 rounded-lg flex justify-between items-center ${model === currentRagModel ? 'active' : ''}" data-model="${model}">
+                    <div>
+                        <div class="font-medium">${model}</div>
+                        <div class="text-xs dark:text-gray-400 text-gray-500">${model === 'default' ? 'System default model' : 'Custom model'}</div>
+                    </div>
+                    <button class="select-model-btn px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600" data-model="${model}" ${model === currentRagModel ? 'disabled' : ''}>
+                        ${model === currentRagModel ? 'Selected' : 'Select'}
+                    </button>
+                </div>
+            `).join('');
+
+            document.querySelectorAll('.select-model-btn').forEach(btn => {
+                btn.addEventListener('click', () => selectRagModel(btn.getAttribute('data-model')));
+            });
+        } catch (error) {
+            console.error('Error loading RAG models:', error);
+            ragModelsList.innerHTML = `<div class="p-3 text-center text-red-500">Error loading models. Please try again.</div>`;
+        }
+    }
+
+    // 选择 RAG 模型
+    function selectRagModel(modelId) {
+        currentRagModel = modelId;
+        document.querySelectorAll('.rag-model-item').forEach(item => {
+            const itemModelId = item.getAttribute('data-model');
+            const selectBtn = item.querySelector('.select-model-btn');
+            if (itemModelId === modelId) {
+                item.classList.add('active');
+                selectBtn.disabled = true;
+                selectBtn.textContent = 'Selected';
+            } else {
+                item.classList.remove('active');
+                selectBtn.disabled = false;
+                selectBtn.textContent = 'Select';
+            }
+        });
+        if (!isRagEnabled) {
+            toggleRagMode();
+        }
+        closeRagModelsModal();
+        displayMessage('system', `Selected RAG model: ${modelId}`);
+    }
+
+    // 更新训练进度 UI
+function updateTrainingProgress(percentage, status, isError = false) {
+    // 更新主界面进度
+    if (mainTrainingProgress) {
+        mainTrainingProgress.classList.remove('hidden');
+        mainTrainingProgressBar.style.width = `${percentage}%`;
+        mainTrainingStatus.textContent = status;
+        if (isError) {
+            mainTrainingProgressBar.classList.add('bg-red-500');
+        } else {
+            mainTrainingProgressBar.classList.remove('bg-red-500');
+        }
+    }
+    // 更新聊天界面进度
+    if (chatTrainingProgress) {
+        chatTrainingProgress.classList.remove('hidden');
+        chatTrainingProgressBar.style.width = `${percentage}%`;
+        chatTrainingStatus.textContent = status;
+        if (isError) {
+            chatTrainingProgressBar.classList.add('bg-red-500');
+        } else {
+            chatTrainingProgressBar.classList.remove('bg-red-500');
+        }
+    }
+    // 更新模态框进度
+    if (modalTrainingProgress) {
+        modalTrainingProgress.classList.remove('hidden');
+        modalTrainingProgressBar.style.width = `${percentage}%`;
+        modalTrainingStatus.textContent = status;
+        if (isError) {
+            modalTrainingProgressBar.classList.add('bg-red-500');
+        } else {
+            modalTrainingProgressBar.classList.remove('bg-red-500');
+        }
+    }
+}
+
+    // 开始 RAG 训练
+async function startRagTraining() {
+    if (isTraining) {
+        displayMessage('error', 'A training process is already in progress.');
+        return;
+    }
+
+    const modelName = newRagName.value.trim();
+    const files = modalFolderInput.files;
+    if (!modelName || files.length === 0) {
+        displayMessage('error', 'Please provide a model name and select files.');
+        return;
+    }
+
+    isTraining = true;
+    trainRagBtn.disabled = true;
+    closeRagModelsModal();
+    updateTrainingProgress(10, 'Uploading files...');
+
+    try {
+        const formData = new FormData();
+        formData.append('model_name', modelName);
+        for (const file of files) {
+            formData.append('files[]', file, file.webkitRelativePath || file.name);
+        }
+
+        updateTrainingProgress(30, 'Processing files...');
+
+        const response = await fetch(`${BASE_URL}/upload_folder_for_rag`, {
+            method: 'POST',
+            body: formData
+        });
+
+        updateTrainingProgress(80, 'Finalizing training...');
+
+        const result = await response.json();
+        if (result.error) {
+            throw new Error(result.error);
+        }
+
+        updateTrainingProgress(100, 'Training complete!');
+
+        setTimeout(() => {
+            mainTrainingProgress?.classList.add('hidden');
+            chatTrainingProgress?.classList.add('hidden');
+            modalTrainingProgress?.classList.add('hidden');
+            newRagName.value = '';
+            modalFolderInput.value = '';
+            modalFolderInfo.textContent = '';
+            trainRagBtn.disabled = true;
+            currentRagModel = result.model_name;
+            if (!isRagEnabled) {
+                toggleRagMode();
+            }
+            displayMessage('system', `Successfully trained RAG model "${result.model_name}" with ${result.processed_files} files. The model is now selected for use.`);
+            // loadRagModels();
+            isTraining = false;
+            trainRagBtn.disabled = false;
+        }, 1500);
+    } catch (error) {
+        console.error('RAG training error:', error);
+        updateTrainingProgress(100, `Error: ${error.message || 'Failed to train model'}`, true);
+        setTimeout(() => {
+            mainTrainingProgress?.classList.add('hidden');
+            chatTrainingProgress?.classList.add('hidden');
+            modalTrainingProgress?.classList.add('hidden');
+            mainTrainingProgressBar.classList.remove('bg-red-500');
+            chatTrainingProgressBar.classList.remove('bg-red-500');
+            modalTrainingProgressBar.classList.remove('bg-red-500');
+            mainTrainingProgressBar.style.width = '0%';
+            chatTrainingProgressBar.style.width = '0%';
+            modalTrainingProgressBar.style.width = '0%';
+            isTraining = false;
+            trainRagBtn.disabled = false;
+        }, 3000);
+    }
+}
+
+    // 创建消息元素（用于流式响应）
+    function createMessageElement(type, content) {
+        const div = document.createElement('div');
+        div.classList.add('chat-bubble', type === 'user' ? 'user-bubble' : type === 'ai' ? 'ai-bubble' : 'system-bubble');
+        const header = document.createElement('div');
+        header.className = 'flex items-center mb-1';
+        const avatar = document.createElement('div');
+        avatar.className = 'w-6 h-6 rounded-full flex items-center justify-center mr-2 text-white';
+        avatar.style.backgroundColor = type === 'user' ? '#3b82f6' : type === 'ai' ? '#1e293b' : '#6b7280';
+        const avatarText = document.createElement('span');
+        avatarText.className = 'text-xs font-bold';
+        avatarText.textContent = type === 'user' ? 'You' : type === 'ai' ? 'AI' : 'System';
+        avatar.appendChild(avatarText);
+        header.appendChild(avatar);
+        div.appendChild(header);
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        contentDiv.textContent = content;
+        div.appendChild(contentDiv);
+        return div;
+    }
+
+    // 滚动到底部
+    function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // 显示消息
+    function displayMessage(type, content, isThinking = false) {
+        if (isThinking) {
+            const details = document.createElement('details');
+            details.classList.add('chat-bubble', 'thinking-bubble');
+            details.open = true;
+            const summary = document.createElement('summary');
+            summary.textContent = 'Thinking...';
+            const contentDiv = document.createElement('div');
+            contentDiv.textContent = content;
+            contentDiv.style.paddingTop = '0.5rem';
+            details.appendChild(summary);
+            details.appendChild(contentDiv);
+            chatContainer.appendChild(details);
+        } else {
+            const div = document.createElement('div');
+            div.classList.add('chat-bubble', type === 'user' ? 'user-bubble' : type === 'ai' ? 'ai-bubble' : 'system-bubble');
+            const header = document.createElement('div');
+            header.className = 'flex items-center mb-1';
+            const avatar = document.createElement('div');
+            avatar.className = 'w-6 h-6 rounded-full flex items-center justify-center mr-2 text-white';
+            avatar.style.backgroundColor = type === 'user' ? '#3b82f6' : type === 'ai' ? '#1e293b' : '#6b7280';
+            const avatarText = document.createElement('span');
+            avatarText.className = 'text-xs font-bold';
+            avatarText.textContent = type === 'user' ? 'You' : type === 'ai' ? 'AI' : 'System';
+            avatar.appendChild(avatarText);
+            header.appendChild(avatar);
+            div.appendChild(header);
+            const contentDiv = document.createElement('div');
+            contentDiv.textContent = content;
+            div.appendChild(contentDiv);
+            chatContainer.appendChild(div);
+        }
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // 保存消息到本地存储
+    function saveMessage(type, content, isThinking = false) {
+        const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        history.push({ type, content, isThinking });
+        localStorage.setItem('chatHistory', JSON.stringify(history));
+    }
+
+    // 显示思考中消息
+    function displayThinkingMessage(id) {
+        const div = document.createElement('div');
+        div.id = `thinking-${id}`;
+        div.className = 'chat-bubble thinking-bubble';
+        div.innerHTML = `
+            <div class="flex items-center">
+                <div class="w-2 h-2 bg-gray-400 rounded-full mr-1 animate-bounce"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full mr-1 animate-bounce" style="animation-delay: 0.2s"></div>
+                <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                <div class="ml-2">AI is thinking...</div>
+            </div>
+        `;
+        chatContainer.appendChild(div);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    // 移除思考中消息
+    function removeThinkingMessage(id) {
+        const thinkingMsg = document.getElementById(`thinking-${id}`);
+        if (thinkingMsg) {
+            thinkingMsg.remove();
+        }
+    }
+
+    // 显示聊天界面
+    function showChatInterface() {
+        welcomeScreen?.classList.add('fade-out');
+        setTimeout(() => {
+            welcomeScreen?.classList.add('hidden');
+            chatInterface?.classList.remove('hidden');
+            setTimeout(() => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 100);
+        }, 300);
+    }
+
+    // 启用/禁用输入控件
+    function setInputControlsDisabled(isDisabled, isChat) {
+        if (isChat) {
+            chatSendButton.disabled = isDisabled;
+            chatQuestionInput.disabled = isDisabled;
+            chatFileInput.disabled = isDisabled;
+            const label = document.querySelector('label[for="chat-file-input"]');
+            label?.classList.toggle('opacity-50', isDisabled);
+            label?.classList.toggle('pointer-events-none', isDisabled);
+            chatSendButton.innerHTML = isDisabled
+                ? '<svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing'
+                : '<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" /></svg>Send';
+        } else {
+            sendButton.disabled = isDisabled;
+            questionInput.disabled = isDisabled;
+            fileInput.disabled = isDisabled;
+            const label = document.querySelector('label[for="file-input"]');
+            label?.classList.toggle('opacity-50', isDisabled);
+            label?.classList.toggle('pointer-events-none', isDisabled);
+            sendButton.innerHTML = isDisabled
+                ? '<svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg> Processing'
+                : '<svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" /></svg>';
+        }
+    }
+
+    // 检查服务器状态
+    async function checkServerStatus() {
+        try {
+            const response = await fetch(`${BASE_URL}/health`);
+            if (!response.ok) {
+                displayServerError();
+                return;
+            }
+            const data = await response.json();
+            if (data.rag_available) {
+                loadRagModels();
+            }
+            // 测试 LLM 连接
+            const llmResponse = await fetch(`${BASE_URL}/test_llm`);
+            if (!llmResponse.ok) {
+                displayLLMError();
+            }
+        } catch (error) {
+            console.error('Failed to connect to server:', error);
+            displayServerError();
+        }
+    }
+
+    // 显示服务器错误
+    function displayServerError() {
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'p-4 mb-4 text-sm text-white bg-red-500 rounded-lg';
+        errorMsg.textContent = 'Failed to connect to server. Please make sure the Flask server is running.';
+        document.querySelector('.welcome-container')?.prepend(errorMsg);
+    }
+
+    // 显示 LLM 错误
+    function displayLLMError() {
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'p-4 mb-4 text-sm text-white bg-orange-500 rounded-lg';
+        errorMsg.textContent = 'Server is running but cannot connect to LLM. Please make sure LM Studio is running.';
+        document.querySelector('.welcome-container')?.prepend(errorMsg);
+    }
+
+    // 创建萤火虫效果
+    function createFireflies() {
+        const darkBg = document.getElementById('dark-bg');
+        const fireflyCount = 30; 
+
+        for (let i = 0; i < fireflyCount; i++) {
+            const firefly = document.createElement('div');
+            firefly.className = 'firefly';
+        
+            // 随机位置
+            const left = Math.random() * 100;
+            const top = Math.random() * 100;
+            firefly.style.left = `${left}%`;
+            firefly.style.top = `${top}%`;
+        
+            // 随机动画时长（50s 到 150s）
+            const duration = 50 + Math.random() * 100;
+            firefly.style.animationDuration = `${duration}s`;
+        
+            // 随机动画延迟（0s 到 10s）
+            const delay = Math.random() * 10;
+            firefly.style.animationDelay = `${delay}s`;
+        
+            // 随机初始旋转角度
+            firefly.style.transform = `rotate(${Math.random() * 360}deg)`;
+        
+            darkBg.appendChild(firefly);
+        }
+    }
+
+    // 初始化 UI
+    function initUI() {
+        if (isDarkMode) {
+            toggleTheme();
+        }
+        // 加载聊天历史
+        const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
+        if (history.length > 0) {
+            showChatInterface();
+            history.forEach(msg => displayMessage(msg.type, msg.content, msg.isThinking));
+        }
+
+        // 检查服务器状态
+        checkServerStatus();
+    }
+
+    // 页面加载时初始化
+    document.addEventListener('DOMContentLoaded', () => {
+        initializeEventListeners();
+        initUI();
+    });
+</script>
+</body>
+</html>
