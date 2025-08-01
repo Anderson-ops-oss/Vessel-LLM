@@ -1,5 +1,3 @@
-# rag_trainer.py
-
 import logging
 from pathlib import Path
 from datetime import datetime
@@ -7,15 +5,21 @@ import json
 from typing import List, Dict
 import torch
 import requests
+import re
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
 
 # LlamaIndex imports
 from llama_index.embeddings.huggingface import HuggingFaceEmbedding
 from llama_index.core import Settings
-from llama_index.core.node_parser import SentenceSplitter
 from llama_index.core.schema import Document
 from llama_index.core import VectorStoreIndex
 from llama_index.core.retrievers import VectorIndexRetriever
 from llama_index.core import StorageContext, load_index_from_storage
+
+# Sentence Transformers for custom semantic chunking
+from sentence_transformers import SentenceTransformer
+
 try:
     from FlagEmbedding import FlagReranker
 except ImportError:
@@ -34,26 +38,27 @@ class ChineseRAGSystem:
                  model_save_dir: str = "rag_models",
                  embedding_model: str = "qwen/Qwen3-Embedding-0.6B",
                  use_reranker: bool = True,
-                 reranker_model: str = "BAAI/bge-multilingual-gemma2"
+                 reranker_model: str = "BAAI/bge-multilingual-gemma2",
+                 semantic_chunking_model: str = "BAAI/bge-small-zh-v1.5"
                  ):
         self.processed_texts_dir = Path(processed_texts_dir)
         self.model_save_dir = Path(model_save_dir)
         self.model_save_dir.mkdir(exist_ok=True)
         self.embedding_model_name = embedding_model
+        self.semantic_chunking_model = semantic_chunking_model
         self.index = None
         self.retriever = None
         self.use_reranker = use_reranker
         self.reranker_model_name = reranker_model
         self.reranker = None
         self.config = {
-                'chunk_size': 512,  
-                'chunk_overlap': 100,
-                'similarity_top_k': 30,  
-                'created_at': datetime.now().isoformat()
-            }
+            'similarity_top_k': 30,
+            'semantic_chunking_threshold': 0.95,  # Cosine similarity threshold for chunking
+            'created_at': datetime.now().isoformat()
+        }
     
     def setup_models(self):
-        """Setup embedding and reranker models."""
+        """Setup embedding, reranker, and semantic chunking models."""
         device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Current device: {device}")
         
@@ -68,14 +73,18 @@ class ChineseRAGSystem:
             logger.error(f"Fail to load embedding model: {e}")
             raise
         
-        
         Settings.embed_model = self.embedding_model
         
-        Settings.node_parser = SentenceSplitter(
-            chunk_size=self.config['chunk_size'],
-            chunk_overlap=self.config['chunk_overlap'],
-            separator="。"
-        )
+        # Initialize Sentence Transformer for custom semantic chunking
+        try:
+            self.semantic_chunker = SentenceTransformer(
+                self.semantic_chunking_model,
+                device=device
+            )
+            logger.info(f"Initialized semantic chunking model: {self.semantic_chunking_model}")
+        except Exception as e:
+            logger.error(f"Failed to initialize semantic chunking model: {e}")
+            raise
         
         # Initialize Reranker if available
         if self.use_reranker and FlagReranker:
@@ -87,6 +96,54 @@ class ChineseRAGSystem:
             except Exception as e:
                 logger.error(f"Failed to load reranker: {e}")
                 self.reranker = None
+    
+    def custom_semantic_chunking(self, text: str) -> List[str]:
+        """Custom semantic chunking using Sentence Transformers."""
+        try:
+            # Split text into sentences using Chinese punctuation
+            sentences = re.split(r'(?<=[。！？])', text)
+            sentences = [s.strip() for s in sentences if s.strip()]
+            if not sentences:
+                logger.warning("No valid sentences found for chunking")
+                return [text]
+            
+            # Embed sentences
+            embeddings = self.semantic_chunker.encode(sentences, convert_to_numpy=True)
+            
+            # Group sentences into chunks based on cosine similarity
+            chunks = []
+            current_chunk = [sentences[0]]
+            current_embeddings = [embeddings[0]]
+            
+            for i in range(1, len(sentences)):
+                # Compute similarity between current sentence and last sentence in chunk
+                similarity = cosine_similarity(
+                    [embeddings[i]],
+                    [current_embeddings[-1]]
+                )[0][0]
+                
+                if similarity >= self.config['semantic_chunking_threshold']:
+                    # Add to current chunk if similar
+                    current_chunk.append(sentences[i])
+                    current_embeddings.append(embeddings[i])
+                else:
+                    # Start new chunk
+                    chunks.append(' '.join(current_chunk))
+                    current_chunk = [sentences[i]]
+                    current_embeddings = [embeddings[i]]
+            
+            # Add the last chunk
+            if current_chunk:
+                chunks.append(' '.join(current_chunk))
+            
+            # Filter out very short chunks
+            chunks = [chunk for chunk in chunks if len(chunk) > 10]
+            
+            logger.info(f"Created {len(chunks)} semantic chunks")
+            return chunks
+        except Exception as e:
+            logger.error(f"Semantic chunking failed: {e}")
+            return [text]  # Fallback to original text
     
     def load_texts(self) -> List[Document]:
         """Load processed text files from the specified directory."""
@@ -114,10 +171,29 @@ class ChineseRAGSystem:
         return documents
     
     def build_index(self, documents: List[Document]):
-        """Build vector index"""
-        logger.info("Building vector index...")
+        """Build vector index with custom semantic chunking."""
+        logger.info("Building vector index with semantic chunking...")
         try:
-            self.index = VectorStoreIndex.from_documents(documents, show_progress=True)
+            # Convert LlamaIndex documents to semantic chunks
+            chunked_documents = []
+            for doc in documents:
+                # Perform custom semantic chunking
+                chunks = self.custom_semantic_chunking(doc.text)
+                for i, chunk in enumerate(chunks):
+                    # Create new LlamaIndex Document for each chunk
+                    chunk_doc = Document(
+                        text=chunk,
+                        metadata={
+                            **doc.metadata,
+                            'chunk_id': f"{doc.metadata['file_name']}_chunk_{i}",
+                            'chunk_index': i
+                        }
+                    )
+                    chunked_documents.append(chunk_doc)
+                logger.info(f"Chunked document {doc.metadata['file_name']} into {len(chunks)} chunks")
+            
+            # Build index with chunked documents
+            self.index = VectorStoreIndex.from_documents(chunked_documents, show_progress=True)
             logger.info("Index built successfully")
         except Exception as e:
             logger.error(f"Failed to build index: {e}")
@@ -176,8 +252,8 @@ class ChineseRAGSystem:
         self.save_system()
         logger.info("RAG system trained successfully")
     
-    def generate_answer(self, query: str, api_url: str = "http://localhost:1234/v1/chat/completions") -> str:
-        """Generate answer based on user query"""
+    def retrieve_relevant_docs(self, query: str) -> str:
+        """Retrieve relevant documents and return formatted context"""
         if not self.retriever:
             logger.error("Retriever not initialized")
             return "System not initialized"
@@ -189,7 +265,7 @@ class ChineseRAGSystem:
         
         # Apply reranking if available
         if self.reranker:
-            print("Reranking documents...")
+            logger.info("Reranking documents...")
             try:
                 node_texts = [node.text for node in nodes]
                 pairs = [(query, text) for text in node_texts]
@@ -204,26 +280,41 @@ class ChineseRAGSystem:
                 logger.error(f"Reranking failed: {e}")
         
         # Prepare context
-        context_nodes = nodes[:30]  
+        context_nodes = nodes[:30]
         context = '\n'.join(
-        f"Source: {node.metadata['source_file']}\nContent: {node.text[:500]}"
-        for node in context_nodes
-    )
-        prompt = f"""请根据以下上下文回答问题。如果上下文不包含答案，请说明不知道。无需进行推理或假设。用中文回答全部的问题
+            f"Source: {node.metadata['source_file']}\nContent: {node.text[:500]}"
+            for node in context_nodes
+        )
+        
+        return context
+    
+    def generate_answer(self, query: str, api_url: str = "http://localhost:1234/v1/chat/completions") -> str:
+        """Generate answer based on user query using consistent model name"""
+        context = self.retrieve_relevant_docs(query)
+        
+        if context in ["System not initialized", "No relevant documents found."]:
+            return context
+        
+        prompt = f"""请根据以下上下文回答问题。如果上下文不包含答案，请说明不知道。用中文或者英文回答全部的问题。
+在回答之前，请在 <think> 标签中提供你的推理。
+
 上下文：
 {context}
+
 问题：{query}
+
 回答："""
         
+        # Use the same model name as other parts of the system
         payload = {
-            "model": "qwen3-14b",
+            "model": "qwen/qwen3-14b",
             "messages": [{"role": "user", "content": prompt}],
             "max_tokens": 30000,
             "temperature": 0.2
         }
         
         try:
-            response = requests.post(api_url, json=payload, headers={"Content-Type": "application/json"}, timeout=3000)
+            response = requests.post(api_url, json=payload, headers={"Content-Type": "application/json"}, timeout=300)
             response.raise_for_status()
             return response.json()['choices'][0]['message']['content']
         except requests.exceptions.Timeout:
