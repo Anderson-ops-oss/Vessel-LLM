@@ -384,6 +384,13 @@
             </div>
             <!-- 功能按钮区域 -->
             <div class="flex items-center space-x-2">
+                <!-- 上下文管理按钮 -->
+                <button id="context-manager-btn" class="px-3 py-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-sm hover:from-blue-600 hover:to-purple-600 text-xs font-medium transition-all duration-200" title="Context Manager">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    Context Manager
+                </button>
                 <!-- 清除聊天按钮：红色图标，悬停时变色 -->
                 <button id="clear-chat" class="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-sm hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-300 transition-colors" title="Clear Chat">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -424,12 +431,12 @@
                 <p class="dark:text-gray-300 text-gray-600 max-w-lg">Ask questions or upload documents to get insights from our AI assistant.</p>
             </div>
             <!-- 训练进度显示 -->
-            <div id="main-training-progress" class="hidden w-full max-w-lg mt-4">
+            <div id="welcome-training-progress" class="hidden w-full max-w-lg mt-4">
                 <h3 class="text-lg font-medium dark:text-white text-gray-800 mb-2">Training RAG Model</h3>
                 <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
-                    <div id="main-training-progress-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                    <div id="welcome-training-progress-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
                 </div>
-                <p id="main-training-status" class="text-center mt-2 text-sm">Preparing files...</p>
+                <p id="welcome-training-status" class="text-center mt-2 text-sm">Preparing files...</p>
             </div>
             <!-- 输入区域：最大宽度 lg -->
             <div class="w-full max-w-lg">
@@ -459,12 +466,12 @@
         <div id="chat-interface" class="hidden flex-1 flex flex-col">
             <div id="chat-container" class="flex-1 overflow-y-auto p-4"></div>
             <!-- 训练进度显示 -->
-            <div id="main-training-progress" class="hidden w-full max-w-lg mt-4">
+            <div id="chat-training-progress" class="hidden w-full max-w-lg mt-4">
                 <h3 class="text-lg font-medium dark:text-white text-gray-800 mb-2">Training RAG Model</h3>
                 <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
-                    <div id="main-training-progress-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                    <div id="chat-training-progress-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
                 </div>
-                <p id="main-training-status" class="text-center mt-2 text-sm">Preparing files...</p>
+                <p id="chat-training-status" class="text-center mt-2 text-sm">Preparing files...</p>
             </div>
             <div class="p-4 rounded-lg backdrop-blur-sm bg-white/30 dark:bg-gray-800/30 shadow-sm mt-auto">
                 <div class="relative">
@@ -523,12 +530,6 @@
             <div class="mt-6 border-t dark:border-gray-700 border-gray-200 pt-4">
                 <h4 class="font-medium mb-2">Train new model</h4>
                 <div class="mb-3">
-                    <!-- 模型名称标签 -->
-                    <label for="new-rag-name" class="block text-sm mb-1 dark:text-gray-300 text-gray-600">Model name</label>
-                    <!-- 模型名称输入框 -->
-                    <input type="text" id="new-rag-name" class="w-full p-2 rounded border dark:border-gray-700 border-gray-300 dark:bg-gray-800 bg-white" placeholder="Enter a name for your model">
-                </div>
-                <div class="mb-3">
                     <!-- 文件夹上传区域 -->
                     <div id="modal-folder-upload" class="border-2 border-dashed border-blue-500 rounded-lg p-4 text-center cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20">
                         <input type="file" id="modal-folder-input" webkitdirectory directory multiple class="hidden">
@@ -537,12 +538,44 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v6m-3-3h6" />
                         </svg>
                         <p class="text-sm">Upload folder with documents</p>
+                        <p class="text-xs text-gray-500 mt-1">Model will be named after the folder</p>
                     </div>
                     <div id="modal-folder-info" class="text-xs dark:text-gray-400 text-gray-500 mt-1"></div>
                 </div>
                 <button id="train-rag-btn" class="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                     Train Model
                 </button>
+            </div>
+            
+            <!-- 重命名成功后的操作区域 -->
+            <div id="rename-success-area" class="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-green-800 dark:text-green-200">Model trained successfully!</p>
+                        <p class="text-xs text-green-600 dark:text-green-300" id="trained-model-name">Model: </p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="rename-model-btn" class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
+                            Rename
+                        </button>
+                        <button id="use-model-btn" class="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">
+                            Use Model
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 重命名输入框 -->
+                <div id="rename-input-area" class="mt-3 hidden">
+                    <div class="flex space-x-2">
+                        <input type="text" id="rename-input" class="flex-1 px-2 py-1 text-sm border rounded dark:border-gray-600 dark:bg-gray-700" placeholder="Enter new name">
+                        <button id="confirm-rename-btn" class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
+                            Confirm
+                        </button>
+                        <button id="cancel-rename-btn" class="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -570,6 +603,7 @@
     const fileInputLabel = document.getElementById('file-input-label');
     const chatFileInputLabel = document.getElementById('chat-file-input-label');
     const clearChatButton = document.getElementById('clear-chat');
+    const contextManagerBtn = document.getElementById('context-manager-btn');
     const folderUploadArea = document.getElementById('folder-upload-area');
     const folderInput = document.getElementById('folder-input');
     const folderInfo = document.getElementById('folder-info');
@@ -577,7 +611,6 @@
     const ragModelsModal = document.getElementById('rag-models-modal');
     const closeRagModalBtn = document.getElementById('close-rag-modal');
     const ragModelsList = document.getElementById('rag-models-list');
-    const newRagName = document.getElementById('new-rag-name');
     const modalFolderUpload = document.getElementById('modal-folder-upload');
     const modalFolderInput = document.getElementById('modal-folder-input');
     const modalFolderInfo = document.getElementById('modal-folder-info');
@@ -585,9 +618,9 @@
     const trainingProgressContainer = document.getElementById('training-progress-container');
     const trainingProgress = document.getElementById('training-progress');
     const trainingStatus = document.getElementById('training-status');
-    const mainTrainingProgress = document.getElementById('main-training-progress');
-    const mainTrainingProgressBar = document.getElementById('main-training-progress-bar');
-    const mainTrainingStatus = document.getElementById('main-training-status');
+    const welcomeTrainingProgress = document.getElementById('welcome-training-progress');
+    const welcomeTrainingProgressBar = document.getElementById('welcome-training-progress-bar');
+    const welcomeTrainingStatus = document.getElementById('welcome-training-status');
     const chatTrainingProgress = document.getElementById('chat-training-progress');
     const chatTrainingProgressBar = document.getElementById('chat-training-progress-bar');
     const chatTrainingStatus = document.getElementById('chat-training-status');
@@ -601,6 +634,32 @@
     let currentRagModel = 'None'; 
     let availableRagModels = [];
     let isTraining = false; 
+    let isStreamingEnabled = true;
+    let messageCount = 0; 
+    let currentSessionId = localStorage.getItem('oocl_session_id') || null;
+    let lastTrainedModelName = ''; // 存储最后训练的模型名称
+
+    // 生成或获取session ID
+    function getOrCreateSessionId() {
+        if (!currentSessionId) {
+            currentSessionId = 'oocl_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            localStorage.setItem('oocl_session_id', currentSessionId);
+        }
+        return currentSessionId;
+    }
+
+    // 更新上下文按钮显示
+    function updateContextButton() {
+        if (contextManagerBtn) {
+            const messageCountText = Math.floor(messageCount / 2);
+            contextManagerBtn.innerHTML = `
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                </svg>
+                Context (${messageCountText})
+            `;
+        }
+    }
 
     // 后端 API 基础 URL
     const BASE_URL = 'http://localhost:5000';
@@ -644,13 +703,31 @@
         modalFolderUpload?.addEventListener('click', () => modalFolderInput?.click());
         modalFolderInput?.addEventListener('change', () => {
             const fileCount = modalFolderInput.files.length;
-            modalFolderInfo.textContent = fileCount > 0 ? `${fileCount} files selected` : '';
-            trainRagBtn.disabled = !newRagName.value || fileCount === 0 || isTraining;
+            let folderName = '';
+            
+            if (fileCount > 0) {
+                // 从第一个文件的路径中提取文件夹名称
+                const firstFile = modalFolderInput.files[0];
+                const pathParts = firstFile.webkitRelativePath.split('/');
+                folderName = pathParts[0]; // 第一部分是文件夹名称
+            }
+            
+            modalFolderInfo.textContent = fileCount > 0 ? `${fileCount} files selected from folder: ${folderName}` : '';
+            trainRagBtn.disabled = fileCount === 0 || isTraining;
         });
-        newRagName?.addEventListener('input', () => {
-            trainRagBtn.disabled = !newRagName.value || modalFolderInput.files.length === 0 || isTraining;
-        });
+        
+        // 移除原来的模型名称输入事件监听器
+        // newRagName?.addEventListener('input', () => {
+        //     trainRagBtn.disabled = !newRagName.value || modalFolderInput.files.length === 0 || isTraining;
+        // });
+        
         trainRagBtn?.addEventListener('click', startRagTraining);
+
+        // 添加重命名相关的事件监听器
+        document.getElementById('rename-model-btn')?.addEventListener('click', showRenameInput);
+        document.getElementById('use-model-btn')?.addEventListener('click', useTrainedModel);
+        document.getElementById('confirm-rename-btn')?.addEventListener('click', confirmRename);
+        document.getElementById('cancel-rename-btn')?.addEventListener('click', cancelRename);
 
         // 添加 SSE 监听以获取训练进度
         const source = new EventSource(`${BASE_URL}/training_progress`);
@@ -686,28 +763,272 @@
                 trainRagBtn.disabled = false;
             }, 3000);
         };
+        
+        // 添加上下文管理器按钮的事件监听器
+        if (contextManagerBtn) {
+            contextManagerBtn.addEventListener('click', manageContext);
+            console.log('contextManager event listener added'); // 调试信息
+        } else {
+            console.error('contextManagerBtn element not found!'); // 调试信息
+        }
+    }
+    
+    // 显示对话上下文
+    async function showContext() {
+        console.log('showContext function called'); // 调试信息
+        try {
+            const sessionId = getOrCreateSessionId();
+            console.log('Session ID:', sessionId); // 调试信息
+            
+            const response = await fetch(`${BASE_URL}/get-context?session_id=${sessionId}`);
+            console.log('Response status:', response.status); // 调试信息
+            
+            const data = await response.json();
+            console.log('Response data:', data); // 调试信息
+            
+            if (data.context && data.context.length > 0) {
+                let contextDisplay = `Context (${data.context.length} messages):\n\n`;
+                data.context.forEach((msg, index) => {
+                    contextDisplay += `${index + 1}. ${msg.role}: ${msg.content}\n\n`;
+                });
+                console.log('Displaying context:', contextDisplay); // 调试信息
+                displayMessage('system', contextDisplay);
+            } else {
+                console.log('No context available'); // 调试信息
+                displayMessage('system', 'No conversation context available.');
+            }
+        } catch (error) {
+            console.error('Error in showContext:', error); // 调试信息
+            displayMessage('error', `Error fetching context: ${error.message}`);
+        }
+    }
+
+    // 清除对话上下文
+    async function clearContext() {
+        try {
+            const sessionId = getOrCreateSessionId();
+            console.log('Clearing context for session:', sessionId); // 调试信息
+            
+            const response = await fetch(`${BASE_URL}/clear-context`, { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ session_id: sessionId })
+            });
+            
+            console.log('Clear context response status:', response.status); // 调试信息
+            const data = await response.json();
+            console.log('Clear context response data:', data); // 调试信息
+            
+            if (data.status === 'success') {
+                messageCount = 0;
+                updateContextButton(); // 更新按钮显示
+                displayMessage('system', 'Conversation context cleared successfully.');
+            } else {
+                displayMessage('error', 'Failed to clear context.');
+            }
+        } catch (error) {
+            console.error('Error in clearContext:', error); // 调试信息
+            displayMessage('error', `Error clearing context: ${error.message}`);
+        }
+    }
+
+    // 上下文管理器 - 组合功能
+    async function manageContext() {
+        const contextContainer = document.createElement('div');
+        contextContainer.className = 'context-manager-popup fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-6 z-50 max-w-md w-full mx-4';
+        
+        contextContainer.innerHTML = `
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-semibold dark:text-white text-gray-800">Context Manager</h3>
+                <button id="close-context-manager" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="space-y-3">
+                <button id="popup-show-context" class="w-full px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                    📋 Show Current Context
+                </button>
+                <button id="popup-clear-context" class="w-full px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors">
+                    🗑️ Clear Context
+                </button>
+                <div class="text-center text-sm text-gray-500 dark:text-gray-400 pt-2">
+                    Current messages: <span class="font-medium">${Math.floor(messageCount / 2)}</span>
+                </div>
+            </div>
+        `;
+        
+        // Add overlay
+        const overlay = document.createElement('div');
+        overlay.className = 'context-manager-overlay fixed inset-0 bg-black bg-opacity-50 z-40';
+        
+        document.body.appendChild(overlay);
+        document.body.appendChild(contextContainer);
+        
+        // Close handlers
+        const closeManager = () => {
+            document.body.removeChild(contextContainer);
+            document.body.removeChild(overlay);
+        };
+        
+        document.getElementById('close-context-manager').onclick = closeManager;
+        overlay.onclick = closeManager;
+        
+        // Button handlers
+        document.getElementById('popup-show-context').onclick = async () => {
+            await showContext();
+            closeManager();
+        };
+        
+        document.getElementById('popup-clear-context').onclick = async () => {
+            if (confirm('Are you sure you want to clear the conversation context?')) {
+                await clearContext();
+                closeManager();
+                
+                // Update the popup display if reopened
+                setTimeout(() => {
+                    updateContextButton();
+                }, 100);
+            }
+        };
+    }
+
+    // 显示重命名成功区域
+    function showRenameSuccessArea(modelName) {
+        lastTrainedModelName = modelName;
+        const renameSuccessArea = document.getElementById('rename-success-area');
+        const trainedModelNameSpan = document.getElementById('trained-model-name');
+        
+        if (renameSuccessArea && trainedModelNameSpan) {
+            trainedModelNameSpan.textContent = `Model: ${modelName}`;
+            renameSuccessArea.classList.remove('hidden');
+        }
+    }
+
+    // 显示重命名输入框
+    function showRenameInput() {
+        const renameInputArea = document.getElementById('rename-input-area');
+        const renameInput = document.getElementById('rename-input');
+        
+        if (renameInputArea && renameInput) {
+            renameInputArea.classList.remove('hidden');
+            renameInput.value = lastTrainedModelName;
+            renameInput.focus();
+        }
+    }
+
+    // 使用训练好的模型
+    function useTrainedModel() {
+        if (lastTrainedModelName) {
+            selectRagModel(lastTrainedModelName);
+            
+            // 隐藏重命名成功区域
+            const renameSuccessArea = document.getElementById('rename-success-area');
+            if (renameSuccessArea) {
+                renameSuccessArea.classList.add('hidden');
+            }
+            
+            // 打开RAG模型模态框以显示选中的模型
+            openRagModelsModal();
+        }
+    }
+
+    // 确认重命名
+    async function confirmRename() {
+        const renameInput = document.getElementById('rename-input');
+        const newName = renameInput?.value.trim();
+        
+        if (!newName) {
+            displayMessage('error', 'Please enter a valid name.');
+            return;
+        }
+        
+        if (newName === lastTrainedModelName) {
+            cancelRename();
+            return;
+        }
+        
+        try {
+            const response = await fetch(`${BASE_URL}/rename_rag_model`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    old_name: lastTrainedModelName,
+                    new_name: newName
+                })
+            });
+
+            const result = await response.json();
+            if (result.error) {
+                displayMessage('error', `Rename failed: ${result.error}`);
+                return;
+            }
+
+            // 更新最后训练的模型名称
+            lastTrainedModelName = newName;
+            
+            // 更新显示
+            const trainedModelNameSpan = document.getElementById('trained-model-name');
+            if (trainedModelNameSpan) {
+                trainedModelNameSpan.textContent = `Model: ${newName}`;
+            }
+            
+            // 隐藏重命名输入区域
+            cancelRename();
+            
+            // 刷新模型列表
+            loadRagModels();
+            displayMessage('system', `Model renamed to "${newName}" successfully.`);
+            
+        } catch (error) {
+            displayMessage('error', `Rename error: ${error.message}`);
+        }
+    }
+
+    // 取消重命名
+    function cancelRename() {
+        const renameInputArea = document.getElementById('rename-input-area');
+        const renameInput = document.getElementById('rename-input');
+        
+        if (renameInputArea) {
+            renameInputArea.classList.add('hidden');
+        }
+        
+        if (renameInput) {
+            renameInput.value = '';
+        }
     }
 
     // 发送消息（问题和可选文件）
     async function sendMessage(inputElement, fileInputElement) {
         const question = inputElement.value.trim();
         const files = fileInputElement.files;
+        
+        // 检查RAG模式下是否尝试上传文件
+        if (isRagEnabled && files.length > 0) {
+            displayMessage('error', 'File upload is not allowed in RAG mode. Please disable RAG mode to upload files.');
+            return;
+        }
+        
         if (!question && files.length === 0) {
             displayMessage('error', 'Please enter a question or upload files.');
             return;
         }
 
         if (inputElement === questionInput) {
-        showChatInterface();
+            showChatInterface();
         }
         // 禁用输入控件
         setInputControlsDisabled(true, inputElement === chatQuestionInput);
 
-        // 显示用户消息并清空输入t
+        // 显示用户消息并清空输入
         if (question) {
             displayMessage('user', question);
             saveMessage('user', question);
             inputElement.value = ''; // Clear input immediately after sending
+            messageCount++;
+            updateContextButton(); // 更新按钮显示
         }
         if (files.length > 0) {
             displayMessage('system', `Uploading ${files.length} file(s)...`);
@@ -718,11 +1039,14 @@
         displayThinkingMessage(thinkingId);
 
         try {
+            const sessionId = getOrCreateSessionId();
             let response;
+
             if (files.length > 0 && !isRagEnabled) {
-                // 发送文件和问题
+                // 发送文件和问题 - 使用流式响应
                 const formData = new FormData();
                 formData.append('question', question);
+                formData.append('session_id', sessionId);
                 for (let file of files) {
                     formData.append('file', file);
                 }
@@ -731,35 +1055,76 @@
                     body: formData
                 });
             } else {
-                // 使用 RAG 或普通问题
-                const endpoint = isRagEnabled ? '/rag_ask' : '/ask';
+                // 使用 RAG 或普通问题 - 使用流式响应
+                const endpoint = isRagEnabled ? '/rag_ask' : '/ask-stream';
                 response = await fetch(`${BASE_URL}${endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ question, model_id: currentRagModel })
+                    body: JSON.stringify({ 
+                        question, 
+                        model_id: currentRagModel,
+                        session_id: sessionId
+                    })
                 });
             }
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-            const data = await response.json();
+
             removeThinkingMessage(thinkingId);
 
-            if (data.error) {
-                displayMessage('error', `Error: ${data.error}`);
-                return;
+            // 创建AI消息容器
+            const messageDiv = createMessageElement('ai', '');
+            chatContainer.appendChild(messageDiv);
+            scrollToBottom();
+
+            // 读取流式响应
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let fullResponse = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6).trim();
+                        if (data === '[DONE]' || data === '') {
+                            continue;
+                        }
+                        try {
+                            const parsed = JSON.parse(data);
+                            if (parsed.content) {
+                                fullResponse += parsed.content;
+                                const messageContent = messageDiv.querySelector('.message-content');
+                                messageContent.textContent = fullResponse;
+                                scrollToBottom();
+                            } else if (parsed.error) {
+                                displayMessage('error', `Error: ${parsed.error}`);
+                                return;
+                            } else if (parsed.done) {
+                                // 流式响应结束
+                                break;
+                            }
+                        } catch (e) {
+                            // 忽略解析错误，可能是不完整的JSON
+                            console.log('JSON parse error (ignoring):', e.message);
+                        }
+                    }
+                }
             }
 
-            // 显示思考细节
-            if (data.thinking) {
-                displayMessage('system', `(Thinking: ${data.thinking})`, true);
-                saveMessage('system', `(Thinking: ${data.thinking})`, true);
+            // 保存完整响应
+            if (fullResponse) {
+                saveMessage('ai', fullResponse);
+                messageCount++;
+                updateContextButton(); // 更新按钮显示
             }
-
-            // 显示 AI 响应
-            displayMessage('ai', data.response);
-            saveMessage('ai', data.response);
 
             // 清空文件输入
             fileInputElement.value = '';
@@ -818,18 +1183,25 @@
         }
         isRagEnabled = !isRagEnabled;
         ragStatus.className = `ml-1 inline-block w-3 h-3 rounded-full ${isRagEnabled ? 'bg-green-500' : 'bg-gray-400'}`;
+        
         if (isRagEnabled) {
+            // 禁用文件上传功能
             fileInputLabel?.classList.add('opacity-50', 'pointer-events-none');
             chatFileInputLabel?.classList.add('opacity-50', 'pointer-events-none');
+            fileInput.disabled = true;
+            chatFileInput.disabled = true;
             fileInput.value = '';
             chatFileInput.value = '';
             fileInfo.textContent = '';
             chatFileInfo.textContent = '';
-            displayMessage('system', `RAG mode enabled with model: ${currentRagModel}`);
+            displayMessage('system', `RAG mode enabled with model: ${currentRagModel}. File upload is disabled in RAG mode.`);
         } else {
+            // 启用文件上传功能
             fileInputLabel?.classList.remove('opacity-50', 'pointer-events-none');
             chatFileInputLabel?.classList.remove('opacity-50', 'pointer-events-none');
-            displayMessage('system', 'RAG mode disabled.');
+            fileInput.disabled = false;
+            chatFileInput.disabled = false;
+            displayMessage('system', 'RAG mode disabled. File upload is now available.');
         }
     }
 
@@ -864,18 +1236,49 @@
 
             ragModelsList.innerHTML = availableRagModels.map(model => `
                 <div class="rag-model-item p-3 border dark:border-gray-700 border-gray-300 rounded-lg flex justify-between items-center ${model === currentRagModel ? 'active' : ''}" data-model="${model}">
-                    <div>
+                    <div class="flex-1">
                         <div class="font-medium">${model}</div>
                         <div class="text-xs dark:text-gray-400 text-gray-500">${model === 'default' ? 'System default model' : 'Custom model'}</div>
                     </div>
-                    <button class="select-model-btn px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600" data-model="${model}" ${model === currentRagModel ? 'disabled' : ''}>
-                        ${model === currentRagModel ? 'Selected' : 'Select'}
-                    </button>
+                    <div class="flex space-x-2">
+                        <button class="select-model-btn px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600" data-model="${model}" ${model === currentRagModel ? 'disabled' : ''}>
+                            ${model === currentRagModel ? 'Selected' : 'Select'}
+                        </button>
+                        ${model !== 'default' ? `
+                            <button class="rename-existing-model-btn px-2 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600" data-model="${model}" title="Rename Model">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </button>
+                            <button class="delete-model-btn px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600" data-model="${model}" title="Delete Model">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        ` : ''}
+                    </div>
                 </div>
             `).join('');
 
+            // 绑定选择按钮事件
             document.querySelectorAll('.select-model-btn').forEach(btn => {
                 btn.addEventListener('click', () => selectRagModel(btn.getAttribute('data-model')));
+            });
+
+            // 绑定重命名按钮事件
+            document.querySelectorAll('.rename-existing-model-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showRenameDialog(btn.getAttribute('data-model'));
+                });
+            });
+
+            // 绑定删除按钮事件
+            document.querySelectorAll('.delete-model-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    showDeleteDialog(btn.getAttribute('data-model'));
+                });
             });
         } catch (error) {
             console.error('Error loading RAG models:', error);
@@ -884,39 +1287,135 @@
     }
 
     // 选择 RAG 模型
-    function selectRagModel(modelId) {
-        currentRagModel = modelId;
+    function selectRagModel(modelName) {
+        currentRagModel = modelName;
+        
+        // 更新模型列表中的选中状态
         document.querySelectorAll('.rag-model-item').forEach(item => {
-            const itemModelId = item.getAttribute('data-model');
+            item.classList.remove('active');
             const selectBtn = item.querySelector('.select-model-btn');
-            if (itemModelId === modelId) {
-                item.classList.add('active');
-                selectBtn.disabled = true;
-                selectBtn.textContent = 'Selected';
-            } else {
-                item.classList.remove('active');
-                selectBtn.disabled = false;
+            if (selectBtn) {
                 selectBtn.textContent = 'Select';
+                selectBtn.disabled = false;
             }
         });
-        if (!isRagEnabled) {
-            toggleRagMode();
+        
+        // 设置新选中的模型
+        const selectedItem = document.querySelector(`[data-model="${modelName}"]`);
+        if (selectedItem) {
+            selectedItem.classList.add('active');
+            const selectBtn = selectedItem.querySelector('.select-model-btn');
+            if (selectBtn) {
+                selectBtn.textContent = 'Selected';
+                selectBtn.disabled = true;
+            }
         }
+        
+        // 显示选择成功消息
+        displayMessage('system', `RAG model "${modelName}" selected successfully.`);
+        
+        // 关闭模态框
         closeRagModelsModal();
-        displayMessage('system', `Selected RAG model: ${modelId}`);
+    }
+
+    // 显示重命名对话框
+    function showRenameDialog(modelName) {
+        const newName = prompt(`Rename model "${modelName}" to:`, modelName);
+        if (newName && newName.trim() && newName.trim() !== modelName) {
+            renameExistingModel(modelName, newName.trim());
+        }
+    }
+
+    // 显示删除确认对话框
+    function showDeleteDialog(modelName) {
+        if (confirm(`Are you sure you want to delete the model "${modelName}"? This action cannot be undone.`)) {
+            deleteExistingModel(modelName);
+        }
+    }
+
+    // 重命名现有模型
+    async function renameExistingModel(oldName, newName) {
+        try {
+            const response = await fetch(`${BASE_URL}/rename_rag_model`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    old_name: oldName,
+                    new_name: newName
+                })
+            });
+
+            const result = await response.json();
+            if (result.error) {
+                displayMessage('error', `Rename failed: ${result.error}`);
+                return;
+            }
+
+            // 更新当前选中的模型名称（如果被重命名的是当前选中的模型）
+            if (currentRagModel === oldName) {
+                currentRagModel = newName;
+            }
+
+            // 刷新模型列表
+            loadRagModels();
+            displayMessage('system', `Model renamed from "${oldName}" to "${newName}" successfully.`);
+            
+        } catch (error) {
+            displayMessage('error', `Rename error: ${error.message}`);
+        }
+    }
+
+    // 删除现有模型
+    async function deleteExistingModel(modelName) {
+        try {
+            const response = await fetch(`${BASE_URL}/delete_rag_model`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model_name: modelName
+                })
+            });
+
+            const result = await response.json();
+            if (result.error) {
+                displayMessage('error', `Delete failed: ${result.error}`);
+                return;
+            }
+
+            // 如果删除的是当前选中的模型，重置选择
+            if (currentRagModel === modelName) {
+                currentRagModel = 'None';
+                isRagEnabled = false;
+                ragStatus.className = 'ml-1 inline-block w-3 h-3 rounded-full bg-gray-400';
+                
+                // 启用文件上传功能
+                fileInputLabel?.classList.remove('opacity-50', 'pointer-events-none');
+                chatFileInputLabel?.classList.remove('opacity-50', 'pointer-events-none');
+                fileInput.disabled = false;
+                chatFileInput.disabled = false;
+            }
+
+            // 刷新模型列表
+            loadRagModels();
+            displayMessage('system', `Model "${modelName}" deleted successfully.`);
+            
+        } catch (error) {
+            displayMessage('error', `Delete error: ${error.message}`);
+        }
     }
 
     // 更新训练进度 UI
+// 更新训练进度 UI
 function updateTrainingProgress(percentage, status, isError = false) {
-    // 更新主界面进度
-    if (mainTrainingProgress) {
-        mainTrainingProgress.classList.remove('hidden');
-        mainTrainingProgressBar.style.width = `${percentage}%`;
-        mainTrainingStatus.textContent = status;
+    // 更新欢迎界面进度
+    if (welcomeTrainingProgress) {
+        welcomeTrainingProgress.classList.remove('hidden');
+        welcomeTrainingProgressBar.style.width = `${percentage}%`;
+        welcomeTrainingStatus.textContent = status;
         if (isError) {
-            mainTrainingProgressBar.classList.add('bg-red-500');
+            welcomeTrainingProgressBar.classList.add('bg-red-500');
         } else {
-            mainTrainingProgressBar.classList.remove('bg-red-500');
+            welcomeTrainingProgressBar.classList.remove('bg-red-500');
         }
     }
     // 更新聊天界面进度
@@ -950,12 +1449,17 @@ async function startRagTraining() {
         return;
     }
 
-    const modelName = newRagName.value.trim();
     const files = modalFolderInput.files;
-    if (!modelName || files.length === 0) {
-        displayMessage('error', 'Please provide a model name and select files.');
+    if (files.length === 0) {
+        displayMessage('error', 'Please select a folder with files.');
         return;
     }
+
+    // 从文件路径中提取文件夹名称作为模型名称
+    const firstFile = files[0];
+    const pathParts = firstFile.webkitRelativePath.split('/');
+    const folderName = pathParts[0];
+    const modelName = folderName.replace(/[^a-zA-Z0-9_-]/g, '_'); // 清理名称
 
     isTraining = true;
     trainRagBtn.disabled = true;
@@ -964,7 +1468,7 @@ async function startRagTraining() {
 
     try {
         const formData = new FormData();
-        formData.append('model_name', modelName);
+        formData.append('folder_name', modelName); // 发送文件夹名称而不是用户输入的名称
         for (const file of files) {
             formData.append('files[]', file, file.webkitRelativePath || file.name);
         }
@@ -986,19 +1490,18 @@ async function startRagTraining() {
         updateTrainingProgress(100, 'Training complete!');
 
         setTimeout(() => {
-            mainTrainingProgress?.classList.add('hidden');
+            welcomeTrainingProgress?.classList.add('hidden');
             chatTrainingProgress?.classList.add('hidden');
             modalTrainingProgress?.classList.add('hidden');
-            newRagName.value = '';
             modalFolderInput.value = '';
             modalFolderInfo.textContent = '';
             trainRagBtn.disabled = true;
-            currentRagModel = result.model_name;
-            if (!isRagEnabled) {
-                toggleRagMode();
-            }
-            displayMessage('system', `Successfully trained RAG model "${result.model_name}" with ${result.processed_files} files. The model is now selected for use.`);
-            // loadRagModels();
+            
+            // 显示重命名成功区域而不是直接选择模型
+            showRenameSuccessArea(result.model_name);
+            
+            displayMessage('system', `Successfully trained RAG model "${result.model_name}" with ${result.processed_files} files. You can rename it or use it directly.`);
+            loadRagModels(); // 刷新模型列表
             isTraining = false;
             trainRagBtn.disabled = false;
         }, 1500);
@@ -1020,6 +1523,34 @@ async function startRagTraining() {
         }, 3000);
     }
 }
+
+    // 创建消息元素（用于流式响应）
+    function createMessageElement(type, content) {
+        const div = document.createElement('div');
+        div.classList.add('chat-bubble', type === 'user' ? 'user-bubble' : type === 'ai' ? 'ai-bubble' : 'system-bubble');
+        const header = document.createElement('div');
+        header.className = 'flex items-center mb-1';
+        const avatar = document.createElement('div');
+        avatar.className = 'w-6 h-6 rounded-full flex items-center justify-center mr-2 text-white';
+        avatar.style.backgroundColor = type === 'user' ? '#3b82f6' : type === 'ai' ? '#1e293b' : '#6b7280';
+        const avatarText = document.createElement('span');
+        avatarText.className = 'text-xs font-bold';
+        avatarText.textContent = type === 'user' ? 'You' : type === 'ai' ? 'AI' : 'System';
+        avatar.appendChild(avatarText);
+        header.appendChild(avatar);
+        div.appendChild(header);
+        const contentDiv = document.createElement('div');
+        contentDiv.className = 'message-content';
+        contentDiv.textContent = content;
+        div.appendChild(contentDiv);
+        return div;
+    }
+
+    // 滚动到底部
+    function scrollToBottom() {
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
     // 显示消息
     function displayMessage(type, content, isThinking = false) {
         if (isThinking) {
