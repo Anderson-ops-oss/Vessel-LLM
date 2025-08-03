@@ -38,7 +38,7 @@ class ChineseRAGSystem:
                  model_save_dir: str = "rag_models",
                  embedding_model: str = "qwen/Qwen3-Embedding-0.6B",
                  use_reranker: bool = True,
-                 reranker_model: str = "BAAI/bge-multilingual-gemma2",
+                 reranker_model: str = "BAAI/bge-reranker-v2-m3",
                  semantic_chunking_model: str = "BAAI/bge-small-zh-v1.5"
                  ):
         self.processed_texts_dir = Path(processed_texts_dir)
@@ -57,42 +57,79 @@ class ChineseRAGSystem:
             'created_at': datetime.now().isoformat()
         }
     
-    def setup_models(self):
-        """Setup embedding, reranker, and semantic chunking models."""
+    def setup_models(self, force_offline: bool = False):
+        """
+        Setup embedding, reranker, and semantic chunking models. 自动检测本地/在线模式。
+        # 部署后如需完全离线，请在下方所有 from_pretrained/SentenceTransformer/HuggingFaceEmbedding/FlagReranker 加 local_files_only=True
+        """
+        import os
         device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Current device: {device}")
-        
+
+        def is_local_model(model_name):
+            # 判断是否为本地路径或cache下有文件
+            if os.path.isdir(model_name) or os.path.exists(model_name):
+                return True
+            # 检查transformers默认cache
+            try:
+                from transformers.utils.hub import cached_file
+                from huggingface_hub.errors import EntryNotFoundError
+                try:
+                    cached_file(model_name, "config.json", local_files_only=True)
+                    return True
+                except Exception:
+                    return False
+            except ImportError:
+                return False
+
+        # embedding model
+        local_embedding = force_offline or is_local_model(self.embedding_model_name)
+
+        # ====== 这里是 Embedding 模型加载，部署后如需离线请确保 local_files_only=True ======
         try:
             self.embedding_model = HuggingFaceEmbedding(
                 model_name=self.embedding_model_name,
                 trust_remote_code=True,
-                device=device
+                device=device,
+                local_files_only=True # 部署后如需离线请设为 True
             )
-            logger.info(f"Successfully loaded embedding model: {self.embedding_model_name}")
+            logger.info(f"Successfully loaded embedding model: {self.embedding_model_name} (local_files_only={local_embedding})")
         except Exception as e:
             logger.error(f"Fail to load embedding model: {e}")
             raise
-        
+
         Settings.embed_model = self.embedding_model
-        
-        # Initialize Sentence Transformer for custom semantic chunking
+
+        # semantic chunking model
+        local_chunking = force_offline or is_local_model(self.semantic_chunking_model)
+
+        # ====== 这里是 SentenceTransformer 语义分块模型加载，部署后如需离线请确保 local_files_only=True ======
         try:
             self.semantic_chunker = SentenceTransformer(
                 self.semantic_chunking_model,
-                device=device
+                device=device,
+                local_files_only= True # 部署后如需离线请设为 True
             )
-            logger.info(f"Initialized semantic chunking model: {self.semantic_chunking_model}")
+            logger.info(f"Initialized semantic chunking model: {self.semantic_chunking_model} (local_files_only={local_chunking})")
         except Exception as e:
             logger.error(f"Failed to initialize semantic chunking model: {e}")
             raise
-        
-        # Initialize Reranker if available
+
+        # reranker
+        # ====== 这里是 FlagReranker 重排序模型加载，部署后如需离线请确保 local_files_only=True ======
         if self.use_reranker and FlagReranker:
+            local_reranker = force_offline or is_local_model(self.reranker_model_name)
             try:
-                self.reranker = FlagReranker(
-                    self.reranker_model_name
-                )
-                logger.info(f"Loaded reranker model: {self.reranker_model_name}")
+                try:
+                    self.reranker = FlagReranker(
+                        self.reranker_model_name,
+                        local_files_only=True # 部署后如需离线请设为 True
+                    )
+                except TypeError:
+                    self.reranker = FlagReranker(
+                        self.reranker_model_name
+                    )
+                logger.info(f"Loaded reranker model: {self.reranker_model_name} (local_files_only={local_reranker})")
             except Exception as e:
                 logger.error(f"Failed to load reranker: {e}")
                 self.reranker = None
@@ -117,12 +154,12 @@ class ChineseRAGSystem:
             
             for i in range(1, len(sentences)):
                 # Compute similarity between current sentence and last sentence in chunk
-                similarity = cosine_similarity(
-                    [embeddings[i]],
-                    [current_embeddings[-1]]
+                sim = cosine_similarity(
+                    embeddings[i].reshape(1, -1),
+                    current_embeddings[-1].reshape(1, -1)
                 )[0][0]
                 
-                if similarity >= self.config['semantic_chunking_threshold']:
+                if sim >= self.config['semantic_chunking_threshold']:
                     # Add to current chunk if similar
                     current_chunk.append(sentences[i])
                     current_embeddings.append(embeddings[i])
