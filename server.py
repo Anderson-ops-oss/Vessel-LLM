@@ -1,3 +1,14 @@
+
+import os
+# 设置 HuggingFace 及相关模型缓存目录到 main_function 目录下的 cache 子目录（自动绝对路径，跨环境可用）
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+CACHE_DIR = os.path.join(BASE_DIR, '..', 'cache')
+os.makedirs(CACHE_DIR, exist_ok=True)
+os.environ['HF_HOME'] = os.path.abspath(CACHE_DIR)
+os.environ['TRANSFORMERS_CACHE'] = os.path.abspath(CACHE_DIR)
+os.environ['HF_DATASETS_CACHE'] = os.path.abspath(CACHE_DIR)
+os.environ['SENTENCE_TRANSFORMERS_HOME'] = os.path.abspath(CACHE_DIR)
+
 from flask import Flask, request, jsonify, Response, stream_with_context, session
 from flask_cors import CORS
 import requests
@@ -23,14 +34,14 @@ import uuid
 from document_extractor import ChineseDocumentProcessor
 
 # Import RAG system - adding the RAG directory to the path
-rag_path = r'C:\Users\CHENGAN3\Desktop\Project 1 Coding part\v4(2025-8-1)\main_function'
+rag_path = r'main_function'
 sys.path.append(rag_path)
 try:
     # Import directly from rag_trainer.py
     from rag_trainer import ChineseRAGSystem
     
     # RAG models directory
-    BASE_MODEL_DIR = r"C:\Users\CHENGAN3\Desktop\Project 1 Coding part\v4(2025-8-1)\rag_models"
+    BASE_MODEL_DIR = r"rag_models"
 
     # Create a dictionary to store multiple RAG systems
     rag_systems = {}
@@ -72,8 +83,20 @@ conversation_contexts = defaultdict(lambda: deque(maxlen=20))  # Keep last 20 me
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+
 # LM Studio API endpoint
 LM_STUDIO_API_URL = "http://localhost:1234/v1/chat/completions"
+
+# 日志用户问题
+def log_user_question(question, session_id=None):
+    try:
+        timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        log_line = f"{timestamp} | session: {session_id or '-'} | {question}\n"
+        log_path = os.path.join(os.path.dirname(__file__), 'user_question_log.txt')
+        with open(log_path, 'a', encoding='utf-8') as f:
+            f.write(log_line)
+    except Exception as e:
+        logger.error(f"Failed to log user question: {e}")
 
 # Add a helper function to call the LLM API with proper error handling
 def call_llm_api(messages, temperature=0.5, max_tokens=32000, stream=False):
@@ -218,8 +241,12 @@ def ask_question():
         if not question:
             return jsonify({'error': 'No question provided'}), 400
 
+
         # Get or create session ID
         session_id = get_or_create_session_id()
+
+        # 日志用户问题
+        log_user_question(question, session_id)
 
         # System prompt for tool usage
         system_prompt = (
@@ -276,9 +303,13 @@ def ask_question_stream():
         if not question:
             return jsonify({'error': 'No question provided'}), 400
 
+
         # Get or create session ID
         session_id = get_or_create_session_id()
-        
+
+        # 日志用户问题
+        log_user_question(question, session_id)
+
         # System prompt for tool usage
         system_prompt = (
             "你是一个友善的助手。你可以参考之前的对话内容来提供更好的回答。"
@@ -374,8 +405,12 @@ def upload_and_ask():
         files = request.files.getlist('file')
         file_contents = []
 
+
         # Get or create session ID
         session_id = request.form.get('session_id') or str(uuid.uuid4())
+
+        # 日志用户问题
+        log_user_question(question, session_id)
 
         if files:
             os.makedirs('uploads', exist_ok=True)
@@ -520,16 +555,20 @@ def rag_ask():
         model_id = data.get('model_id', 'default') 
         session_id = data.get('session_id') or str(uuid.uuid4())
         
+
         if not question:
             return jsonify({'error': 'No question provided'}), 400
-            
+
+        # 日志用户问题
+        log_user_question(question, session_id)
+
         if not RAG_AVAILABLE or not rag_systems:
             return jsonify({'error': 'RAG system is not available'}), 503
-            
+
         # Check if the requested model exists
         if model_id not in rag_systems:
             return jsonify({'error': f"RAG model '{model_id}' not found"}), 404
-            
+
         # Log that we're using RAG
         logger.info(f"Using RAG system '{model_id}' for question: {question}")
         
