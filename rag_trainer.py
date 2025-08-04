@@ -39,7 +39,7 @@ class ChineseRAGSystem:
                  embedding_model: str = "qwen/Qwen3-Embedding-0.6B",
                  use_reranker: bool = True,
                  reranker_model: str = "BAAI/bge-reranker-v2-m3",
-                 semantic_chunking_model: str = "BAAI/bge-small-zh-v1.5"
+                 semantic_chunking_model: str = "Alibaba-NLP/gte-multilingual-reranker-base"
                  ):
         self.processed_texts_dir = Path(processed_texts_dir)
         self.model_save_dir = Path(model_save_dir)
@@ -370,3 +370,4 @@ if __name__ == "__main__":
     rag_system = ChineseRAGSystem(processed_texts_dir=PROCESSED_DIR, model_save_dir=MODEL_DIR)
     rag_system.train_system(PROCESSED_DIR)
     print("RAG system trained successfully!")
+
