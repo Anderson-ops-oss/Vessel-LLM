@@ -305,6 +305,112 @@
             /* 模态框激活时：恢复正常位置 */
             transform: translateY(0);
         }
+        
+        /* 思考过程样式 - DeepSeek R1 风格 */
+        .thinking-section {
+            transition: all 0.3s ease;
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 8px;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(147, 197, 253, 0.05));
+        }
+        
+        .thinking-section summary {
+            list-style: none;
+            padding: 12px 16px;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border-radius: 8px;
+            user-select: none;
+            display: flex;
+            align-items: center;
+            font-weight: 500;
+            color: #1e40af;
+        }
+        
+        .dark .thinking-section summary {
+            color: #93c5fd;
+        }
+        
+        .thinking-section summary:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+        }
+        
+        .dark .thinking-section summary:hover {
+            background-color: rgba(59, 130, 246, 0.15);
+        }
+        
+        .thinking-section summary::-webkit-details-marker {
+            display: none;
+        }
+        
+        .thinking-section summary::-moz-list-bullet {
+            list-style-type: none;
+        }
+        
+        .thinking-section[open] {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(147, 197, 253, 0.08));
+            border-color: rgba(59, 130, 246, 0.3);
+        }
+        
+        .dark .thinking-section[open] {
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(147, 197, 253, 0.08));
+            border-color: rgba(59, 130, 246, 0.4);
+        }
+        
+        .thinking-content {
+            border-top: 1px solid rgba(59, 130, 246, 0.15);
+            padding: 16px;
+            margin: 0;
+            animation: fadeInSlide 0.3s ease-out;
+            background-color: rgba(248, 250, 252, 0.5);
+            border-radius: 0 0 8px 8px;
+            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #374151;
+        }
+        
+        .dark .thinking-content {
+            background-color: rgba(15, 23, 42, 0.3);
+            color: #d1d5db;
+            border-top-color: rgba(59, 130, 246, 0.2);
+        }
+        
+        .thinking-arrow {
+            transition: transform 0.2s ease;
+            margin-right: 8px;
+            color: inherit;
+        }
+        
+        .thinking-section[open] .thinking-arrow {
+            transform: rotate(90deg);
+        }
+        
+        .thinking-badge {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-left: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.025em;
+        }
+        
+        @keyframes fadeInSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-8px);
+                max-height: 0;
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+                max-height: 500px;
+            }
+        }
     </style>
 </head>
 <!-- 页面主体，默认启用暗模式 -->
@@ -389,12 +495,12 @@
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
                     </svg>
-                    Context Manager
+                    Context (0)
                 </button>
                 <!-- 清除聊天按钮：红色图标，悬停时变色 -->
-                <button id="clear-chat" class="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-sm hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-300 transition-colors" title="Clear Chat">
+                <button id="clear-chat" class="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-sm hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-300 transition-colors" title="Clear Chat History & LLM Memory">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                     </svg>
                 </button>
                 <!-- 主题切换按钮：显示太阳或月亮图标 -->
@@ -816,6 +922,11 @@
             });
             
             console.log('Clear context response status:', response.status); // 调试信息
+            
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
             const data = await response.json();
             console.log('Clear context response data:', data); // 调试信息
             
@@ -823,12 +934,15 @@
                 messageCount = 0;
                 updateContextButton(); // 更新按钮显示
                 displayMessage('system', 'Conversation context cleared successfully.');
+                return Promise.resolve();
             } else {
                 displayMessage('error', 'Failed to clear context.');
+                return Promise.reject(new Error('Failed to clear context'));
             }
         } catch (error) {
             console.error('Error in clearContext:', error); // 调试信息
             displayMessage('error', `Error clearing context: ${error.message}`);
+            return Promise.reject(error);
         }
     }
 
@@ -1074,15 +1188,16 @@
 
             removeThinkingMessage(thinkingId);
 
-            // 创建AI消息容器
+            // Create AI message container
             const messageDiv = createMessageElement('ai', '');
             chatContainer.appendChild(messageDiv);
             scrollToBottom();
 
-            // 读取流式响应
+            // Read streaming response
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let fullResponse = '';
+            let thinkingContent = '';
 
             while (true) {
                 const { done, value } = await reader.read();
@@ -1104,6 +1219,41 @@
                                 const messageContent = messageDiv.querySelector('.message-content');
                                 messageContent.textContent = fullResponse;
                                 scrollToBottom();
+                            } else if (parsed.formatted_response) {
+                                // Store thinking content for saving
+                                if (parsed.thinking && parsed.thinking.trim()) {
+                                    thinkingContent = parsed.thinking.trim();
+                                }
+                                
+                                // Use the final formatted response to replace the content
+                                const messageContent = messageDiv.querySelector('.message-content');
+                                
+                                // Create the final message structure with thinking section if available
+                                let finalHTML = '';
+                                
+                                // Add thinking section if provided
+                                if (parsed.thinking && parsed.thinking.trim()) {
+                                    finalHTML += `
+                                        <details class="thinking-section">
+                                            <summary>
+                                                <svg class="thinking-arrow w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                                                </svg>
+                                                <span>Thinking</span>
+                                                <span class="thinking-badge">AI</span>
+                                            </summary>
+                                            <div class="thinking-content">${parsed.thinking.replace(/\n/g, '<br>')}</div>
+                                        </details>
+                                    `;
+                                }
+                                
+                                // Add the main response content
+                                finalHTML += `<div class="response-content" style="white-space: pre-wrap;">${parsed.formatted_response.replace(/\n/g, '<br>')}</div>`;
+                                
+                                messageContent.innerHTML = finalHTML;
+                                messageContent.style.whiteSpace = 'normal'; // Reset white-space since we're using innerHTML
+                                fullResponse = parsed.formatted_response; // Update fullResponse for saving
+                                scrollToBottom();
                             } else if (parsed.error) {
                                 displayMessage('error', `Error: ${parsed.error}`);
                                 return;
@@ -1119,9 +1269,9 @@
                 }
             }
 
-            // 保存完整响应
+            // 保存完整响应，包括思考内容
             if (fullResponse) {
-                saveMessage('ai', fullResponse);
+                saveMessage('ai', fullResponse, false, thinkingContent);
                 messageCount++;
                 updateContextButton(); // 更新按钮显示
             }
@@ -1154,9 +1304,24 @@
 
     // 清除聊天历史
     function clearChat() {
-        chatContainer.innerHTML = '';
-        localStorage.removeItem('chatHistory');
-        displayMessage('system', 'Chat history cleared.');
+        if (confirm('Clear all chat history and reset LLM memory? This will remove all conversation context.')) {
+            // Clear the visual chat history first
+            chatContainer.innerHTML = '';
+            localStorage.removeItem('chatHistory');
+            messageCount = 0;
+            updateContextButton();
+            
+            // Show immediate feedback
+            displayMessage('system', 'Clearing chat history and LLM memory...');
+            
+            // Also clear the LLM context/memory
+            clearContext().then(() => {
+                // Success - context cleared message will be shown by clearContext
+            }).catch((error) => {
+                console.error('Error clearing context:', error);
+                displayMessage('error', 'Chat history cleared, but failed to clear LLM memory. You may need to refresh the page.');
+            });
+        }
     }
 
     // 切换主题
@@ -1541,7 +1706,12 @@ async function startRagTraining() {
         div.appendChild(header);
         const contentDiv = document.createElement('div');
         contentDiv.className = 'message-content';
-        contentDiv.textContent = content;
+        contentDiv.style.whiteSpace = 'pre-wrap'; // Preserve spaces and line breaks
+        if (content.includes('\n')) {
+            contentDiv.innerHTML = content.replace(/\n/g, '<br>');
+        } else {
+            contentDiv.textContent = content;
+        }
         div.appendChild(contentDiv);
         return div;
     }
@@ -1552,7 +1722,7 @@ async function startRagTraining() {
     }
 
     // 显示消息
-    function displayMessage(type, content, isThinking = false) {
+    function displayMessage(type, content, isThinking = false, thinkingContent = '') {
         if (isThinking) {
             const details = document.createElement('details');
             details.classList.add('chat-bubble', 'thinking-bubble');
@@ -1560,8 +1730,13 @@ async function startRagTraining() {
             const summary = document.createElement('summary');
             summary.textContent = 'Thinking...';
             const contentDiv = document.createElement('div');
-            contentDiv.textContent = content;
+            contentDiv.style.whiteSpace = 'pre-wrap'; // Preserve spaces and line breaks
             contentDiv.style.paddingTop = '0.5rem';
+            if (content.includes('\n')) {
+                contentDiv.innerHTML = content.replace(/\n/g, '<br>');
+            } else {
+                contentDiv.textContent = content;
+            }
             details.appendChild(summary);
             details.appendChild(contentDiv);
             chatContainer.appendChild(details);
@@ -1580,7 +1755,40 @@ async function startRagTraining() {
             header.appendChild(avatar);
             div.appendChild(header);
             const contentDiv = document.createElement('div');
-            contentDiv.textContent = content;
+            contentDiv.style.whiteSpace = 'pre-wrap'; // Preserve spaces and line breaks
+            
+            // For AI messages, check if we need to show thinking content
+            if (type === 'ai' && thinkingContent && thinkingContent.trim()) {
+                let finalHTML = '';
+                
+                // Add thinking section
+                finalHTML += `
+                    <details class="thinking-section">
+                        <summary>
+                            <svg class="thinking-arrow w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Thinking</span>
+                            <span class="thinking-badge">AI</span>
+                        </summary>
+                        <div class="thinking-content">${thinkingContent.replace(/\n/g, '<br>')}</div>
+                    </details>
+                `;
+                
+                // Add the main response content
+                finalHTML += `<div class="response-content" style="white-space: pre-wrap;">${content.replace(/\n/g, '<br>')}</div>`;
+                
+                contentDiv.innerHTML = finalHTML;
+                contentDiv.style.whiteSpace = 'normal'; // Reset since we're using innerHTML
+            } else {
+                // Regular content handling
+                if (content.includes('\n')) {
+                    contentDiv.innerHTML = content.replace(/\n/g, '<br>');
+                } else {
+                    contentDiv.textContent = content;
+                }
+            }
+            
             div.appendChild(contentDiv);
             chatContainer.appendChild(div);
         }
@@ -1588,9 +1796,9 @@ async function startRagTraining() {
     }
 
     // 保存消息到本地存储
-    function saveMessage(type, content, isThinking = false) {
+    function saveMessage(type, content, isThinking = false, thinkingContent = '') {
         const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
-        history.push({ type, content, isThinking });
+        history.push({ type, content, isThinking, thinkingContent });
         localStorage.setItem('chatHistory', JSON.stringify(history));
     }
 
@@ -1734,7 +1942,7 @@ async function startRagTraining() {
         const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
         if (history.length > 0) {
             showChatInterface();
-            history.forEach(msg => displayMessage(msg.type, msg.content, msg.isThinking));
+            history.forEach(msg => displayMessage(msg.type, msg.content, msg.isThinking, msg.thinkingContent || ''));
         }
 
         // 检查服务器状态
