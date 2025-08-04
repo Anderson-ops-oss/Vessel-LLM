@@ -83,6 +83,81 @@ conversation_contexts = defaultdict(lambda: deque(maxlen=20))  # Keep last 20 me
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
+def format_markdown_to_user_friendly(text):
+    """Convert markdown text to user-friendly plain text format."""
+    if not text:
+        return text
+    
+    # Store original text for comparison
+    original_text = text
+    
+    # Remove markdown headers and replace with clean formatting
+    text = re.sub(r'^###\s*\*\*(.*?)\*\*\s*$', r'\n\1\n' + '='*40, text, flags=re.MULTILINE)
+    text = re.sub(r'^##\s*\*\*(.*?)\*\*\s*$', r'\n\1\n' + '='*50, text, flags=re.MULTILINE)
+    text = re.sub(r'^#\s*\*\*(.*?)\*\*\s*$', r'\n\1\n' + '='*60, text, flags=re.MULTILINE)
+    
+    # Handle regular headers without bold
+    text = re.sub(r'^###\s+(.*?)$', r'\n\1\n' + '-'*30, text, flags=re.MULTILINE)
+    text = re.sub(r'^##\s+(.*?)$', r'\n\1\n' + '-'*40, text, flags=re.MULTILINE)
+    text = re.sub(r'^#\s+(.*?)$', r'\n\1\n' + '-'*50, text, flags=re.MULTILINE)
+    
+    # Remove bold formatting but keep the content
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+    text = re.sub(r'__(.*?)__', r'\1', text)
+    
+    # Remove italic formatting but keep the content
+    text = re.sub(r'\*(.*?)\*', r'\1', text)
+    text = re.sub(r'_(.*?)_', r'\1', text)
+    
+    # Format numbered lists more clearly with proper spacing
+    text = re.sub(r'^(\d+)\.\s+\*\*(.*?)\*\*\s*$', r'\n\1. \2', text, flags=re.MULTILINE)
+    text = re.sub(r'^(\d+)\.\s+(.*?)$', r'\n\1. \2', text, flags=re.MULTILINE)
+    
+    # Format bullet points with better spacing
+    text = re.sub(r'^[\*\-\+]\s+\*\*(.*?)\*\*\s*$', r'\n• \1', text, flags=re.MULTILINE)
+    text = re.sub(r'^[\*\-\+]\s+(.*?)$', r'\n• \1', text, flags=re.MULTILINE)
+    
+    # Remove code blocks backticks but keep the content with better formatting
+    text = re.sub(r'```.*?\n(.*?)```', r'\n[\1]\n', text, flags=re.DOTALL)
+    text = re.sub(r'`([^`]+)`', r'[\1]', text)
+    
+    # Handle special formatting patterns
+    text = re.sub(r'\*\*Steps:\*\*', 'Steps:', text)
+    text = re.sub(r'\*\*Note:\*\*', 'Note:', text)
+    text = re.sub(r'\*\*Important:\*\*', 'Important:', text)
+    
+    # Clean up multiple newlines but preserve paragraph structure
+    text = re.sub(r'\n{3,}', '\n\n', text)
+    
+    # Remove extra spaces while preserving single spaces
+    text = re.sub(r'[ \t]+', ' ', text)
+    
+    # Clean up lines and maintain readable structure
+    lines = text.split('\n')
+    formatted_lines = []
+    prev_was_empty = False
+    
+    for line in lines:
+        line = line.strip()
+        if line:
+            formatted_lines.append(line)
+            prev_was_empty = False
+        elif not prev_was_empty and formatted_lines:  # Keep single empty lines between content
+            formatted_lines.append('')
+            prev_was_empty = True
+    
+    # Join lines and clean up
+    formatted_text = '\n'.join(formatted_lines).strip()
+    
+    # If formatting didn't improve readability much, return original with minimal changes
+    if len(formatted_text) < len(original_text) * 0.5:
+        # Just remove the most aggressive markdown and return
+        simple_format = re.sub(r'\*\*(.*?)\*\*', r'\1', original_text)
+        simple_format = re.sub(r'`([^`]+)`', r'\1', simple_format)
+        return simple_format
+    
+    return formatted_text
+
 
 # LM Studio API endpoint
 LM_STUDIO_API_URL = "http://localhost:1234/v1/chat/completions"
@@ -251,6 +326,7 @@ def ask_question():
         # System prompt for tool usage
         system_prompt = (
             "你是一个友善的助手。你可以参考之前的对话内容来提供更好的回答。"
+            "请用清晰、简洁的语言回答，避免过多的标记符号。"
             "在回答之前，请在 <think> 标签中提供你的推理。"
         )
 
@@ -284,6 +360,9 @@ def ask_question():
         think_match = re.search(r'<think>(.*?)</think>', full_response, re.DOTALL)
         thinking = think_match.group(1).strip() if think_match else f"Processing question: '{question}'. Analyzing intent..."
         response_text = full_response[think_match.end():].strip() if think_match else full_response
+        
+        # Format the response to be more user-friendly
+        response_text = format_markdown_to_user_friendly(response_text)
 
         # Update conversation context - 只保存处理后的回答，不包含思考内容
         update_conversation_context(session_id, question, response_text)
@@ -313,6 +392,7 @@ def ask_question_stream():
         # System prompt for tool usage
         system_prompt = (
             "你是一个友善的助手。你可以参考之前的对话内容来提供更好的回答。"
+            "请用清晰、简洁的语言回答，避免过多的标记符号。"
             "在回答之前，请在 <think> 标签中提供你的推理。"
         )
 
@@ -357,6 +437,7 @@ def ask_question_stream():
                                     content = choice['delta']['content']
                                     if content:
                                         ai_response_content += content
+                                        # Send raw content for streaming (format at end)
                                         yield f"data: {json.dumps({'content': content})}\n\n"
                                         
                         except json.JSONDecodeError:
@@ -367,9 +448,15 @@ def ask_question_stream():
                 if ai_response_content:
                     # Process thinking and response parts - 分离思考内容和实际回答
                     think_match = re.search(r'<think>(.*?)</think>', ai_response_content, re.DOTALL)
+                    thinking_content = think_match.group(1).strip() if think_match else ""
                     response_text = ai_response_content[think_match.end():].strip() if think_match else ai_response_content
+                    # Format the complete response before saving
+                    formatted_response_text = format_markdown_to_user_friendly(response_text)
                     # 只保存处理后的回答内容，不包含思考标签
-                    update_conversation_context(session_id, question, response_text)
+                    update_conversation_context(session_id, question, formatted_response_text)
+                    
+                    # Send the final formatted response with thinking content
+                    yield f"data: {json.dumps({'formatted_response': formatted_response_text, 'thinking': thinking_content})}\n\n"
                             
                 # Send end signal with session info
                 yield f"data: {json.dumps({'done': True, 'session_id': session_id})}\n\n"
@@ -446,6 +533,7 @@ def upload_and_ask():
         # System prompt for file processing
         system_prompt = (
             "你是一个友善的助手，你必须基于提供的信息来回答问题。你可以参考之前的对话内容来提供更好的回答。"
+            "请用清晰、简洁的语言回答，避免过多的标记符号。"
             "在回答之前，请在 <think> 标签中提供你的推理。"
         )
 
@@ -500,9 +588,15 @@ def upload_and_ask():
                 if ai_response_content:
                     # Process thinking and response parts - 分离思考内容和实际回答
                     think_match = re.search(r'<think>(.*?)</think>', ai_response_content, re.DOTALL)
+                    thinking_content = think_match.group(1).strip() if think_match else ""
                     response_text = ai_response_content[think_match.end():].strip() if think_match else ai_response_content
+                    # Format the response for better user experience
+                    formatted_response_text = format_markdown_to_user_friendly(response_text)
                     # 只保存处理后的回答内容，不包含思考标签
-                    update_conversation_context(session_id, question, response_text)  # 只保存原始问题，不包含文件内容
+                    update_conversation_context(session_id, question, formatted_response_text)  # 只保存原始问题，不包含文件内容
+                    
+                    # Send the final formatted response with thinking content
+                    yield f"data: {json.dumps({'formatted_response': formatted_response_text, 'thinking': thinking_content})}\n\n"
                             
                 # Send end signal with session info
                 yield f"data: {json.dumps({'done': True, 'session_id': session_id})}\n\n"
@@ -583,6 +677,7 @@ def rag_ask():
                     # Build enhanced prompt with RAG context and conversation history
                     system_prompt = (
                         f"你是一个友善的助手，基于提供的知识库内容和之前的对话历史来回答问题。"
+                        f"请用清晰、简洁的语言回答，避免过多的标记符号。"
                         f"在回答之前，请在 <think> 标签中提供你的推理。\n\n"
                         f"相关知识库内容：\n{rag_context}"
                     )
@@ -640,9 +735,15 @@ def rag_ask():
                 if ai_response_content:
                     # Process thinking and response parts - 分离思考内容和实际回答
                     think_match = re.search(r'<think>(.*?)</think>', ai_response_content, re.DOTALL)
+                    thinking_content = think_match.group(1).strip() if think_match else ""
                     response_text = ai_response_content[think_match.end():].strip() if think_match else ai_response_content
+                    # Format the response for better user experience
+                    formatted_response_text = format_markdown_to_user_friendly(response_text)
                     # 只保存处理后的回答内容，不包含思考标签
-                    update_conversation_context(session_id, question, response_text)
+                    update_conversation_context(session_id, question, formatted_response_text)
+                    
+                    # Send the final formatted response with thinking content
+                    yield f"data: {json.dumps({'formatted_response': formatted_response_text, 'thinking': thinking_content})}\n\n"
                             
                 # Send end signal with session info
                 yield f"data: {json.dumps({'done': True, 'session_id': session_id})}\n\n"
@@ -1070,4 +1171,4 @@ if __name__ == '__main__':
     except Exception as e:
         logger.error(f"Error testing LLM connection at startup: {str(e)}")
     
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False, threaded=True)
