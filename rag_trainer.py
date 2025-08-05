@@ -108,7 +108,8 @@ class ChineseRAGSystem:
             self.semantic_chunker = SentenceTransformer(
                 self.semantic_chunking_model,
                 device=device,
-                local_files_only= True # 部署后如需离线请设为 True
+                local_files_only=True, # 部署后如需离线请设为 True
+                trust_remote_code=True # 允许运行自定义代码
             )
             logger.info(f"Initialized semantic chunking model: {self.semantic_chunking_model} (local_files_only={local_chunking})")
         except Exception as e:
@@ -123,11 +124,14 @@ class ChineseRAGSystem:
                 try:
                     self.reranker = FlagReranker(
                         self.reranker_model_name,
-                        local_files_only=True # 部署后如需离线请设为 True
+                        local_files_only=True, # 部署后如需离线请设为 True
+                        trust_remote_code=True # 允许运行自定义代码
                     )
                 except TypeError:
+                    # 如果参数不支持，则使用基本参数
                     self.reranker = FlagReranker(
-                        self.reranker_model_name
+                        self.reranker_model_name,
+                        trust_remote_code=True
                     )
                 logger.info(f"Loaded reranker model: {self.reranker_model_name} (local_files_only={local_reranker})")
             except Exception as e:
