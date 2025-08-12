@@ -16,7 +16,7 @@ A powerful Chinese/English document processing and RAG (Retrieval-Augmented Gene
 ## System Requirements
 
 - Python 3.8 or higher
-- 4GB+ RAM (8GB+ recommended for large documents)
+- 16GB+ RAM (24GB+ recommended for large documents)
 - GPU support recommended for faster model inference
 - LM Studio running locally (for LLM inference)
 
