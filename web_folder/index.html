@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OOCL Offline LLM Chat</title>
+    <link rel="icon" href="img/OOCL_logo_slogan.png" type="image/png">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="light min-h-screen">
+    <div id="dark-bg" class="bg-pattern">
+    </div>
+    <!-- 浅模式背景容器，初始隐藏 -->
+    <div id="light-bg" class="bg-pattern hidden">
+        <!-- SVG 背景，定义多个径向渐变效果 -->
+        <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice">
+            <defs>
+                <!-- 定义多个径向渐变 -->
+                <radialGradient id="Gradient1" cx="50%" cy="50%" fx="0.441602%" fy="50%" r=".5">
+                    <animate attributeName="fx" dur="34s" values="0%;3%;0%" repeatCount="indefinite"></animate>
+                    <stop offset="0%" stop-color="rgba(255, 0, 255, 1)"></stop>
+                    <stop offset="100%" stop-color="rgba(255, 0, 255, 0)"></stop>
+                </radialGradient>
+                <!-- 定义多个径向渐变 Gradient2 到 Gradient6，颜色分别为黄、黑、绿、蓝、红 -->
+                <radialGradient id="Gradient2" cx="50%" cy="50%" fx="2.68147%" fy="50%" r=".5">
+                    <animate attributeName="fx" dur="23.5s" values="0%;3%;0%" repeatCount="indefinite"></animate>
+                    <stop offset="0%" stop-color="rgba(255, 255, 0, 1)"></stop>
+                    <stop offset="100%" stop-color="rgba(255, 255, 0, 0)"></stop>
+                </radialGradient>
+                <!-- 圆形渐变背景，带有旋转、位移动画 -->
+                <radialGradient id="Gradient3" cx="50%" cy="50%" fx="0.836536%" fy="50%" r=".5">
+                    <animate attributeName="fx" dur="21.5s" values="0%;3%;0%" repeatCount="indefinite"></animate>
+                    <stop offset="0%" stop-color="rgba(0, 255, 255, 1)"></stop>
+                    <stop offset="100%" stop-color="rgba(0, 255, 255, 0)"></stop>
+                </radialGradient>
+                <radialGradient id="Gradient4" cx="50%" cy="50%" fx="4.56417%" fy="50%" r=".5">
+                    <animate attributeName="fx" dur="23s" values="0%;5%;0%" repeatCount="indefinite"></animate>
+                    <stop offset="0%" stop-color="rgba(0, 255, 0, 1)"></stop>
+                    <stop offset="100%" stop-color="rgba(0, 255, 0, 0)"></stop>
+                </radialGradient>
+                <radialGradient id="Gradient5" cx="50%" cy="50%" fx="2.65405%" fy="50%" r=".5">
+                    <animate attributeName="fx" dur="24.5s" values="0%;5%;0%" repeatCount="indefinite"></animate>
+                    <stop offset="0%" stop-color="rgba(0,0,255, 1)"></stop>
+                    <stop offset="100%" stop-color="rgba(0,0,255, 0)"></stop>
+                </radialGradient>
+                <radialGradient id="Gradient6" cx="50%" cy="50%" fx="0.981338%" fy="50%" r=".5">
+                    <animate attributeName="fx" dur="25.5s" values="0%;5%;0%" repeatCount="indefinite"></animate>
+                    <stop offset="0%" stop-color="rgba(255,0,0, 1)"></stop>
+                    <stop offset="100%" stop-color="rgba(255,0,0, 0)"></stop>
+                </radialGradient>
+            </defs>
+            <rect x="13.744%" y="1.18473%" width="100%" height="100%" fill="url(#Gradient1)" transform="rotate(334.41 50 50)">
+                <animate attributeName="x" dur="20s" values="25%;0%;25%" repeatCount="indefinite"></animate>
+                <animate attributeName="y" dur="21s" values="0%;25%;0%" repeatCount="indefinite"></animate>
+                <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="7s" repeatCount="indefinite"></animateTransform>
+            </rect>
+            <rect x="-2.17916%" y="35.4267%" width="100%" height="100%" fill="url(#Gradient2)" transform="rotate(255.072 50 50)">
+                <animate attributeName="x" dur="23s" values="-25%;0%;-25%" repeatCount="indefinite"></animate>
+                <animate attributeName="y" dur="24s" values="0%;50%;0%" repeatCount="indefinite"></animate>
+                <animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="12s" repeatCount="indefinite"></animateTransform>
+            </rect>
+            <rect x="9.00483%" y="14.5733%" width="100%" height="100%" fill="url(#Gradient3)" transform="rotate(139.903 50 50)">
+                <animate attributeName="x" dur="25s" values="0%;25%;0%" repeatCount="indefinite"></animate>
+                <animate attributeName="y" dur="12s" values="0%;25%;0%" repeatCount="indefinite"></animate>
+                <animateTransform attributeName="transform" type="rotate" from="360 50 50" to="0 50 50" dur="9s" repeatCount="indefinite"></animateTransform>
+            </rect>
+        </svg>
+    </div>
+
+    <!-- 主要内容区域 -->
+     <!-- 主容器：相对定位，最大宽度 4xl，居中，内边距 4，垂直布局 -->
+    <div class="relative z-10 max-w-4xl mx-auto p-4 h-screen flex flex-col">
+        <!-- 头部：左右布局，带模糊背景和阴影 -->
+        <header class="flex justify-between items-center mb-4 p-4 rounded-lg backdrop-blur-sm bg-white/30 dark:bg-gray-800/30 shadow-sm">
+            <!-- Logo 和标题区域 -->
+            <div class="flex items-center space-x-3">
+                <!-- Logo 图片，高度 10，宽度自适应 -->
+                <img src="img/OOCL_logo_slogan.png" alt="OOCL Logo" class="h-10 w-auto">
+                <!-- 标题：OOCL AI Assistant，字体加粗，依据主题切换颜色 -->
+                <h1 class="text-xl font-bold dark:text-white text-gray-800">OOCL AI Assistant</h1>
+            </div>
+            <!-- 功能按钮区域 -->
+            <div class="flex items-center space-x-2">
+                <!-- 上下文管理按钮 -->
+                <button id="context-manager-btn" class="px-3 py-2 rounded-full bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-sm hover:from-blue-600 hover:to-purple-600 text-xs font-medium transition-all duration-200" title="Context Manager">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                    Context (0)
+                </button>
+                <!-- 清除会话按钮：红色图标，悬停时变色 -->
+                <button id="clear-chat" class="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-sm hover:bg-red-100 dark:hover:bg-red-900 text-red-600 dark:text-red-300 transition-colors" title="Clear Chat History & LLM Memory">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </button>
+                <!-- 主题切换按钮：显示太阳或月亮图标 -->
+                <button id="theme-toggle" class="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-sm">
+                    <svg id="dark-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 dark:text-yellow-300 text-gray-700" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                    </svg>
+                    <svg id="light-icon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 hidden text-blue-600" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v-1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.707.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd" />
+                </svg>
+                </button>
+                <!-- RAG 模型切换按钮 -->
+                <button id="rag-toggle" class="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-sm ml-2">
+                    <span class="text-sm font-medium">RAG</span>
+                    <!-- RAG 状态指示器：灰色表示关闭，绿色表示开启 -->
+                    <span id="rag-status" class="ml-1 inline-block w-3 h-3 rounded-full bg-gray-400"></span>
+                </button>
+                <!-- 管理 RAG 模型按钮 -->
+                <button id="rag-models-btn" class="p-2 rounded-full bg-white/80 dark:bg-gray-700/80 shadow-sm ml-2" title="Manage RAG Models">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                </button>
+            </div>
+        </header>
+
+        <!-- 欢迎界面 -->
+         <!-- 欢迎界面：垂直居中，包含 Logo、标题和输入区域 -->
+        <div id="welcome-screen" class="welcome-container flex-1 flex flex-col items-center justify-center p-4 text-center">
+            <div class="mb-8">
+                <img src="img/OOCL_logo_slogan.png" alt="OOCL Logo" class="h-32 w-auto mx-auto mb-6">
+                <h2 class="text-3xl font-bold dark:text-white text-gray-800 mb-3">Welcome to OOCL AI</h2>
+                <p class="dark:text-gray-300 text-gray-600 max-w-lg">Ask questions or upload documents to get insights from our AI assistant.</p>
+            </div>
+            <!-- 训练进度指示 -->
+            <div id="welcome-training-progress" class="hidden w-full max-w-lg mt-4">
+                <h3 class="text-lg font-medium dark:text-white text-gray-800 mb-2">Training RAG Model</h3>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                    <div id="welcome-training-progress-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="welcome-training-status" class="text-center mt-2 text-sm">Preparing files...</p>
+            </div>
+            <!-- 输入区域：最大宽度 lg -->
+            <div class="w-full max-w-lg">
+                <div class="relative mb-4">
+                    <textarea id="question-input" rows="3" class="w-full p-4 rounded-xl shadow-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500" placeholder="Type your question here..."></textarea>
+                    <button id="send-button" class="absolute right-3 bottom-3 p-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+                <!-- 文件上传区域 -->
+                <div class="flex items-center justify-center">
+                    <input type="file" id="file-input" accept=".docx,.pdf,.xlsx,.txt" multiple class="hidden">
+                    <label for="file-input" id="file-input-label" class="flex items-center px-4 py-2 rounded-lg dark:bg-gray-700/80 bg-white/80 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600/80 transition-colors cursor-pointer mr-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <span>Upload Files</span>
+                    </label>
+                    <div id="file-info" class="text-sm dark:text-gray-400 text-gray-500"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 欢迎界面 -->
+        <div id="chat-interface" class="hidden flex-1 flex flex-col">
+            <div id="chat-container" class="flex-1 overflow-y-auto p-4"></div>
+            <!-- 训练进度指示 -->
+            <div id="chat-training-progress" class="hidden w-full max-w-lg mt-4">
+                <h3 class="text-lg font-medium dark:text-white text-gray-800 mb-2">Training RAG Model</h3>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                    <div id="chat-training-progress-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="chat-training-status" class="text-center mt-2 text-sm">Preparing files...</p>
+            </div>
+            <div class="p-4 rounded-lg backdrop-blur-sm bg-white/30 dark:bg-gray-800/30 shadow-sm mt-auto">
+                <div class="relative">
+                    <textarea id="chat-question-input" rows="3" class="w-full p-4 rounded-xl shadow-sm transition-all duration-200 focus:ring-2 focus:ring-blue-500" placeholder="Type your question here..."></textarea>
+                    <div class="flex items-center justify-between mt-2">
+                        <div class="flex items-center">
+                            <input type="file" id="chat-file-input" accept=".docx,.pdf,.xlsx,.txt" multiple class="hidden">
+                            <label for="chat-file-input" id="chat-file-input-label" class="flex items-center px-3 py-2 rounded-lg dark:bg-gray-700/80 bg-white/80 shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600/80 transition-colors cursor-pointer text-sm mr-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                </svg>
+                                Attach Files
+                            </label>
+                            <div id="chat-file-info" class="text-xs dark:text-gray-400 text-gray-500"></div>
+                        </div>
+                        <button id="chat-send-button" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md flex items-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 1.414L10.586 9H7a1 1 0 100 2h3.586l-1.293 1.293a1 1 0 101.414 1.414l3-3a1 1 0 000-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            Send
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RAG 模型管理面板 -->
+    <div id="rag-models-modal" class="modal-overlay">
+        <div class="modal-container">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold dark:text-white text-gray-800">RAG Models</h3>
+                <button id="close-rag-modal" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+            <div class="mb-4">
+                <p class="text-sm dark:text-gray-300 text-gray-600 mb-2">Select a RAG model to use for answering questions:</p>
+                <div id="rag-models-list" class="space-y-2 max-h-60 overflow-y-auto">
+                    <div class="p-3 text-center text-sm dark:text-gray-400 text-gray-500">
+                        Loading models...
+                    </div>
+                </div>
+            </div>
+            <!-- 训练进度指示 -->
+            <div id="modal-training-progress" class="hidden mb-4">
+                <h3 class="text-lg font-medium dark:text-white text-gray-800 mb-2">Training RAG Model</h3>
+                <div class="w-full bg-gray-200 dark:bg-gray-700 h-2 rounded-full overflow-hidden">
+                    <div id="modal-training-progress-bar" class="bg-blue-500 h-2 rounded-full" style="width: 0%"></div>
+                </div>
+                <p id="modal-training-status" class="text-center mt-2 text-sm">Preparing files...</p>
+            </div>
+            <!-- 新模型训练区域 -->
+            <div class="mt-6 border-t dark:border-gray-700 border-gray-200 pt-4">
+                <h4 class="font-medium mb-2">Train new model</h4>
+                <div class="mb-3">
+                    <!-- 文件上传区域 -->
+                    <div id="modal-folder-upload" class="border-2 border-dashed border-blue-500 rounded-lg p-4 text-center cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/20">
+                        <input type="file" id="modal-folder-input" webkitdirectory directory multiple class="hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mx-auto text-blue-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11v6m-3-3h6" />
+                        </svg>
+                        <p class="text-sm">Upload folder with documents</p>
+                        <p class="text-xs text-gray-500 mt-1">Model will be named after the folder</p>
+                    </div>
+                    <div id="modal-folder-info" class="text-xs dark:text-gray-400 text-gray-500 mt-1"></div>
+                </div>
+                <button id="train-rag-btn" class="w-full py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                    Train Model
+                </button>
+            </div>
+
+            <!-- 重命名成功后的操作区域 -->
+            <div id="rename-success-area" class="mt-4 p-3 bg-green-50 dark:bg-green-900/20 rounded-lg hidden">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-green-800 dark:text-green-200">Model trained successfully!</p>
+                        <p class="text-xs text-green-600 dark:text-green-300" id="trained-model-name">Model: </p>
+                    </div>
+                    <div class="flex space-x-2">
+                        <button id="rename-model-btn" class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
+                            Rename
+                        </button>
+                        <button id="use-model-btn" class="px-3 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600">
+                            Use Model
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 重命名输入框 -->
+                <div id="rename-input-area" class="mt-3 hidden">
+                    <div class="flex space-x-2">
+                        <input type="text" id="rename-input" class="flex-1 px-2 py-1 text-sm border rounded dark:border-gray-600 dark:bg-gray-700" placeholder="Enter new name">
+                        <button id="confirm-rename-btn" class="px-3 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600">
+                            Confirm
+                        </button>
+                        <button id="cancel-rename-btn" class="px-3 py-1 text-xs bg-gray-500 text-white rounded hover:bg-gray-600">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="js/script.js"></script>
+</body>
+</html>

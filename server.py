@@ -42,29 +42,31 @@ import time
 from pathlib import Path
 import uuid
 
-# Import document processor
-from document_extractor import ChineseDocumentProcessor
+import sys
+import os
+# 添加 core 目录到 sys.path
+core_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'core')
+if core_path not in sys.path:
+    sys.path.insert(0, core_path)
 
-# Import RAG system - adding the RAG directory to the path
-rag_path = r'main_function'
-sys.path.append(rag_path)
+from core.document_extractor import ChineseDocumentProcessor
+
+# Import RAG system
 try:
-    # Import directly from rag_trainer.py
-    from rag_trainer import ChineseRAGSystem
-    
+    from core.rag_trainer import ChineseRAGSystem
     # RAG models directory
     BASE_MODEL_DIR = r"rag_models"
 
     # Create a dictionary to store multiple RAG systems
     rag_systems = {}
-    
+
     # Check if default model exists and load it
     default_model_dir = os.path.join(BASE_MODEL_DIR, "default")
     if os.path.exists(default_model_dir) and os.path.exists(os.path.join(default_model_dir, "config.json")):
         rag_systems["default"] = ChineseRAGSystem(model_save_dir=default_model_dir)
         rag_systems["default"].load_system()
         print("Default RAG system loaded successfully!")
-    
+
     # Load any other existing models
     for model_dir in os.listdir(BASE_MODEL_DIR):
         model_path = os.path.join(BASE_MODEL_DIR, model_dir)
@@ -76,7 +78,7 @@ try:
                 print(f"RAG system '{model_dir}' loaded successfully!")
             except Exception as e:
                 print(f"Error loading RAG system '{model_dir}': {e}")
-    
+
     RAG_AVAILABLE = True
     print(f"Loaded {len(rag_systems)} RAG systems")
 except Exception as e:
@@ -1163,51 +1165,7 @@ from openpyxl import load_workbook
 import os
 import logging
 import shutil
-from datetime import datetime
-from collections import defaultdict, deque
-import uuid
-import sys
-import json
-from flask import Response
-import time
-from pathlib import Path
-import uuid
-
-# Import document processor
-from document_extractor import ChineseDocumentProcessor
-
-# Import RAG system - adding the RAG directory to the path
-rag_path = r'main_function'
-sys.path.append(rag_path)
-try:
-    # Import directly from rag_trainer.py
-    from rag_trainer import ChineseRAGSystem
-    
-    # RAG models directory
-    BASE_MODEL_DIR = r"rag_models"
-
-    # Create a dictionary to store multiple RAG systems
-    rag_systems = {}
-    
-    # Check if default model exists and load it
-    default_model_dir = os.path.join(BASE_MODEL_DIR, "default")
-    if os.path.exists(default_model_dir) and os.path.exists(os.path.join(default_model_dir, "config.json")):
-        rag_systems["default"] = ChineseRAGSystem(model_save_dir=default_model_dir)
-        rag_systems["default"].load_system()
-        print("Default RAG system loaded successfully!")
-    
-    # Load any other existing models
-    for model_dir in os.listdir(BASE_MODEL_DIR):
-        model_path = os.path.join(BASE_MODEL_DIR, model_dir)
-        config_path = os.path.join(model_path, "config.json")
-        if os.path.isdir(model_path) and os.path.exists(config_path) and model_dir != "default":
-            try:
-                rag_systems[model_dir] = ChineseRAGSystem(model_save_dir=model_path)
-                rag_systems[model_dir].load_system()
-                print(f"RAG system '{model_dir}' loaded successfully!")
-            except Exception as e:
-                print(f"Error loading RAG system '{model_dir}': {e}")
-    
+*** End Patch
     RAG_AVAILABLE = True
     print(f"Loaded {len(rag_systems)} RAG systems")
 except Exception as e:
