@@ -1,0 +1,33 @@
+# Core web framework
+Flask==2.3.3
+Flask-CORS==4.0.0
+
+# HTTP requests
+requests==2.31.0
+
+# Document processing
+python-docx==0.8.11
+PyPDF2==3.0.1
+openpyxl==3.1.2
+PyMuPDF==1.23.5
+
+# Machine Learning and AI
+torch>=2.0.0
+transformers>=4.30.0
+sentence-transformers>=2.2.2
+scikit-learn>=1.3.0
+numpy>=1.24.0
+
+# LlamaIndex and RAG components
+llama-index>=0.8.0
+llama-index-embeddings-huggingface>=0.1.0
+
+# HuggingFace and embedding models
+huggingface-hub>=0.16.0
+FlagEmbedding>=1.2.0
+
+# Data processing
+pathlib2>=2.3.7
+
+# Logging and utilities (built-in modules, but including for completeness)
+# os, sys, json, uuid, logging, datetime, collections, re, html, shutil are built-in
