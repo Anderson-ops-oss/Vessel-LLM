@@ -44,9 +44,11 @@ const chatTrainingStatus = document.getElementById('chat-training-status');
 const modalTrainingProgress = document.getElementById('modal-training-progress');
 const modalTrainingProgressBar = document.getElementById('modal-training-progress-bar');
 const modalTrainingStatus = document.getElementById('modal-training-status');
+const serverLoadingOverlay = document.getElementById('server-loading-overlay');
+const serverStatusMessage = document.getElementById('server-status-message');
 
 // 状态变量
-let isDarkMode = true;
+let isDarkMode = false; // 默认亮模式，与HTML中的light类一致
 let isRagEnabled = false;
 let currentRagModel = 'None'; 
 let availableRagModels = [];
@@ -55,6 +57,7 @@ let isStreamingEnabled = true;
 let messageCount = 0; 
 let currentSessionId = localStorage.getItem('oocl_session_id') || null;
 let lastTrainedModelName = ''; // 存储最后训练的模型名称
+let isServerReady = false; // 服务器就绪状态
 
 // 生成或获取session ID
 function getOrCreateSessionId() {
@@ -401,6 +404,12 @@ function cancelRename() {
 
 // 发送消息（问题和可选文件）
 async function sendMessage(inputElement, fileInputElement) {
+    // 检查服务器是否准备就绪
+    if (!isServerReady) {
+        alert('Server is still starting up. Please wait a moment and try again.');
+        return;
+    }
+    
     const question = inputElement.value.trim();
     // 重要：需要先将files转换为数组，因为清空fileInput后files会变成空的
     const files = Array.from(fileInputElement.files);
@@ -598,11 +607,21 @@ async function handleStreamingResponse(response, thinkingId) {
 
 // 更新文件信息显示
 function updateFileInfo() {
+    if (isRagEnabled && fileInput.files.length > 0) {
+        fileInput.value = ''; // 清空文件选择
+        alert('File upload is disabled in RAG mode. Please disable RAG mode to upload files.');
+        return;
+    }
     const files = fileInput.files;
     fileInfo.textContent = files.length > 0 ? `${files.length} file(s) selected` : '';
 }
 
 function updateChatFileInfo() {
+    if (isRagEnabled && chatFileInput.files.length > 0) {
+        chatFileInput.value = ''; // 清空文件选择
+        alert('File upload is disabled in RAG mode. Please disable RAG mode to upload files.');
+        return;
+    }
     const files = chatFileInput.files;
     chatFileInfo.textContent = files.length > 0 ? `${files.length} file(s) selected` : '';
 }
@@ -610,19 +629,24 @@ function updateChatFileInfo() {
 // 清除聊天历史
 function clearChat() {
     if (confirm('Clear all chat history and reset LLM memory? This will remove all conversation context.')) {
-        chatContainer.innerHTML = '';
-        localStorage.removeItem('chatHistory');
-        messageCount = 0;
-        updateContextButton();
-        
-        // Clear backend context
-        clearContext();
-        
-        // Show welcome screen again
-        chatInterface.classList.add('hidden');
-        welcomeScreen.classList.remove('hidden', 'fade-out');
-        welcomeScreen.style.opacity = '1';
+        performClearChat();
     }
+}
+
+// 执行清除聊天的实际操作（不含确认对话框）
+function performClearChat() {
+    chatContainer.innerHTML = '';
+    localStorage.removeItem('chatHistory');
+    messageCount = 0;
+    updateContextButton();
+    
+    // Clear backend context
+    clearContext();
+    
+    // Show welcome screen again
+    chatInterface.classList.add('hidden');
+    welcomeScreen.classList.remove('hidden', 'fade-out');
+    welcomeScreen.style.opacity = '1';
 }
 
 // 切换主题
@@ -644,6 +668,11 @@ function toggleTheme() {
 
 // 切换 RAG 模式
 function toggleRagMode() {
+    if (!isServerReady) {
+        alert('Server is still starting up. Please wait a moment and try again.');
+        return;
+    }
+    
     if(currentRagModel === 'None') {
         alert('Please select a RAG model first by clicking the RAG Models button.');
         return;
@@ -651,10 +680,48 @@ function toggleRagMode() {
     isRagEnabled = !isRagEnabled;
     ragStatus.className = `ml-1 inline-block w-3 h-3 rounded-full ${isRagEnabled ? 'bg-green-500' : 'bg-gray-400'}`;
     
+    // 更新文件输入控件的状态
+    updateFileInputsState();
+    
     if (isRagEnabled) {
         displayMessage('system', `RAG mode enabled with model: ${currentRagModel}. File upload is disabled in RAG mode.`);
     } else {
         displayMessage('system', 'RAG mode disabled. You can now upload files again.');
+    }
+}
+
+// 更新文件输入控件的启用/禁用状态
+function updateFileInputsState() {
+    const fileInputs = [fileInput, chatFileInput];
+    const fileLabels = [fileInputLabel, chatFileInputLabel];
+    
+    fileInputs.forEach(input => {
+        if (input) {
+            input.disabled = isRagEnabled;
+            if (isRagEnabled) {
+                input.value = ''; // 清空已选择的文件
+            }
+        }
+    });
+    
+    fileLabels.forEach(label => {
+        if (label) {
+            if (isRagEnabled) {
+                label.style.opacity = '0.5';
+                label.style.cursor = 'not-allowed';
+                label.title = 'File upload is disabled in RAG mode';
+            } else {
+                label.style.opacity = '1';
+                label.style.cursor = 'pointer';
+                label.title = '';
+            }
+        }
+    });
+    
+    // 清空文件信息显示
+    if (isRagEnabled) {
+        if (fileInfo) fileInfo.textContent = '';
+        if (chatFileInfo) chatFileInfo.textContent = '';
     }
 }
 
@@ -1013,23 +1080,89 @@ function setInputControlsDisabled(isDisabled, isChat) {
 
 // 检查服务器状态
 async function checkServerStatus() {
-    try {
-        const response = await fetch(`${BASE_URL}/health`);
-        const data = await response.json();
-        if (data.status === 'ok') {
-            console.log('Server is running');
-            try {
-                const llmResponse = await fetch(`${BASE_URL}/test_llm`);
-                const llmData = await llmResponse.json();
-                if (llmData.status !== 'ok') {
-                    displayLLMError();
+    const maxRetries = 30; // 最大重试次数
+    const retryDelay = 2000; // 重试间隔（毫秒）
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        try {
+            updateServerStatus(`Checking server status... (${attempt}/${maxRetries})`);
+            
+            const response = await fetch(`${BASE_URL}/health`, { timeout: 5000 });
+            const data = await response.json();
+            
+            if (data.status === 'ok') {
+                updateServerStatus('Server is running, checking LLM...');
+                
+                try {
+                    const llmResponse = await fetch(`${BASE_URL}/test_llm`, { timeout: 10000 });
+                    const llmData = await llmResponse.json();
+                    
+                    if (llmData.status === 'ok') {
+                        updateServerStatus('All systems ready!');
+                        hideServerLoadingOverlay();
+                        return; // 服务器和LLM都准备就绪
+                    } else {
+                        updateServerStatus('LLM not ready, retrying...');
+                    }
+                } catch (error) {
+                    updateServerStatus('LLM test failed, retrying...');
                 }
-            } catch (error) {
-                displayLLMError();
             }
+        } catch (error) {
+            updateServerStatus(`Connection failed, retrying... (${attempt}/${maxRetries})`);
         }
-    } catch (error) {
-        displayServerError();
+        
+        // 如果不是最后一次尝试，等待后重试
+        if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, retryDelay));
+        }
+    }
+    
+    // 所有重试都失败了
+    updateServerStatus('Failed to connect to server. Please check if the server is running.');
+    showServerError();
+}
+
+// 更新服务器状态消息
+function updateServerStatus(message) {
+    if (serverStatusMessage) {
+        serverStatusMessage.textContent = message;
+    }
+}
+
+// 隐藏服务器加载遮罩
+function hideServerLoadingOverlay() {
+    isServerReady = true;
+    if (serverLoadingOverlay) {
+        serverLoadingOverlay.style.opacity = '0';
+        setTimeout(() => {
+            serverLoadingOverlay.style.display = 'none';
+        }, 300);
+    }
+}
+
+// 显示服务器错误（修改现有函数以适配新的加载状态）
+function showServerError() {
+    if (serverLoadingOverlay) {
+        const overlay = serverLoadingOverlay;
+        const content = overlay.querySelector('.text-center');
+        content.innerHTML = `
+            <div class="mb-4">
+                <img src="img/OOCL_logo_slogan.png" alt="OOCL Logo" class="h-24 w-auto mx-auto mb-4">
+            </div>
+            <div class="text-red-500 mb-4">
+                <svg class="w-12 h-12 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.732-.833-2.5 0L4.314 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                </svg>
+                <h2 class="text-xl font-bold mb-2">Server Connection Failed</h2>
+            </div>
+            <p class="text-sm dark:text-gray-400 text-gray-600 max-w-md mb-4">
+                Unable to connect to the AI assistant server. Please ensure the server is running and try refreshing the page.
+            </p>
+            <button onclick="location.reload()" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition-colors">
+                Retry
+            </button>
+        `;
     }
 }
 
@@ -1084,6 +1217,17 @@ function createFireflies() {
 
 // 初始化 UI
 function initUI() {
+    // 初始化主题设置 - 确保图标和背景与当前模式一致
+    darkIcon?.classList.toggle('hidden', !isDarkMode);
+    lightIcon?.classList.toggle('hidden', isDarkMode);
+    darkBg?.classList.toggle('hidden', !isDarkMode);
+    lightBg?.classList.toggle('hidden', isDarkMode);
+    
+    // 确保加载遮罩也遵循当前主题
+    if (serverLoadingOverlay) {
+        serverLoadingOverlay.classList.toggle('dark', isDarkMode);
+    }
+    
     if (isDarkMode) {
         createFireflies();
     }
@@ -1102,12 +1246,25 @@ function initUI() {
         updateContextButton();
     }
 
-    // 检查服务器状态
+    // 初始化文件输入控件状态
+    updateFileInputsState();
+
+    // 最后检查服务器状态（这将管理加载遮罩的显示/隐藏）
     checkServerStatus();
 }
 
 // 页面加载时初始化
 document.addEventListener('DOMContentLoaded', () => {
+    // 检测页面刷新并自动清除聊天历史
+    // 使用 performance.navigation.type 或 performance.getEntriesByType 来检测刷新
+    if (performance.navigation && performance.navigation.type === 1) {
+        // 页面是通过刷新加载的，执行清除操作
+        performClearChat();
+    } else if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
+        // 现代浏览器的刷新检测
+        performClearChat();
+    }
+    
     initializeEventListeners();
     initUI();
 });
