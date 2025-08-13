@@ -27,4 +27,3 @@ Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription:
 
 [Run]
 Filename: "{app}\download_models_to_cache.exe"; WorkingDir: "{app}"; Description: "Download LLM/RAG models"; Flags: nowait postinstall skipifsilent
-Filename: "{app}\start.bat"; Description: "Launch LLM-RAG Suite"; Flags: nowait postinstall skipifsilent
