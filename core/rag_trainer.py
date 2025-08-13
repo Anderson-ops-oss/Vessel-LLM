@@ -57,83 +57,202 @@ class ChineseRAGSystem:
             'created_at': datetime.now().isoformat()
         }
     
-    def setup_models(self, force_offline: bool = False):
+    def setup_models(self, force_offline: bool = True):
         """
-        Setup embedding, reranker, and semantic chunking models. 自动检测本地/在线模式。
-        # 部署后如需完全离线，请在下方所有 from_pretrained/SentenceTransformer/HuggingFaceEmbedding/FlagReranker 加 local_files_only=True
+        Setup embedding, reranker, and semantic chunking models. 默认使用离线模式。
         """
         import os
         device = "cuda" if torch.cuda.is_available() else "cpu"
         logger.info(f"Current device: {device}")
 
-        def is_local_model(model_name):
-            # 判断是否为本地路径或cache下有文件
-            if os.path.isdir(model_name) or os.path.exists(model_name):
-                return True
-            # 检查transformers默认cache
-            try:
-                from transformers.utils.hub import cached_file
-                from huggingface_hub.errors import EntryNotFoundError
+        # 强制设置离线模式环境变量
+        os.environ['HF_OFFLINE'] = '1'
+        os.environ['TRANSFORMERS_OFFLINE'] = '1'
+        os.environ['HF_DATASETS_OFFLINE'] = '1'
+
+        def create_sentence_transformers_config(model_path):
+            """为缺失 sentence_transformers_config.json 的模型创建基础配置"""
+            config_file = os.path.join(model_path, "sentence_transformers_config.json")
+            if not os.path.exists(config_file):
+                # 尝试读取模型的实际配置来获取正确的维度
                 try:
-                    cached_file(model_name, "config.json", local_files_only=True)
-                    return True
+                    model_config_file = os.path.join(model_path, "config.json")
+                    if os.path.exists(model_config_file):
+                        with open(model_config_file, 'r', encoding='utf-8') as f:
+                            model_config = json.load(f)
+                        
+                        # 尝试获取嵌入维度
+                        embedding_dim = model_config.get('hidden_size', 
+                                       model_config.get('model_dim', 
+                                       model_config.get('d_model', 1024)))
+                    else:
+                        embedding_dim = 1024  # 默认维度
                 except Exception:
+                    embedding_dim = 1024  # 默认维度
+                
+                # 基础的 sentence-transformers 配置
+                config = {
+                    "__version__": {
+                        "sentence_transformers": "2.2.2",
+                        "transformers": "4.21.0",
+                        "pytorch": "1.12.1"
+                    },
+                    "modules": [
+                        {
+                            "idx": 0,
+                            "name": "0",
+                            "path": "",
+                            "type": "sentence_transformers.models.Transformer"
+                        },
+                        {
+                            "idx": 1,
+                            "name": "1",
+                            "path": "1_Pooling",
+                            "type": "sentence_transformers.models.Pooling"
+                        }
+                    ]
+                }
+                
+                try:
+                    with open(config_file, 'w', encoding='utf-8') as f:
+                        json.dump(config, f, indent=2)
+                    
+                    # 创建 pooling 配置目录和文件
+                    pooling_dir = os.path.join(model_path, "1_Pooling")
+                    os.makedirs(pooling_dir, exist_ok=True)
+                    
+                    pooling_config = {
+                        "word_embedding_dimension": embedding_dim,
+                        "pooling_mode_cls_token": False,
+                        "pooling_mode_mean_tokens": True,
+                        "pooling_mode_max_tokens": False,
+                        "pooling_mode_mean_sqrt_len_tokens": False
+                    }
+                    
+                    pooling_config_file = os.path.join(pooling_dir, "config.json")
+                    with open(pooling_config_file, 'w', encoding='utf-8') as f:
+                        json.dump(pooling_config, f, indent=2)
+                    
+                    logger.info(f"Created sentence_transformers_config.json for {model_path} with embedding_dim={embedding_dim}")
+                    return True
+                except Exception as e:
+                    logger.warning(f"Failed to create config for {model_path}: {e}")
                     return False
-            except ImportError:
-                return False
+            return True
 
-        # embedding model
-        local_embedding = force_offline or is_local_model(self.embedding_model_name)
+        def find_local_model_path(model_name):
+            """查找本地模型路径"""
+            # 检查是否是绝对路径
+            if os.path.isabs(model_name) and os.path.exists(model_name):
+                return model_name
+                
+            # 检查当前缓存目录
+            cache_dir = os.environ.get('HF_HOME', os.environ.get('TRANSFORMERS_CACHE', ''))
+            if cache_dir:
+                # 尝试标准的 HuggingFace 模型路径格式
+                model_cache_name = model_name.replace('/', '--')
+                model_dirs = [
+                    os.path.join(cache_dir, f"models--{model_cache_name}"),
+                    os.path.join(cache_dir, model_cache_name),
+                    os.path.join(cache_dir, model_name)
+                ]
+                
+                for model_dir in model_dirs:
+                    if os.path.exists(model_dir):
+                        # 查找 snapshots 目录下的实际模型
+                        snapshots_dir = os.path.join(model_dir, "snapshots")
+                        if os.path.exists(snapshots_dir):
+                            # 获取最新的快照目录
+                            snapshot_dirs = [d for d in os.listdir(snapshots_dir) 
+                                           if os.path.isdir(os.path.join(snapshots_dir, d))]
+                            if snapshot_dirs:
+                                latest_snapshot = sorted(snapshot_dirs)[-1]
+                                full_path = os.path.join(snapshots_dir, latest_snapshot)
+                                if os.path.exists(os.path.join(full_path, "config.json")):
+                                    logger.info(f"Found local model at: {full_path}")
+                                    return full_path
+                        
+                        # 直接检查是否有 config.json
+                        if os.path.exists(os.path.join(model_dir, "config.json")):
+                            logger.info(f"Found local model at: {model_dir}")
+                            return model_dir
+            
+            # 如果都找不到，返回原始名称（可能会失败）
+            logger.warning(f"Could not find local model for: {model_name}")
+            return model_name
 
-        # ====== 这里是 Embedding 模型加载，部署后如需离线请确保 local_files_only=True ======
+        # ====== Embedding 模型加载 ======
         try:
+            embedding_model_path = find_local_model_path(self.embedding_model_name)
             self.embedding_model = HuggingFaceEmbedding(
-                model_name=self.embedding_model_name,
+                model_name=embedding_model_path,
                 trust_remote_code=True,
                 device=device,
-                local_files_only=True # 部署后如需离线请设为 True
+                local_files_only=True
             )
-            logger.info(f"Successfully loaded embedding model: {self.embedding_model_name} (local_files_only={local_embedding})")
+            logger.info(f"Successfully loaded embedding model: {embedding_model_path}")
         except Exception as e:
-            logger.error(f"Fail to load embedding model: {e}")
+            logger.error(f"Failed to load embedding model: {e}")
             raise
 
         Settings.embed_model = self.embedding_model
 
-        # semantic chunking model
-        local_chunking = force_offline or is_local_model(self.semantic_chunking_model)
-
-        # ====== 这里是 SentenceTransformer 语义分块模型加载，部署后如需离线请确保 local_files_only=True ======
+        # ====== SentenceTransformer 语义分块模型加载 ======
         try:
-            self.semantic_chunker = SentenceTransformer(
-                self.semantic_chunking_model,
-                device=device,
-                local_files_only=True, # 部署后如需离线请设为 True
-                trust_remote_code=True # 允许运行自定义代码
-            )
-            logger.info(f"Initialized semantic chunking model: {self.semantic_chunking_model} (local_files_only={local_chunking})")
+            chunking_model_path = find_local_model_path(self.semantic_chunking_model)
+            
+            # 尝试创建缺失的 sentence-transformers 配置
+            create_sentence_transformers_config(chunking_model_path)
+            
+            # 使用更强的警告抑制
+            import warnings
+            import logging
+            
+            # 临时降低 sentence_transformers 的日志级别
+            st_logger = logging.getLogger('sentence_transformers')
+            original_level = st_logger.level
+            st_logger.setLevel(logging.ERROR)
+            
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                # 抑制所有相关警告
+                warnings.filterwarnings("ignore", category=UserWarning)
+                warnings.filterwarnings("ignore", message=".*No sentence-transformers model found.*")
+                warnings.filterwarnings("ignore", message=".*Creating a new one with mean pooling.*")
+                
+                self.semantic_chunker = SentenceTransformer(
+                    chunking_model_path,
+                    device=device,
+                    local_files_only=True,
+                    trust_remote_code=True
+                )
+            
+            # 恢复原始日志级别
+            st_logger.setLevel(original_level)
+            
+            logger.info(f"Initialized semantic chunking model: {chunking_model_path}")
+                
         except Exception as e:
             logger.error(f"Failed to initialize semantic chunking model: {e}")
             raise
 
-        # reranker
-        # ====== 这里是 FlagReranker 重排序模型加载，部署后如需离线请确保 local_files_only=True ======
+        # ====== FlagReranker 重排序模型加载 ======
         if self.use_reranker and FlagReranker:
-            local_reranker = force_offline or is_local_model(self.reranker_model_name)
             try:
+                reranker_model_path = find_local_model_path(self.reranker_model_name)
                 try:
                     self.reranker = FlagReranker(
-                        self.reranker_model_name,
-                        local_files_only=True, # 部署后如需离线请设为 True
-                        trust_remote_code=True # 允许运行自定义代码
+                        reranker_model_path,
+                        local_files_only=True,
+                        trust_remote_code=True
                     )
                 except TypeError:
                     # 如果参数不支持，则使用基本参数
                     self.reranker = FlagReranker(
-                        self.reranker_model_name,
+                        reranker_model_path,
                         trust_remote_code=True
                     )
-                logger.info(f"Loaded reranker model: {self.reranker_model_name} (local_files_only={local_reranker})")
+                logger.info(f"Loaded reranker model: {reranker_model_path}")
             except Exception as e:
                 logger.error(f"Failed to load reranker: {e}")
                 self.reranker = None
