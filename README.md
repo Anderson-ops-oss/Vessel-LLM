@@ -19,7 +19,7 @@ A powerful Chinese/English document processing and RAG (Retrieval-Augmented Gene
 - 16GB+ RAM (24GB+ recommended for large documents)
 - GPU support recommended for faster model inference
 - LM Studio running locally (for LLM inference)
-
+- 12 GB vRAM (16+ recommended for large documents)
 ## Installation Guide
 
 ### Step 1: Create Virtual Environment
