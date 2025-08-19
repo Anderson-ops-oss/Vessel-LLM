@@ -47,8 +47,8 @@ const modalTrainingStatus = document.getElementById('modal-training-status');
 const serverLoadingOverlay = document.getElementById('server-loading-overlay');
 const serverStatusMessage = document.getElementById('server-status-message');
 
-// 状态变量
-let isDarkMode = false; // 默认亮模式，与HTML中的light类一致
+// Initialize state variables
+let isDarkMode = false; 
 let isRagEnabled = false;
 let currentRagModel = 'None'; 
 let availableRagModels = [];
@@ -56,10 +56,10 @@ let isTraining = false;
 let isStreamingEnabled = true;
 let messageCount = 0; 
 let currentSessionId = localStorage.getItem('oocl_session_id') || null;
-let lastTrainedModelName = ''; // 存储最后训练的模型名称
-let isServerReady = false; // 服务器就绪状态
+let lastTrainedModelName = ''; 
+let isServerReady = false; 
 
-// 生成或获取session ID
+// Create or get session ID
 function getOrCreateSessionId() {
     if (!currentSessionId) {
         currentSessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
@@ -68,7 +68,7 @@ function getOrCreateSessionId() {
     return currentSessionId;
 }
 
-// 更新上下文按钮显示
+// Update context button display (Actually we already hide the button)
 function updateContextButton() {
     if (contextManagerBtn) {
         contextManagerBtn.innerHTML = `
@@ -80,16 +80,17 @@ function updateContextButton() {
     }
 }
 
-// 后端 API 基础 URL
+// API base URL
 const BASE_URL = 'http://localhost:5000';
 
-// 初始化事件监听器
+// Initialize event listeners
 function initializeEventListeners() {
-    // 发送按钮事件
+
+    // Send button event
     sendButton?.addEventListener('click', () => sendMessage(questionInput, fileInput));
     chatSendButton?.addEventListener('click', () => sendMessage(chatQuestionInput, chatFileInput));
 
-    // 输入框回车键事件
+    // Input box Enter key event
     questionInput?.addEventListener('keydown', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
@@ -103,20 +104,20 @@ function initializeEventListeners() {
         }
     });
 
-    // 文件输入事件
+    // File input event
     fileInput?.addEventListener('change', updateFileInfo);
     chatFileInput?.addEventListener('change', updateChatFileInfo);
 
-    // 主题切换
+    // Theme toggle
     themeToggle?.addEventListener('click', toggleTheme);
 
-    // 清除聊天
+    // Clear chat
     clearChatButton?.addEventListener('click', clearChat);
 
-    // RAG 模式切换
+    // RAG mode toggle
     ragToggle?.addEventListener('click', toggleRagMode);
 
-    // RAG 模型模态框事件
+    // RAG model modal events
     ragModelsBtn?.addEventListener('click', openRagModelsModal);
     closeRagModalBtn?.addEventListener('click', closeRagModelsModal);
     modalFolderUpload?.addEventListener('click', () => modalFolderInput?.click());
@@ -130,26 +131,26 @@ function initializeEventListeners() {
     
     trainRagBtn?.addEventListener('click', startRagTraining);
 
-    // 添加重命名相关的事件监听器
+    // Add rename-related event listeners
     document.getElementById('rename-model-btn')?.addEventListener('click', showRenameInput);
     document.getElementById('use-model-btn')?.addEventListener('click', useTrainedModel);
     document.getElementById('confirm-rename-btn')?.addEventListener('click', confirmRename);
     document.getElementById('cancel-rename-btn')?.addEventListener('click', cancelRename);
 
-    // 添加 SSE 监听以获取训练进度
+    // Add SSE listener to get training progress
     const source = new EventSource(`${BASE_URL}/training_progress`);
     source.onmessage = (event) => {
         const progress = JSON.parse(event.data);
-        
-        // 只有在实际训练时或有错误时才更新进度
+
+        // Only update progress if training is ongoing or there's an error
         if (progress.is_training || progress.error) {
             updateTrainingProgress(progress.percentage, progress.status, progress.error);
         } else if (progress.percentage === 0 && (!progress.status || progress.status.trim() === '')) {
-            // 如果没有训练在进行且没有状态信息，确保进度条隐藏
+            // If no training is ongoing and there's no status information, ensure the progress bar is hidden
             hideTrainingProgress();
         }
-        
-        // 训练完成时隐藏进度条
+
+        // Hide progress bar when training is complete
         if (!progress.is_training && progress.percentage === 100 && !progress.error) {
             isTraining = false;
             setTimeout(() => {
@@ -160,22 +161,22 @@ function initializeEventListeners() {
     source.onerror = () => {
         console.log('SSE connection closed');
     };
-    
-    // 添加上下文管理器按钮的事件监听器
+
+    // Context manager button event (Actually hide)
     if (contextManagerBtn) {
         contextManagerBtn.addEventListener('click', manageContext);
-        console.log('contextManager event listener added'); // 调试信息
+        console.log('contextManager event listener added'); // Debug info
     } else {
-        console.log('contextManagerBtn not found'); // 调试信息
+        console.log('contextManagerBtn not found'); // Debug info
     }
 }
 
-// 显示对话上下文
+// Show conversation context (Acctually hide)
 async function showContext() {
-    console.log('showContext function called'); // 调试信息
+    console.log('showContext function called'); // Debug info
     try {
         const sessionId = getOrCreateSessionId();
-        console.log('Using session ID:', sessionId); // 调试信息
+        console.log('Using session ID:', sessionId); // Debug info
         
         const response = await fetch(`${BASE_URL}/get-context?session_id=${encodeURIComponent(sessionId)}`, {
             method: 'GET',
@@ -183,15 +184,15 @@ async function showContext() {
         });
         const result = await response.json();
         
-        console.log('Context result:', result); // 调试信息
+        console.log('Context result:', result); // Debug info
         
         if (result.status === 'success') {
             if (result.context && result.context.length > 0) {
                 const contextText = result.context.map((msg, index) => 
                     `[${index + 1}] ${msg.role.toUpperCase()}:\n${msg.content}\n${'='.repeat(50)}`
                 ).join('\n\n');
-                
-                // 创建一个更好的显示窗口
+
+                // Create a new window for context display
                 const contextWindow = window.open('', '_blank', 'width=800,height=600,scrollbars=yes,resizable=yes');
                 contextWindow.document.write(`
                     <html>
@@ -234,12 +235,12 @@ async function showContext() {
     }
 }
 
-// 清除对话上下文
+// Clear conversation context
 async function clearContext() {
     try {
         const sessionId = getOrCreateSessionId();
-        console.log('Clearing context for session ID:', sessionId); // 调试信息
-        
+        console.log('Clearing context for session ID:', sessionId); // Debug info
+
         const response = await fetch(`${BASE_URL}/clear-context`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -247,7 +248,7 @@ async function clearContext() {
         });
         const result = await response.json();
         
-        console.log('Clear context result:', result); // 调试信息
+        console.log('Clear context result:', result); // Debug info
         
         if (result.status === 'success') {
             messageCount = 0;
@@ -262,7 +263,7 @@ async function clearContext() {
     }
 }
 
-// 上下文管理器 - 组合功能
+// Manage context
 async function manageContext() {
     const contextContainer = document.createElement('div');
     contextContainer.className = 'context-manager-popup fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-6 z-50 max-w-md w-full mx-4';
@@ -309,7 +310,7 @@ async function manageContext() {
     };
 }
 
-// 显示重命名成功区域
+// Show rename success area
 function showRenameSuccessArea(modelName) {
     lastTrainedModelName = modelName;
     const renameSuccessArea = document.getElementById('rename-success-area');
@@ -321,7 +322,7 @@ function showRenameSuccessArea(modelName) {
     }
 }
 
-// 显示重命名输入框
+// Show rename input area
 function showRenameInput() {
     const renameInputArea = document.getElementById('rename-input-area');
     const renameInput = document.getElementById('rename-input');
@@ -332,7 +333,7 @@ function showRenameInput() {
     }
 }
 
-// 使用训练好的模型
+// Use trained model
 function useTrainedModel() {
     if (lastTrainedModelName) {
         selectRagModel(lastTrainedModelName);
@@ -342,7 +343,7 @@ function useTrainedModel() {
     }
 }
 
-// 确认重命名
+// Confirm rename
 async function confirmRename() {
     const renameInput = document.getElementById('rename-input');
     const newName = renameInput?.value.trim();
@@ -372,9 +373,9 @@ async function confirmRename() {
             lastTrainedModelName = newName;
             showRenameSuccessArea(newName);
             displayMessage('system', `Model renamed to "${newName}" successfully`);
-            loadRagModels(); // 重新加载模型列表
-            
-            // 隐藏重命名输入区域
+            loadRagModels();
+
+            // Hide rename input area
             const renameInputArea = document.getElementById('rename-input-area');
             if (renameInputArea) {
                 renameInputArea.classList.add('hidden');
@@ -388,7 +389,7 @@ async function confirmRename() {
     }
 }
 
-// 取消重命名
+// Cancel rename
 function cancelRename() {
     const renameInputArea = document.getElementById('rename-input-area');
     const renameInput = document.getElementById('rename-input');
@@ -402,45 +403,47 @@ function cancelRename() {
     }
 }
 
-// 发送消息（问题和可选文件）
+// Send message function
 async function sendMessage(inputElement, fileInputElement) {
-    // 检查服务器是否准备就绪
+    // Check if server is ready
     if (!isServerReady) {
         alert('Server is still starting up. Please wait a moment and try again.');
         return;
     }
     
     const question = inputElement.value.trim();
-    // 重要：需要先将files转换为数组，因为清空fileInput后files会变成空的
+    // Important: Convert files to array first, as clearing fileInput will make files empty
     const files = Array.from(fileInputElement.files);
     
-    // 调试信息
+    // Debug message
     console.log('发送消息调试信息:');
     console.log('- 问题:', question);
     console.log('- 文件数量:', files.length);
     console.log('- RAG模式:', isRagEnabled);
     console.log('- 当前RAG模型:', currentRagModel);
     console.log('- 文件列表:', files.map(f => f.name));
-    
-    // 检查RAG模式下是否尝试上传文件
+
+    // Check whether RAG mode is enabled and files are being uploaded
     if (isRagEnabled && files.length > 0) {
         alert('File upload is disabled in RAG mode. Please disable RAG mode to upload files.');
         return;
     }
-    
+
+    // Check if question is empty and no files are selected
     if (!question && files.length === 0) {
         alert('Please enter a question or select files to upload.');
         return;
     }
 
+    // Show chat interface if question input is used
     if (inputElement === questionInput) {
         showChatInterface();
     }
-    
-    // 禁用输入控件
+
+    // Disable input controls
     setInputControlsDisabled(true, inputElement === chatQuestionInput);
 
-    // 显示用户消息并清空输入
+    // Show user message and clear input
     if (question) {
         displayMessage('user', question);
         inputElement.value = '';
@@ -458,7 +461,7 @@ async function sendMessage(inputElement, fileInputElement) {
         }
     }
 
-    // 显示思考中消息
+    // Show thinking message
     const thinkingId = Date.now();
     displayThinkingMessage(thinkingId);
 
@@ -1217,7 +1220,7 @@ function createFireflies() {
 
 // 初始化 UI
 function initUI() {
-    // 初始化主题设置 - 确保图标和背景与当前模式一致
+    // 初始化主题设置
     darkIcon?.classList.toggle('hidden', !isDarkMode);
     lightIcon?.classList.toggle('hidden', isDarkMode);
     darkBg?.classList.toggle('hidden', !isDarkMode);
@@ -1264,7 +1267,6 @@ document.addEventListener('DOMContentLoaded', () => {
         // 现代浏览器的刷新检测
         performClearChat();
     }
-    
     initializeEventListeners();
     initUI();
 });
