@@ -68,7 +68,7 @@ function getOrCreateSessionId() {
     return currentSessionId;
 }
 
-// Update context button display (Actually we already hide the button)
+// Update context display 
 function updateContextButton() {
     if (contextManagerBtn) {
         contextManagerBtn.innerHTML = `
@@ -86,7 +86,7 @@ const BASE_URL = 'http://localhost:5000';
 // Initialize event listeners
 function initializeEventListeners() {
 
-    // Send button event
+    // Send button event)
     sendButton?.addEventListener('click', () => sendMessage(questionInput, fileInput));
     chatSendButton?.addEventListener('click', () => sendMessage(chatQuestionInput, chatFileInput));
 
@@ -126,6 +126,7 @@ function initializeEventListeners() {
         if (modalFolderInfo) {
             modalFolderInfo.textContent = fileCount > 0 ? `${fileCount} files selected` : 'No files selected';
         }
+        // If no files are selected or training is in progress, disable the training button
         trainRagBtn.disabled = fileCount === 0 || isTraining;
     });
     
@@ -263,7 +264,7 @@ async function clearContext() {
     }
 }
 
-// Manage context
+// Manage context (already deleted function)
 async function manageContext() {
     const contextContainer = document.createElement('div');
     contextContainer.className = 'context-manager-popup fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white dark:bg-gray-800 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700 p-6 z-50 max-w-md w-full mx-4';
@@ -310,19 +311,20 @@ async function manageContext() {
     };
 }
 
-// Show rename success area
+// Show rename success area (After RAG training)
 function showRenameSuccessArea(modelName) {
     lastTrainedModelName = modelName;
     const renameSuccessArea = document.getElementById('rename-success-area');
     const trainedModelNameSpan = document.getElementById('trained-model-name');
-    
+
+    // Update the displayed model name and show the success area
     if (renameSuccessArea && trainedModelNameSpan) {
         trainedModelNameSpan.textContent = modelName;
         renameSuccessArea.classList.remove('hidden');
     }
 }
 
-// Show rename input area
+// Show rename input area 
 function showRenameInput() {
     const renameInputArea = document.getElementById('rename-input-area');
     const renameInput = document.getElementById('rename-input');
@@ -333,7 +335,7 @@ function showRenameInput() {
     }
 }
 
-// Use trained model
+// Use trained model (After RAG training)
 function useTrainedModel() {
     if (lastTrainedModelName) {
         selectRagModel(lastTrainedModelName);
@@ -403,16 +405,16 @@ function cancelRename() {
     }
 }
 
-// Send message function
+// Send message function (when user clicks send button or presses Enter)
 async function sendMessage(inputElement, fileInputElement) {
     // Check if server is ready
     if (!isServerReady) {
         alert('Server is still starting up. Please wait a moment and try again.');
         return;
     }
-    
+
+    // get the question and remove blank spaces
     const question = inputElement.value.trim();
-    // Important: Convert files to array first, as clearing fileInput will make files empty
     const files = Array.from(fileInputElement.files);
     
     // Debug message
@@ -435,7 +437,7 @@ async function sendMessage(inputElement, fileInputElement) {
         return;
     }
 
-    // Show chat interface if question input is used
+    // Show chat interface if the input send from welcome page
     if (inputElement === questionInput) {
         showChatInterface();
     }
@@ -461,19 +463,18 @@ async function sendMessage(inputElement, fileInputElement) {
         }
     }
 
-    // Show thinking message
+    // Show thinking message (thinking is turned off)
     const thinkingId = Date.now();
     displayThinkingMessage(thinkingId);
 
     try {
         let endpoint, formData;
         
-        console.log('开始发送逻辑判断...');
+        // Debug message
         console.log('isRagEnabled:', isRagEnabled);
         console.log('files.length:', files.length);
         
         if (isRagEnabled) {
-            console.log('进入RAG分支');
             endpoint = `${BASE_URL}/rag_ask`;
             const requestData = {
                 question: question,
@@ -489,33 +490,26 @@ async function sendMessage(inputElement, fileInputElement) {
             
             await handleStreamingResponse(response, thinkingId);
         } else if (files.length > 0) {
-            console.log('进入文件上传分支 - 准备上传文件...');
             endpoint = `${BASE_URL}/upload_and_ask`;
             formData = new FormData();
             formData.append('question', question);
             formData.append('session_id', getOrCreateSessionId());
             for (const file of files) {
-                console.log(`添加文件到FormData: ${file.name}, 大小: ${file.size} bytes`);
                 formData.append('file', file);
             }
             
-            console.log('发送文件上传请求到:', endpoint);
             const response = await fetch(endpoint, {
                 method: 'POST',
                 body: formData
             });
             
-            console.log('文件上传响应状态:', response.status);
             await handleStreamingResponse(response, thinkingId);
         } else {
-            console.log('进入普通问答分支 - 没有文件上传');
             endpoint = `${BASE_URL}/ask-stream`;
             const requestData = {
                 question: question,
                 session_id: getOrCreateSessionId()
             };
-            
-            console.log('发送普通问答请求到:', endpoint);
             const response = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -532,13 +526,14 @@ async function sendMessage(inputElement, fileInputElement) {
     }
 }
 
-// 处理流式响应
+// Streaming response handler
 async function handleStreamingResponse(response, thinkingId) {
     if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`HTTP ${response.status}: ${errorText}`);
     }
 
+    // Initialize variables for streaming response
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let buffer = '';
@@ -547,25 +542,34 @@ async function handleStreamingResponse(response, thinkingId) {
 
     try {
         while (true) {
+            // Read from the stream until done
             const { value, done } = await reader.read();
             if (done) break;
 
+            // Append new data to buffer
             buffer += decoder.decode(value, { stream: true });
+            // Split buffer into lines
             const lines = buffer.split('\n');
-            buffer = lines.pop(); // Keep incomplete line in buffer
+            // Keep incomplete line in buffer
+            buffer = lines.pop(); 
 
+            // Process each complete line
             for (const line of lines) {
+                // handle data line start with 'data: '
                 if (line.startsWith('data: ')) {
                     try {
                         const data = JSON.parse(line.slice(6));
-                        
+
+                        // If server return error, show error message
                         if (data.error) {
                             removeThinkingMessage(thinkingId);
                             displayMessage('error', data.error);
                             return;
                         }
-                        
+
+                        // If server return content, show it
                         if (data.content) {
+                            // Create AI message element if not exists
                             if (!aiMessageElement) {
                                 removeThinkingMessage(thinkingId);
                                 aiMessageElement = createMessageElement('ai', '');
@@ -575,9 +579,12 @@ async function handleStreamingResponse(response, thinkingId) {
                             aiMessageContent += data.content;
                             const contentDiv = aiMessageElement.querySelector('.message-content');
                             contentDiv.textContent = aiMessageContent;
+
+                            // Scroll to bottom
                             scrollToBottom();
                         }
-                        
+
+                        // Handle formatted response or thinking
                         if (data.formatted_response || data.thinking) {
                             if (aiMessageElement && data.formatted_response) {
                                 const contentDiv = aiMessageElement.querySelector('.message-content');
@@ -591,7 +598,8 @@ async function handleStreamingResponse(response, thinkingId) {
                                 }
                             }
                         }
-                        
+
+                        // if server return done
                         if (data.done) {
                             messageCount++;
                             updateContextButton();
@@ -608,10 +616,10 @@ async function handleStreamingResponse(response, thinkingId) {
     }
 }
 
-// 更新文件信息显示
+// update file information display (welcome interface)
 function updateFileInfo() {
     if (isRagEnabled && fileInput.files.length > 0) {
-        fileInput.value = ''; // 清空文件选择
+        fileInput.value = ''; 
         alert('File upload is disabled in RAG mode. Please disable RAG mode to upload files.');
         return;
     }
@@ -619,9 +627,10 @@ function updateFileInfo() {
     fileInfo.textContent = files.length > 0 ? `${files.length} file(s) selected` : '';
 }
 
+// update chat file information display (chat interface)
 function updateChatFileInfo() {
     if (isRagEnabled && chatFileInput.files.length > 0) {
-        chatFileInput.value = ''; // 清空文件选择
+        chatFileInput.value = ''; 
         alert('File upload is disabled in RAG mode. Please disable RAG mode to upload files.');
         return;
     }
@@ -629,14 +638,14 @@ function updateChatFileInfo() {
     chatFileInfo.textContent = files.length > 0 ? `${files.length} file(s) selected` : '';
 }
 
-// 清除聊天历史
+// clean the chat history
 function clearChat() {
     if (confirm('Clear all chat history and reset LLM memory? This will remove all conversation context.')) {
         performClearChat();
     }
 }
 
-// 执行清除聊天的实际操作（不含确认对话框）
+// Perform the actual chat clearing operation (without confirmation dialog)
 function performClearChat() {
     chatContainer.innerHTML = '';
     localStorage.removeItem('chatHistory');
@@ -650,9 +659,10 @@ function performClearChat() {
     chatInterface.classList.add('hidden');
     welcomeScreen.classList.remove('hidden', 'fade-out');
     welcomeScreen.style.opacity = '1';
+
 }
 
-// 切换主题
+// Toggle theme
 function toggleTheme() {
     isDarkMode = !isDarkMode;
     document.body.classList.toggle('dark', isDarkMode);
@@ -669,7 +679,7 @@ function toggleTheme() {
     }
 }
 
-// 切换 RAG 模式
+// Toggle RAG mode
 function toggleRagMode() {
     if (!isServerReady) {
         alert('Server is still starting up. Please wait a moment and try again.');
@@ -682,8 +692,8 @@ function toggleRagMode() {
     }
     isRagEnabled = !isRagEnabled;
     ragStatus.className = `ml-1 inline-block w-3 h-3 rounded-full ${isRagEnabled ? 'bg-green-500' : 'bg-gray-400'}`;
-    
-    // 更新文件输入控件的状态
+
+    // update file inputs state
     updateFileInputsState();
     
     if (isRagEnabled) {
@@ -693,7 +703,8 @@ function toggleRagMode() {
     }
 }
 
-// 更新文件输入控件的启用/禁用状态
+
+// update file inputs state
 function updateFileInputsState() {
     const fileInputs = [fileInput, chatFileInput];
     const fileLabels = [fileInputLabel, chatFileInputLabel];
@@ -702,7 +713,7 @@ function updateFileInputsState() {
         if (input) {
             input.disabled = isRagEnabled;
             if (isRagEnabled) {
-                input.value = ''; // 清空已选择的文件
+                input.value = ''; 
             }
         }
     });
@@ -720,15 +731,15 @@ function updateFileInputsState() {
             }
         }
     });
-    
-    // 清空文件信息显示
+
+    // Clear file information display
     if (isRagEnabled) {
         if (fileInfo) fileInfo.textContent = '';
         if (chatFileInfo) chatFileInfo.textContent = '';
     }
 }
 
-// 隐藏训练进度条
+// Hide training progress bars
 function hideTrainingProgress() {
     [welcomeTrainingProgress, chatTrainingProgress, modalTrainingProgress].forEach(progress => {
         if (progress) {
@@ -737,18 +748,18 @@ function hideTrainingProgress() {
     });
 }
 
-// 打开 RAG 模型模态框
+// Open RAG models modal selection window
 function openRagModelsModal() {
     loadRagModels();
     ragModelsModal?.classList.add('active');
 }
 
-// 关闭 RAG 模型模态框
+// Close RAG models modal
 function closeRagModelsModal() {
     ragModelsModal?.classList.remove('active');
 }
 
-// 加载 RAG 模型
+// Load RAG models
 async function loadRagModels() {
     try {
         const response = await fetch(`${BASE_URL}/rag_models`);
@@ -785,29 +796,29 @@ async function loadRagModels() {
     }
 }
 
-// 选择 RAG 模型
+// Select RAG model
 function selectRagModel(modelName) {
     currentRagModel = modelName;
-    
-    // 更新模型列表中的选中状态
+
+    // Update selected state in model list
     document.querySelectorAll('.rag-model-item').forEach(item => {
         item.classList.remove('active');
     });
-    
-    // 设置新选中的模型
+
+    // Set new selected model
     const selectedItem = document.querySelector(`[data-model="${modelName}"]`);
     if (selectedItem) {
         selectedItem.classList.add('active');
     }
-    
-    // 显示选择成功消息
+
+    // Display success message
     displayMessage('system', `RAG model "${modelName}" selected successfully.`);
-    
-    // 关闭模态框
+
+    // Close modal
     closeRagModelsModal();
 }
 
-// 显示重命名对话框
+// Show rename dialog
 function showRenameDialog(modelName) {
     const newName = prompt(`Rename model "${modelName}" to:`, modelName);
     if (newName && newName.trim() && newName.trim() !== modelName) {
@@ -815,14 +826,14 @@ function showRenameDialog(modelName) {
     }
 }
 
-// 显示删除确认对话框
+// Show delete confirmation dialog
 function showDeleteDialog(modelName) {
     if (confirm(`Are you sure you want to delete the model "${modelName}"? This action cannot be undone.`)) {
         deleteExistingModel(modelName);
     }
 }
 
-// 重命名现有模型
+// Rename existing model
 async function renameExistingModel(oldName, newName) {
     try {
         const response = await fetch(`${BASE_URL}/rename_rag_model`, {
@@ -847,7 +858,7 @@ async function renameExistingModel(oldName, newName) {
     }
 }
 
-// 删除现有模型
+// Delete existing model
 async function deleteExistingModel(modelName) {
     try {
         const response = await fetch(`${BASE_URL}/delete_rag_model`, {
@@ -874,9 +885,10 @@ async function deleteExistingModel(modelName) {
     }
 }
 
-// 更新训练进度 UI
+// Update training progress UI
 function updateTrainingProgress(percentage, status, isError = false) {
-    // 确保显示进度条（只有在此函数被调用时才显示）
+
+    // Ensure progress bars are displayed (only shown when this function is called)
     const progressElements = [
         { container: welcomeTrainingProgress, bar: welcomeTrainingProgressBar, status: welcomeTrainingStatus },
         { container: chatTrainingProgress, bar: chatTrainingProgressBar, status: chatTrainingStatus },
@@ -900,7 +912,7 @@ function updateTrainingProgress(percentage, status, isError = false) {
     });
 }
 
-// 开始 RAG 训练
+// Start RAG training process
 async function startRagTraining() {
     if (isTraining) {
         displayMessage('error', 'A training process is already in progress.');
@@ -913,11 +925,11 @@ async function startRagTraining() {
         return;
     }
 
-    // 从文件路径中提取文件夹名称作为模型名称
+    // Extract folder name from file path as model name
     const firstFile = files[0];
     const pathParts = firstFile.webkitRelativePath.split('/');
     const folderName = pathParts[0];
-    const modelName = folderName.replace(/[^a-zA-Z0-9_-]/g, '_'); // 清理名称
+    const modelName = folderName.replace(/[^a-zA-Z0-9_-]/g, '_'); // Sanitize name
 
     isTraining = true;
     trainRagBtn.disabled = true;
@@ -926,7 +938,7 @@ async function startRagTraining() {
 
     try {
         const formData = new FormData();
-        formData.append('folder_name', modelName); // 发送文件夹名称而不是用户输入的名称
+        formData.append('folder_name', modelName); 
         for (const file of files) {
             formData.append('files[]', file);
         }
@@ -966,24 +978,34 @@ async function startRagTraining() {
     }
 }
 
-// 创建消息元素（用于流式响应）
+// Create a message element for streaming responses
 function createMessageElement(type, content) {
     const div = document.createElement('div');
+
+    // Create message header
     div.classList.add('chat-bubble', type === 'user' ? 'user-bubble' : type === 'ai' ? 'ai-bubble' : 'system-bubble');
     const header = document.createElement('div');
+
+    // Create avatar
     header.className = 'flex items-center mb-1';
     const avatar = document.createElement('div');
     avatar.className = 'w-6 h-6 rounded-full flex items-center justify-center mr-2 text-white';
     avatar.style.backgroundColor = type === 'user' ? '#3b82f6' : type === 'ai' ? '#1e293b' : '#6b7280';
+
+    // Create avatar text
     const avatarText = document.createElement('span');
     avatarText.className = 'text-xs font-bold';
     avatarText.textContent = type === 'user' ? 'You' : type === 'ai' ? 'AI' : 'System';
     avatar.appendChild(avatarText);
     header.appendChild(avatar);
     div.appendChild(header);
+
+    // create message content
     const contentDiv = document.createElement('div');
     contentDiv.className = 'message-content';
     contentDiv.style.whiteSpace = 'pre-wrap'; // Preserve spaces and line breaks
+
+    // If content contains newlines, use innerHTML to preserve formatting
     if (content.includes('\n')) {
         contentDiv.innerHTML = content.replace(/\n/g, '<br>');
     } else {
@@ -993,12 +1015,12 @@ function createMessageElement(type, content) {
     return div;
 }
 
-// 滚动到底部
+// Scroll to bottom
 function scrollToBottom() {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// 显示消息
+// Show message
 function displayMessage(type, content, isThinking = false, thinkingContent = '') {
     if (isThinking) {
         const details = document.createElement('details');
@@ -1013,8 +1035,8 @@ function displayMessage(type, content, isThinking = false, thinkingContent = '')
             </div>
         `;
         chatContainer.appendChild(details);
-        
-        // 然后添加实际回答
+
+        // Add message element
         const messageElement = createMessageElement(type, content);
         chatContainer.appendChild(messageElement);
     } else {
@@ -1024,14 +1046,8 @@ function displayMessage(type, content, isThinking = false, thinkingContent = '')
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// 保存消息到本地存储
-function saveMessage(type, content, isThinking = false, thinkingContent = '') {
-    const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
-    history.push({ type, content, isThinking, thinkingContent });
-    localStorage.setItem('chatHistory', JSON.stringify(history));
-}
 
-// 显示思考中消息
+// show thinking message
 function displayThinkingMessage(id) {
     const div = document.createElement('div');
     div.id = `thinking-${id}`;
@@ -1051,7 +1067,7 @@ function displayThinkingMessage(id) {
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
 
-// 移除思考中消息
+// Remove thinking message
 function removeThinkingMessage(id) {
     const thinkingMsg = document.getElementById(`thinking-${id}`);
     if (thinkingMsg) {
@@ -1059,7 +1075,7 @@ function removeThinkingMessage(id) {
     }
 }
 
-// 显示聊天界面
+// Show chat interface
 function showChatInterface() {
     welcomeScreen?.classList.add('fade-out');
     setTimeout(() => {
@@ -1068,7 +1084,7 @@ function showChatInterface() {
     }, 100);
 }
 
-// 启用/禁用输入控件
+// Set the input controls to disabled state
 function setInputControlsDisabled(isDisabled, isChat) {
     if (isChat) {
         if (chatQuestionInput) chatQuestionInput.disabled = isDisabled;
@@ -1081,29 +1097,43 @@ function setInputControlsDisabled(isDisabled, isChat) {
     }
 }
 
-// 检查服务器状态
+// Check the server status
 async function checkServerStatus() {
-    const maxRetries = 30; // 最大重试次数
-    const retryDelay = 2000; // 重试间隔（毫秒）
+    const maxRetries = 30; 
+    const retryDelay = 2000; 
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
         try {
             updateServerStatus(`Checking server status... (${attempt}/${maxRetries})`);
             
-            const response = await fetch(`${BASE_URL}/health`, { timeout: 5000 });
+            // Create AbortController for timeout
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 5000);
+            
+            const response = await fetch(`${BASE_URL}/health`, { 
+                signal: controller.signal 
+            });
+            clearTimeout(timeoutId);
             const data = await response.json();
             
             if (data.status === 'ok') {
                 updateServerStatus('Server is running, checking LLM...');
                 
                 try {
-                    const llmResponse = await fetch(`${BASE_URL}/test_llm`, { timeout: 10000 });
+                    // Create AbortController for LLM timeout
+                    const llmController = new AbortController();
+                    const llmTimeoutId = setTimeout(() => llmController.abort(), 10000);
+                    
+                    const llmResponse = await fetch(`${BASE_URL}/test_llm`, { 
+                        signal: llmController.signal 
+                    });
+                    clearTimeout(llmTimeoutId);
                     const llmData = await llmResponse.json();
                     
                     if (llmData.status === 'ok') {
                         updateServerStatus('All systems ready!');
                         hideServerLoadingOverlay();
-                        return; // 服务器和LLM都准备就绪
+                        return; 
                     } else {
                         updateServerStatus('LLM not ready, retrying...');
                     }
@@ -1115,25 +1145,25 @@ async function checkServerStatus() {
             updateServerStatus(`Connection failed, retrying... (${attempt}/${maxRetries})`);
         }
         
-        // 如果不是最后一次尝试，等待后重试
+        // if the attempt is not the last one, wait before retrying
         if (attempt < maxRetries) {
             await new Promise(resolve => setTimeout(resolve, retryDelay));
         }
     }
-    
-    // 所有重试都失败了
+
+    // If all retries failed
     updateServerStatus('Failed to connect to server. Please check if the server is running.');
     showServerError();
 }
 
-// 更新服务器状态消息
+// Update server status message
 function updateServerStatus(message) {
     if (serverStatusMessage) {
         serverStatusMessage.textContent = message;
     }
 }
 
-// 隐藏服务器加载遮罩
+// hide server loading overlay
 function hideServerLoadingOverlay() {
     isServerReady = true;
     if (serverLoadingOverlay) {
@@ -1144,7 +1174,7 @@ function hideServerLoadingOverlay() {
     }
 }
 
-// 显示服务器错误（修改现有函数以适配新的加载状态）
+// Show server error message
 function showServerError() {
     if (serverLoadingOverlay) {
         const overlay = serverLoadingOverlay;
@@ -1169,23 +1199,7 @@ function showServerError() {
     }
 }
 
-// 显示服务器错误
-function displayServerError() {
-    const errorMsg = document.createElement('div');
-    errorMsg.className = 'p-4 mb-4 text-sm text-white bg-red-500 rounded-lg';
-    errorMsg.textContent = 'Failed to connect to server. Please make sure the Flask server is running.';
-    document.querySelector('.welcome-container')?.prepend(errorMsg);
-}
-
-// 显示 LLM 错误
-function displayLLMError() {
-    const errorMsg = document.createElement('div');
-    errorMsg.className = 'p-4 mb-4 text-sm text-white bg-orange-500 rounded-lg';
-    errorMsg.textContent = 'Server is running but cannot connect to LLM. Please make sure LM Studio is running.';
-    document.querySelector('.welcome-container')?.prepend(errorMsg);
-}
-
-// 创建萤火虫效果
+// Create firefly effect
 function createFireflies() {
     const darkBg = document.getElementById('dark-bg');
     const fireflyCount = 30; 
@@ -1193,14 +1207,14 @@ function createFireflies() {
     for (let i = 0; i < fireflyCount; i++) {
         const firefly = document.createElement('div');
         firefly.className = 'firefly';
-        
-        // 随机位置和动画持续时间
+
+        // random position and animation duration
         firefly.style.left = Math.random() * 100 + '%';
         firefly.style.top = Math.random() * 100 + '%';
         firefly.style.animationDelay = Math.random() * 200 + 's';
         firefly.style.animationDuration = (Math.random() * 100 + 100) + 's';
-        
-        // 为伪元素设置不同的动画延迟
+
+        // Set different animation delays for pseudo-elements
         const style = document.createElement('style');
         style.textContent = `
             .firefly:nth-child(${i+1})::before { 
@@ -1218,15 +1232,15 @@ function createFireflies() {
     }
 }
 
-// 初始化 UI
+// Initialize UI
 function initUI() {
-    // 初始化主题设置
+    // Initialize theme settings
     darkIcon?.classList.toggle('hidden', !isDarkMode);
     lightIcon?.classList.toggle('hidden', isDarkMode);
     darkBg?.classList.toggle('hidden', !isDarkMode);
     lightBg?.classList.toggle('hidden', isDarkMode);
-    
-    // 确保加载遮罩也遵循当前主题
+
+    // Ensure loading overlay follows current theme
     if (serverLoadingOverlay) {
         serverLoadingOverlay.classList.toggle('dark', isDarkMode);
     }
@@ -1234,11 +1248,11 @@ function initUI() {
     if (isDarkMode) {
         createFireflies();
     }
-    
-    // 确保训练进度条在初始化时是隐藏的
+
+    // Ensure training progress bar is hidden on initialization
     hideTrainingProgress();
-    
-    // 加载聊天历史
+
+    // Load chat history
     const history = JSON.parse(localStorage.getItem('chatHistory')) || [];
     if (history.length > 0) {
         showChatInterface();
@@ -1249,22 +1263,22 @@ function initUI() {
         updateContextButton();
     }
 
-    // 初始化文件输入控件状态
+    // Initialize file input controls state
     updateFileInputsState();
 
-    // 最后检查服务器状态（这将管理加载遮罩的显示/隐藏）
+    // Finally check server status (this will manage loading overlay visibility)
     checkServerStatus();
 }
 
-// 页面加载时初始化
+// Initialize on page load
 document.addEventListener('DOMContentLoaded', () => {
-    // 检测页面刷新并自动清除聊天历史
-    // 使用 performance.navigation.type 或 performance.getEntriesByType 来检测刷新
+    // Detect page refresh and automatically clear chat history
+    // Use performance.navigation.type or performance.getEntriesByType to detect refresh
     if (performance.navigation && performance.navigation.type === 1) {
-        // 页面是通过刷新加载的，执行清除操作
+        // The page was loaded through a refresh, perform clear operation
         performClearChat();
     } else if (performance.getEntriesByType('navigation')[0]?.type === 'reload') {
-        // 现代浏览器的刷新检测
+        // Modern browser refresh detection
         performClearChat();
     }
     initializeEventListeners();
