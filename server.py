@@ -1,13 +1,9 @@
-
 import os
 from flask import Flask, request, jsonify, Response, stream_with_context, session
 from flask_cors import CORS
 import requests
 import re
 import html
-from docx import Document
-import PyPDF2
-from openpyxl import load_workbook
 import logging
 import shutil
 from datetime import datetime
@@ -17,9 +13,9 @@ import sys
 import json
 import time
 from pathlib import Path
+import secrets
+import string
 
-
-# 设置 HuggingFace 及相关模型缓存目录到当前目录下的 cache 子目录（自动绝对路径，跨环境可用）
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CACHE_DIR = os.path.join(BASE_DIR, 'cache')
 UPLOADS_DIR = os.path.join(BASE_DIR, 'uploads')
@@ -29,56 +25,44 @@ os.environ['HF_HOME'] = os.path.abspath(CACHE_DIR)
 os.environ['TRANSFORMERS_CACHE'] = os.path.abspath(CACHE_DIR)
 os.environ['HF_DATASETS_CACHE'] = os.path.abspath(CACHE_DIR)
 os.environ['SENTENCE_TRANSFORMERS_HOME'] = os.path.abspath(CACHE_DIR)
-# 设置离线模式，禁用网络连接
 os.environ['HF_OFFLINE'] = '1'
 os.environ['TRANSFORMERS_OFFLINE'] = '1'
 
-print(f"Cache directory set to: {os.path.abspath(CACHE_DIR)}")
-print(f"Uploads directory set to: {os.path.abspath(UPLOADS_DIR)}")
-print(f"Cache directory exists: {os.path.exists(CACHE_DIR)}")
-if os.path.exists(CACHE_DIR):
-    print(f"Contents: {os.listdir(CACHE_DIR)}")
-
-# 添加 core 目录到 sys.path
 core_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'core')
 if core_path not in sys.path:
     sys.path.insert(0, core_path)
 
-from core.document_extractor import ChineseDocumentProcessor
-
-# Import RAG system
+# Import RAG system and document extractor from core folder
 try:
+    from core.document_extractor import ChineseDocumentProcessor
     from core.rag_trainer import ChineseRAGSystem
-    # RAG models directory - 确保使用项目内的绝对路径
+    # Set up RAG model directory
     BASE_MODEL_DIR = os.path.join(BASE_DIR, "rag_models")
-    # 确保 rag_models 目录存在
+    # Ensure that RAG model directory exists
     os.makedirs(BASE_MODEL_DIR, exist_ok=True)
-    
-    print(f"RAG models directory set to: {os.path.abspath(BASE_MODEL_DIR)}")
 
     # Create a dictionary to store multiple RAG systems
     rag_systems = {}
-
-    # Check if default model exists and load it
-    default_model_dir = os.path.join(BASE_MODEL_DIR, "default")
-    if os.path.exists(default_model_dir) and os.path.exists(os.path.join(default_model_dir, "config.json")):
-        rag_systems["default"] = ChineseRAGSystem(model_save_dir=default_model_dir)
-        rag_systems["default"].load_system()
-        print("Default RAG system loaded successfully!")
 
     # Load any other existing models
     for model_dir in os.listdir(BASE_MODEL_DIR):
         model_path = os.path.join(BASE_MODEL_DIR, model_dir)
         config_path = os.path.join(model_path, "config.json")
-        if os.path.isdir(model_path) and os.path.exists(config_path) and model_dir != "default":
+
+        # Check if model directory and config file exist
+        if os.path.isdir(model_path) and os.path.exists(config_path):
             try:
                 rag_systems[model_dir] = ChineseRAGSystem(model_save_dir=model_path)
                 rag_systems[model_dir].load_system()
+                # Debug Message
                 print(f"RAG system '{model_dir}' loaded successfully!")
             except Exception as e:
                 print(f"Error loading RAG system '{model_dir}': {e}")
 
+    # Set RAG availability flag
     RAG_AVAILABLE = True
+
+    # Debug Message
     print(f"Loaded {len(rag_systems)} RAG systems")
 except Exception as e:
     print(f"Error initializing RAG systems: {e}")
@@ -87,16 +71,25 @@ except Exception as e:
 
 app = Flask(__name__)
 CORS(app) 
-app.secret_key = 'your-secret-key-change-this-in-production'
+app.secret_key = secrets.token_hex(32)
 
 # Store conversation contexts for each session
-conversation_contexts = defaultdict(lambda: deque(maxlen=20))  # Keep last 20 messages 
+conversation_contexts = defaultdict(lambda: deque(maxlen=40))  # Keep last 20 conversations (20 query + 20 response)
 
-# Set up logging
+# Set up logging for debugging.
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
-def format_markdown_to_user_friendly(text):
+# Global variable to track training progress
+training_progress = {
+    'percentage': 0,
+    'status': '',
+    'is_training': False,
+    'error': None
+}
+
+# Format the LLM output to be more user-friendly
+def format_markdown_to_user_friendly(text: str) -> str:
     """Convert markdown text to user-friendly plain text format."""
     if not text:
         return text
@@ -105,36 +98,44 @@ def format_markdown_to_user_friendly(text):
     original_text = text
     
     # Remove markdown headers and replace with clean formatting
+    # markdown example: ### **Header** -> \nHeader\n========================================
     text = re.sub(r'^###\s*\*\*(.*?)\*\*\s*$', r'\n\1\n' + '='*40, text, flags=re.MULTILINE)
     text = re.sub(r'^##\s*\*\*(.*?)\*\*\s*$', r'\n\1\n' + '='*50, text, flags=re.MULTILINE)
     text = re.sub(r'^#\s*\*\*(.*?)\*\*\s*$', r'\n\1\n' + '='*60, text, flags=re.MULTILINE)
     
     # Handle regular headers without bold
+    # markdown example: ### Header -> \nHeader\n----------------------------------------
     text = re.sub(r'^###\s+(.*?)$', r'\n\1\n' + '-'*30, text, flags=re.MULTILINE)
     text = re.sub(r'^##\s+(.*?)$', r'\n\1\n' + '-'*40, text, flags=re.MULTILINE)
     text = re.sub(r'^#\s+(.*?)$', r'\n\1\n' + '-'*50, text, flags=re.MULTILINE)
     
     # Remove bold formatting but keep the content
+    # markdown example: **bold text** -> bold text
     text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
     text = re.sub(r'__(.*?)__', r'\1', text)
     
     # Remove italic formatting but keep the content
+    # markdown example: *italic text* -> italic text
     text = re.sub(r'\*(.*?)\*', r'\1', text)
     text = re.sub(r'_(.*?)_', r'\1', text)
     
     # Format numbered lists more clearly with proper spacing
+    # markdown example: 1. **bold text** -> 1. bold text
     text = re.sub(r'^(\d+)\.\s+\*\*(.*?)\*\*\s*$', r'\n\1. \2', text, flags=re.MULTILINE)
     text = re.sub(r'^(\d+)\.\s+(.*?)$', r'\n\1. \2', text, flags=re.MULTILINE)
     
     # Format bullet points with better spacing
+    # markdown example: - **bold text** -> - bold text
     text = re.sub(r'^[\*\-\+]\s+\*\*(.*?)\*\*\s*$', r'\n• \1', text, flags=re.MULTILINE)
     text = re.sub(r'^[\*\-\+]\s+(.*?)$', r'\n• \1', text, flags=re.MULTILINE)
     
     # Remove code blocks backticks but keep the content with better formatting
+    # markdown example: ```python code block``` -> \n[code block]\n
     text = re.sub(r'```.*?\n(.*?)```', r'\n[\1]\n', text, flags=re.DOTALL)
     text = re.sub(r'`([^`]+)`', r'[\1]', text)
     
     # Handle special formatting patterns
+    # markdown example: **Steps:** -> Steps:
     text = re.sub(r'\*\*Steps:\*\*', 'Steps:', text)
     text = re.sub(r'\*\*Note:\*\*', 'Note:', text)
     text = re.sub(r'\*\*Important:\*\*', 'Important:', text)
@@ -155,7 +156,8 @@ def format_markdown_to_user_friendly(text):
         if line:
             formatted_lines.append(line)
             prev_was_empty = False
-        elif not prev_was_empty and formatted_lines:  # Keep single empty lines between content
+        # if the line is empty and the previous line was not, add a new line
+        elif not prev_was_empty and formatted_lines: 
             formatted_lines.append('')
             prev_was_empty = True
     
@@ -175,19 +177,21 @@ def format_markdown_to_user_friendly(text):
 # LM Studio API endpoint
 LM_STUDIO_API_URL = "http://localhost:1234/v1/chat/completions"
 
-# 日志用户问题
-def log_user_question(question, session_id=None):
+# A function to log the user question
+def log_user_question(question: str) -> None:
+    """Log the user question with a timestamp."""
     try:
+        # Log the user question with a timestamp
         timestamp = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        log_line = f"{timestamp} | session: {session_id or '-'} | {question}\n"
+        log_line = f"{timestamp} | {question}\n"
         log_path = os.path.join(os.path.dirname(__file__), 'user_question_log.txt')
         with open(log_path, 'a', encoding='utf-8') as f:
             f.write(log_line)
     except Exception as e:
         logger.error(f"Failed to log user question: {e}")
 
-# Add a helper function to call the LLM API with proper error handling
-def call_llm_api(messages, temperature=0.5, max_tokens=32000, stream=False):
+# A function to call the LLM API with proper error handling
+def call_llm_api(messages: list, temperature: float = 0.5, max_tokens: int = 3000, stream: bool = False) -> tuple:
     """Helper function to call the LLM API with consistent error handling"""
     try:
         payload = {
@@ -197,10 +201,11 @@ def call_llm_api(messages, temperature=0.5, max_tokens=32000, stream=False):
             "temperature": temperature,
             "stream": stream
         }
-        
+
+        # Debug Message
         logger.info(f"Sending request to LLM API: {LM_STUDIO_API_URL}")
         logger.debug(f"Payload: {payload}")
-        
+
         response = requests.post(
             LM_STUDIO_API_URL, 
             json=payload, 
@@ -209,6 +214,7 @@ def call_llm_api(messages, temperature=0.5, max_tokens=32000, stream=False):
             stream=stream
         )
         
+        # Debug Message
         logger.info(f"LLM API response status: {response.status_code}")
         
         if response.status_code != 200:
@@ -234,12 +240,16 @@ def call_llm_api(messages, temperature=0.5, max_tokens=32000, stream=False):
         logger.error(f"Unexpected error calling LLM API: {str(e)}")
         return None, f"Error: {str(e)}"
 
-def build_conversation_context(session_id, new_message, system_prompt=None):
+# A function to build the conversation context
+def build_conversation_context(session_id: str, new_message: str, system_prompt: str = None) -> list:
     """Build conversation context with history"""
+    # Get the current conversation context
     context = conversation_contexts[session_id]
     
     # Add system message if provided and context is empty
     messages = []
+
+    # if system_prompt is provided and context is empty or does not start with a system message
     if system_prompt and (not context or context[0].get('role') != 'system'):
         messages.append({"role": "system", "content": system_prompt})
     
@@ -251,15 +261,22 @@ def build_conversation_context(session_id, new_message, system_prompt=None):
     
     return messages
 
-def update_conversation_context(session_id, user_message, ai_response):
+# A function to update the conversation context
+def update_conversation_context(session_id: str, user_message: str, ai_response: str) -> None:
     """Update conversation context with new messages"""
+
+    # Get the current conversation context
     context = conversation_contexts[session_id]
     context.append({"role": "user", "content": user_message})
     context.append({"role": "assistant", "content": ai_response})
+    
+    # Debug Message
     logger.info(f"Updated context for session_id: {session_id}, now has {len(context)} messages")
 
-def get_or_create_session_id():
+# A function to get or create a session ID
+def get_or_create_session_id() -> str:
     """Get session ID from request or create new one"""
+    
     # First try to get from request JSON data (only for POST/PUT requests with JSON content)
     if request.method in ['POST', 'PUT'] and request.is_json and request.json and 'session_id' in request.json:
         return request.json['session_id']
@@ -271,11 +288,85 @@ def get_or_create_session_id():
     # Finally try to get from Flask session or create new one
     if 'session_id' not in session:
         session['session_id'] = str(uuid.uuid4())
+        
     return session['session_id']
 
-# Remove old individual extraction functions and replace with unified processor
-def extract_file_content(file_path, file_extension):
+# Shared streaming response generator function
+def generate_streaming_response(messages: list, session_id: str, question: str) -> iter:
+    """Shared function to generate streaming responses for all endpoints"""
+    ai_response_content = ""
+    try:
+        # Call the LLM API with streaming enabled
+        response, error = call_llm_api(messages, stream=True)
+        
+        if error:
+            yield f"data: {json.dumps({'error': error})}\n\n"
+            return
+
+        # Process the streaming response
+        for line in response.iter_lines():
+            if line:
+                line = line.decode('utf-8')
+                
+                # Skip empty lines and comments
+                if not line.strip() or line.startswith('#'):
+                    continue
+                    
+                # Handle Server-Sent Events format
+                if line.startswith('data: '):
+                    line = line[6:]  # Remove 'data: ' prefix
+                
+                # Skip [DONE] signal
+                if line.strip() == '[DONE]':
+                    break
+                    
+                try:
+                    # Parse the JSON chunk
+                    chunk_data = json.loads(line)
+                    
+                    # Extract content from the chunk
+                    # Example: {"choices":[{"delta":{"content":"Hello, world!"}}]}
+                    if 'choices' in chunk_data and chunk_data['choices']:
+                        choice = chunk_data['choices'][0]
+                        if 'delta' in choice and 'content' in choice['delta']:
+                            content = choice['delta']['content']
+                            if content:
+                                ai_response_content += content
+                                # Send raw content for streaming (format at end)
+                                yield f"data: {json.dumps({'content': content})}\n\n"
+                                
+                except json.JSONDecodeError:
+                    # Skip malformed JSON
+                    continue
+        
+        # Update conversation context with complete response
+        if ai_response_content:
+            # Extract thinking content if present
+            think_match = re.search(r'<think>(.*?)</think>', ai_response_content, re.DOTALL)
+            thinking_content = think_match.group(1).strip() if think_match else ""
+            response_text = ai_response_content[think_match.end():].strip() if think_match else ai_response_content
+            
+            # Format the complete response before saving
+            formatted_response_text = format_markdown_to_user_friendly(response_text)
+
+            # Update conversation context with the formatted response
+            update_conversation_context(session_id, question, formatted_response_text)
+            
+            # Send the final formatted response with thinking content
+            yield f"data: {json.dumps({'formatted_response': formatted_response_text, 'thinking': thinking_content})}\n\n"
+                    
+        # Send end signal with session info
+        yield f"data: {json.dumps({'done': True, 'session_id': session_id})}\n\n"
+        
+    except Exception as e:
+        logger.error(f"Error in streaming: {str(e)}")
+        yield f"data: {json.dumps({'error': f'Streaming error: {str(e)}'})}\n\n"
+
+# A function to extract file content using the unified document processor
+def extract_file_content(file_path: str, file_extension: str) -> str:
     """Extract content using the unified document processor."""
+    
+    # Debug Message
     logger.info(f"Extracting content from: {file_path} with extension: {file_extension}")
     
     if not os.path.exists(file_path):
@@ -289,15 +380,19 @@ def extract_file_content(file_path, file_extension):
         
         # Process the specific file based on extension
         if file_extension == '.docx':
+            # Debug Message
             logger.info(f"Processing DOCX file: {file_path}")
             content = processor.extract_text_from_docx(file_path)
         elif file_extension == '.pdf':
+            # Debug Message
             logger.info(f"Processing PDF file: {file_path}")
             content = processor.extract_text_from_pdf(file_path)
         elif file_extension in ['.xlsx', '.xls']:
+            # Debug Message
             logger.info(f"Processing Excel file: {file_path}")
             content = processor.extract_text_from_excel(file_path)
         elif file_extension == '.txt':
+            # Debug Message
             logger.info(f"Processing TXT file: {file_path}")
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
                 content = file.read()
@@ -306,6 +401,7 @@ def extract_file_content(file_path, file_extension):
             return "Error: Unsupported file format"
         
         if content:
+            # Debug Message
             logger.info(f"Successfully extracted {len(content)} characters from {file_path}")
             return content
         else:
@@ -316,25 +412,17 @@ def extract_file_content(file_path, file_extension):
         logger.error(f"Error in extract_file_content for {file_path}: {str(e)}", exc_info=True)
         return f"Error extracting file content: {str(e)}"
 
-# 存储当前训练进度的全局变量
-training_progress = {
-    'percentage': 0,
-    'status': '',
-    'is_training': False,
-    'error': None
-}
-
-# SSE 路由，用于实时推送训练进度
+# SSE route for streaming training progress
 @app.route('/training_progress', methods=['GET'])
 def training_progress_stream():
     def generate():
+        """A generator to stream training progress updates."""
         while True:
             yield f"data: {json.dumps(training_progress)}\n\n"
-            time.sleep(1)  # 每秒推送一次
+            time.sleep(1)  
     return Response(generate(), mimetype='text/event-stream')
 
-
-
+# Route for asking questions with context
 @app.route('/ask-stream', methods=['POST'])
 def ask_question_stream():
     """Handle streaming questions with context"""
@@ -344,13 +432,13 @@ def ask_question_stream():
         if not question:
             return jsonify({'error': 'No question provided'}), 400
 
-
         # Get or create session ID
         session_id = get_or_create_session_id()
+        # Debug Message
         logger.info(f"Using session_id: {session_id} for ask-stream")
 
-        # 日志用户问题
-        log_user_question(question, session_id)
+        # Log user question
+        log_user_question(question)
 
         # System prompt for tool usage
         system_prompt = (
@@ -362,74 +450,8 @@ def ask_question_stream():
         # Build conversation context with history
         messages = build_conversation_context(session_id, question, system_prompt)
 
-        def generate():
-            ai_response_content = ""
-            try:
-                # Call the LLM API with streaming enabled
-                response, error = call_llm_api(messages, stream=True)
-                
-                if error:
-                    yield f"data: {json.dumps({'error': error})}\n\n"
-                    return
-
-                # Process the streaming response
-                for line in response.iter_lines():
-                    if line:
-                        line = line.decode('utf-8')
-                        
-                        # Skip empty lines and comments
-                        if not line.strip() or line.startswith('#'):
-                            continue
-                            
-                        # Handle Server-Sent Events format
-                        if line.startswith('data: '):
-                            line = line[6:]  # Remove 'data: ' prefix
-                        
-                        # Skip [DONE] signal
-                        if line.strip() == '[DONE]':
-                            break
-                            
-                        try:
-                            # Parse the JSON chunk
-                            chunk_data = json.loads(line)
-                            
-                            # Extract content from the chunk
-                            if 'choices' in chunk_data and chunk_data['choices']:
-                                choice = chunk_data['choices'][0]
-                                if 'delta' in choice and 'content' in choice['delta']:
-                                    content = choice['delta']['content']
-                                    if content:
-                                        ai_response_content += content
-                                        # Send raw content for streaming (format at end)
-                                        yield f"data: {json.dumps({'content': content})}\n\n"
-                                        
-                        except json.JSONDecodeError:
-                            # Skip malformed JSON
-                            continue
-                
-                # Update conversation context with complete response
-                if ai_response_content:
-                    # Process thinking and response parts - 分离思考内容和实际回答
-                    think_match = re.search(r'<think>(.*?)</think>', ai_response_content, re.DOTALL)
-                    thinking_content = think_match.group(1).strip() if think_match else ""
-                    response_text = ai_response_content[think_match.end():].strip() if think_match else ai_response_content
-                    # Format the complete response before saving
-                    formatted_response_text = format_markdown_to_user_friendly(response_text)
-                    # 只保存处理后的回答内容，不包含思考标签
-                    update_conversation_context(session_id, question, formatted_response_text)
-                    
-                    # Send the final formatted response with thinking content
-                    yield f"data: {json.dumps({'formatted_response': formatted_response_text, 'thinking': thinking_content})}\n\n"
-                            
-                # Send end signal with session info
-                yield f"data: {json.dumps({'done': True, 'session_id': session_id})}\n\n"
-                
-            except Exception as e:
-                logger.error(f"Error in streaming: {str(e)}")
-                yield f"data: {json.dumps({'error': f'Streaming error: {str(e)}'})}\n\n"
-
         return Response(
-            stream_with_context(generate()),
+            stream_with_context(generate_streaming_response(messages, session_id, question)),
             mimetype='text/plain',
             headers={
                 'Cache-Control': 'no-cache',
@@ -443,6 +465,7 @@ def ask_question_stream():
         logger.error(f"Error in /ask-stream: {str(e)}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
+# File upload and question handling route
 @app.route('/upload_and_ask', methods=['POST'])
 def upload_and_ask():
     """Handle questions with optional multiple file uploads using streaming response and context memory."""
@@ -459,21 +482,26 @@ def upload_and_ask():
         # Get or create session ID
         session_id = request.form.get('session_id') or str(uuid.uuid4())
 
-        # 日志用户问题
-        log_user_question(question, session_id)
+        # Log user question
+        log_user_question(question)
         
+        # Debug Message
         logger.info(f"Upload and ask request - Question: {'YES' if question else 'NO'}, Files count: {len(files)}")
 
+        # Process each uploaded file
         if files:
             for i, file in enumerate(files):
-                # 检查文件是否有效
+                # Check if file is valid
                 if not file or not file.filename:
                     logger.warning(f"Skipping empty or invalid file at index {i}")
                     continue
-                    
+
+                # Debug Message
                 logger.info(f"Processing file {i+1}/{len(files)}: {file.filename}")
+
+                # Check file extension
                 file_extension = os.path.splitext(file.filename)[1].lower()
-                if file_extension not in ['.docx', '.pdf', '.xlsx', '.txt']:
+                if file_extension not in ['.docx', '.pdf', '.xlsx', '.xls', '.txt']:
                     logger.error(f"Unsupported file format: {file_extension} for file: {file.filename}")
                     return jsonify({'error': f"Unsupported file format: {file_extension}"}), 400
 
@@ -489,7 +517,8 @@ def upload_and_ask():
                     if os.path.exists(file_path):
                         os.remove(file_path)
                     return jsonify({'error': file_content}), 400
-                    
+                
+                # Debug Message    
                 logger.info(f"Successfully extracted content from {file.filename}: {len(file_content)} characters")
                 file_contents.append(f"File: {file.filename}\n{file_content}")
 
@@ -498,8 +527,11 @@ def upload_and_ask():
                     os.remove(file_path)
                     logger.info(f"Cleaned up temporary file: {file_path}")
             
+            # Debug Message
             logger.info(f"Total files processed successfully: {len(file_contents)}")
+            
         else:
+            # Debug Message
             logger.info("No files provided in request")
 
         # Combine question and file contents
@@ -519,73 +551,8 @@ def upload_and_ask():
         # Build conversation context with history
         messages = build_conversation_context(session_id, combined_input, system_prompt)
 
-        def generate():
-            ai_response_content = ""
-            try:
-                # Call the LLM API with streaming enabled
-                response, error = call_llm_api(messages, stream=True)
-                
-                if error:
-                    yield f"data: {json.dumps({'error': error})}\n\n"
-                    return
-
-                # Process the streaming response
-                for line in response.iter_lines():
-                    if line:
-                        line = line.decode('utf-8')
-                        
-                        # Skip empty lines and comments
-                        if not line.strip() or line.startswith('#'):
-                            continue
-                            
-                        # Handle Server-Sent Events format
-                        if line.startswith('data: '):
-                            line = line[6:]  # Remove 'data: ' prefix
-                        
-                        # Skip [DONE] signal
-                        if line.strip() == '[DONE]':
-                            break
-                            
-                        try:
-                            # Parse the JSON chunk
-                            chunk_data = json.loads(line)
-                            
-                            # Extract content from the chunk
-                            if 'choices' in chunk_data and chunk_data['choices']:
-                                choice = chunk_data['choices'][0]
-                                if 'delta' in choice and 'content' in choice['delta']:
-                                    content = choice['delta']['content']
-                                    if content:
-                                        ai_response_content += content
-                                        yield f"data: {json.dumps({'content': content})}\n\n"
-                                        
-                        except json.JSONDecodeError:
-                            # Skip malformed JSON
-                            continue
-                
-                # Update conversation context with complete response
-                if ai_response_content:
-                    # Process thinking and response parts - 分离思考内容和实际回答
-                    think_match = re.search(r'<think>(.*?)</think>', ai_response_content, re.DOTALL)
-                    thinking_content = think_match.group(1).strip() if think_match else ""
-                    response_text = ai_response_content[think_match.end():].strip() if think_match else ai_response_content
-                    # Format the response for better user experience
-                    formatted_response_text = format_markdown_to_user_friendly(response_text)
-                    # 只保存处理后的回答内容，不包含思考标签
-                    update_conversation_context(session_id, question, formatted_response_text)  # 只保存原始问题，不包含文件内容
-                    
-                    # Send the final formatted response with thinking content
-                    yield f"data: {json.dumps({'formatted_response': formatted_response_text, 'thinking': thinking_content})}\n\n"
-                            
-                # Send end signal with session info
-                yield f"data: {json.dumps({'done': True, 'session_id': session_id})}\n\n"
-                
-            except Exception as e:
-                logger.error(f"Error in streaming: {str(e)}")
-                yield f"data: {json.dumps({'error': f'Streaming error: {str(e)}'})}\n\n"
-
         return Response(
-            stream_with_context(generate()),
+            stream_with_context(generate_streaming_response(messages, session_id, question)),
             mimetype='text/plain',
             headers={
                 'Cache-Control': 'no-cache',
@@ -599,8 +566,7 @@ def upload_and_ask():
         logger.error(f"Error in /upload_and_ask: {str(e)}")
         return jsonify({'error': str(e)}), 500
 
-
-
+# RAG question handling route
 @app.route('/rag_ask', methods=['POST'])
 def rag_ask():
     """Handle questions using RAG system with streaming response and context memory."""
@@ -614,8 +580,8 @@ def rag_ask():
         if not question:
             return jsonify({'error': 'No question provided'}), 400
 
-        # 日志用户问题
-        log_user_question(question, session_id)
+        # Log user question
+        log_user_question(question)
 
         if not RAG_AVAILABLE or not rag_systems:
             return jsonify({'error': 'RAG system is not available'}), 503
@@ -624,105 +590,44 @@ def rag_ask():
         if model_id not in rag_systems:
             return jsonify({'error': f"RAG model '{model_id}' not found"}), 404
 
-        # Log that we're using RAG
+        # Debug Message
         logger.info(f"Using RAG system '{model_id}' for question: {question}")
         
-        def generate():
-            ai_response_content = ""
+        try:
+            # Get relevant context from RAG system
             try:
-                # Get relevant context from RAG system
-                try:
-                    # Use RAG system to get context and generate response
-                    rag_context = rag_systems[model_id].retrieve_relevant_docs(question)
-                    
-                    # Build enhanced prompt with RAG context and conversation history
-                    system_prompt = (
-                        f"你是一个友善的助手，基于提供的知识库内容和之前的对话历史来回答问题。"
-                        f"请用清晰、简洁的语言回答，避免过多的标记符号。"
-                        f"在回答之前，请在 <think> 标签中提供你的推理。\n\n"
-                        f"相关知识库内容：\n{rag_context}"
-                    )
-                    
-                    # Build conversation context with history
-                    messages = build_conversation_context(session_id, question, system_prompt)
-                    
-                except Exception as rag_error:
-                    logger.error(f"RAG retrieval error: {str(rag_error)}")
-                    yield f"data: {json.dumps({'error': f'RAG retrieval error: {str(rag_error)}'})}\n\n"
-                    return
-
-                # Call the LLM API with streaming enabled
-                response, error = call_llm_api(messages, stream=True)
+                # Use RAG system to get context and generate response
+                rag_context = rag_systems[model_id].retrieve_relevant_docs(question)
                 
-                if error:
-                    yield f"data: {json.dumps({'error': error})}\n\n"
-                    return
-
-                # Process the streaming response
-                for line in response.iter_lines():
-                    if line:
-                        line = line.decode('utf-8')
-                        
-                        # Skip empty lines and comments
-                        if not line.strip() or line.startswith('#'):
-                            continue
-                            
-                        # Handle Server-Sent Events format
-                        if line.startswith('data: '):
-                            line = line[6:]  # Remove 'data: ' prefix
-                        
-                        # Skip [DONE] signal
-                        if line.strip() == '[DONE]':
-                            break
-                            
-                        try:
-                            # Parse the JSON chunk
-                            chunk_data = json.loads(line)
-                            
-                            # Extract content from the chunk
-                            if 'choices' in chunk_data and chunk_data['choices']:
-                                choice = chunk_data['choices'][0]
-                                if 'delta' in choice and 'content' in choice['delta']:
-                                    content = choice['delta']['content']
-                                    if content:
-                                        ai_response_content += content
-                                        yield f"data: {json.dumps({'content': content})}\n\n"
-                                        
-                        except json.JSONDecodeError:
-                            # Skip malformed JSON
-                            continue
+                # Build enhanced prompt with RAG context and conversation history
+                system_prompt = (
+                    f"你是一个友善的助手，基于提供的知识库内容和之前的对话历史来回答问题。"
+                    f"请用清晰、简洁的语言回答，避免过多的标记符号。"
+                    f"在回答之前，请在 <think> 标签中提供你的推理。\n\n"
+                    f"相关知识库内容：\n{rag_context}"
+                )
                 
-                # Update conversation context with complete response
-                if ai_response_content:
-                    # Process thinking and response parts - 分离思考内容和实际回答
-                    think_match = re.search(r'<think>(.*?)</think>', ai_response_content, re.DOTALL)
-                    thinking_content = think_match.group(1).strip() if think_match else ""
-                    response_text = ai_response_content[think_match.end():].strip() if think_match else ai_response_content
-                    # Format the response for better user experience
-                    formatted_response_text = format_markdown_to_user_friendly(response_text)
-                    # 只保存处理后的回答内容，不包含思考标签
-                    update_conversation_context(session_id, question, formatted_response_text)
-                    
-                    # Send the final formatted response with thinking content
-                    yield f"data: {json.dumps({'formatted_response': formatted_response_text, 'thinking': thinking_content})}\n\n"
-                            
-                # Send end signal with session info
-                yield f"data: {json.dumps({'done': True, 'session_id': session_id})}\n\n"
+                # Build conversation context with history
+                messages = build_conversation_context(session_id, question, system_prompt)
                 
-            except Exception as e:
-                logger.error(f"Error in RAG streaming: {str(e)}")
-                yield f"data: {json.dumps({'error': f'RAG streaming error: {str(e)}'})}\n\n"
+            except Exception as rag_error:
+                logger.error(f"RAG retrieval error: {str(rag_error)}")
+                return jsonify({'error': f'RAG retrieval error: {str(rag_error)}'}), 500
 
-        return Response(
-            stream_with_context(generate()),
-            mimetype='text/plain',
-            headers={
-                'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Content-Type'
-            }
-        )
+            return Response(
+                stream_with_context(generate_streaming_response(messages, session_id, question)),
+                mimetype='text/plain',
+                headers={
+                    'Cache-Control': 'no-cache',
+                    'Connection': 'keep-alive',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Headers': 'Content-Type'
+                }
+            )
+        
+        except Exception as e:
+            logger.error(f"Error in RAG processing: {str(e)}")
+            return jsonify({'error': f'RAG processing error: {str(e)}'}), 500
             
     except Exception as e:
         logger.error(f"Error in /rag_ask: {str(e)}")
@@ -735,7 +640,6 @@ def get_rag_models():
     try:
         if not RAG_AVAILABLE:
             return jsonify({'error': 'RAG system is not available'}), 503
-        
         models = list(rag_systems.keys())
         return jsonify({'models': models})
     except Exception as e:
@@ -743,50 +647,29 @@ def get_rag_models():
         return jsonify({'error': str(e)}), 500
 
 # Process uploaded folder for RAG training
-def process_folder_for_rag(upload_dir):
+def process_folder_for_rag(upload_dir: str) -> tuple:
     """Process files in a directory for RAG training using unified document processor."""
+
+    # Create a directory for processed texts
     processed_dir = os.path.join(upload_dir, "processed_texts")
     os.makedirs(processed_dir, exist_ok=True)
     
     try:
-        # 尝试检测和修复PDF文件
-        for root, dirs, files in os.walk(upload_dir):
-            for file in files:
-                if file.lower().endswith('.pdf'):
-                    file_path = os.path.join(root, file)
-                    try:
-                        # 尝试打开PDF文件验证其完整性
-                        try:
-                            with open(file_path, 'rb') as f:
-                                # 尝试读取前1024字节检查PDF头
-                                header = f.read(1024)
-                                if not header.startswith(b'%PDF-'):
-                                    logger.warning(f"File doesn't have PDF header: {file_path}")
-                                    # 如果不是PDF格式，尝试重命名为txt文件
-                                    txt_path = file_path.replace('.pdf', '.txt')
-                                    os.rename(file_path, txt_path)
-                                    logger.info(f"Renamed problematic PDF to text file: {txt_path}")
-                        except Exception as e:
-                            logger.error(f"Error checking PDF file {file_path}: {e}")
-                    except Exception as check_error:
-                        logger.error(f"Error during PDF check: {check_error}")
-
-        # 使用统一文档处理器
+        # Use unified document processor
         processor = ChineseDocumentProcessor(upload_dir)
-        
         processed_texts = processor.process_documents()
-        
-        # 保存处理后的文本
+
+        # Save processed texts
         file_count = 0
         for file_path, text in processed_texts.items():
-            if text.strip():  # 只保存非空文本
+            if text.strip():  # Only save non-empty texts
                 filename = os.path.basename(file_path)
                 base_name = os.path.splitext(filename)[0]
                 processed_file = os.path.join(processed_dir, f"{base_name}_processed.txt")
-                
                 with open(processed_file, 'w', encoding='utf-8') as f:
                     f.write(text)
                 file_count += 1
+                # Debug Message
                 logger.info(f"Processed and saved: {processed_file}")
         
         return processed_dir, file_count
@@ -796,13 +679,12 @@ def process_folder_for_rag(upload_dir):
         return processed_dir, 0
 
 # Add a route to handle folder upload and RAG training
-# 修改 upload_folder_for_rag 路由以更新训练进度
 @app.route('/upload_folder_for_rag', methods=['POST'])
 def upload_folder_for_rag():
     """Handle folder upload and train RAG model."""
     global training_progress
     try:
-        # 初始化训练进度
+        # Initialize training progress
         training_progress = {
             'percentage': 10,
             'status': 'Uploading files...',
@@ -812,6 +694,7 @@ def upload_folder_for_rag():
 
         # Check if files were uploaded
         if 'files[]' not in request.files:
+            # No files uploaded
             training_progress['error'] = 'No files provided'
             training_progress['percentage'] = 100
             training_progress['is_training'] = False
@@ -820,18 +703,16 @@ def upload_folder_for_rag():
         # Get folder name from form data (instead of user input)
         folder_name = request.form.get('folder_name', '')
         if not folder_name:
-            # 如果没有提供文件夹名称，生成一个默认名称
+            # If no folder name is provided, generate a default name
             folder_name = f"rag_model_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
         
-        # Sanitize folder name - 允许中文字符、字母、数字和常用符号
-        # 只过滤掉文件系统不允许的字符
-        import string
-        forbidden_chars = '<>:"/\\|?*'  # Windows文件系统禁止的字符
+        # Only filter out characters not allowed by the file system (Windows forbidden characters)
+        forbidden_chars = '<>:"/\\|?*' 
         model_name = folder_name
         for char in forbidden_chars:
             model_name = model_name.replace(char, '_')
-        
-        # 移除首尾空格并确保不为空
+
+        # Remove leading/trailing whitespace and ensure it's not empty
         model_name = model_name.strip()
         if not model_name:
             model_name = f"rag_model_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
@@ -852,9 +733,9 @@ def upload_folder_for_rag():
         saved_paths = []
         
         for file in files:
+            # Check if file is valid
             if not file or not file.filename or file.filename == '':
                 continue
-                
             filepath_parts = file.filename.split('/')
             if len(filepath_parts) > 1:
                 subdir = os.path.join(upload_dir, *filepath_parts[:-1])
@@ -865,30 +746,17 @@ def upload_folder_for_rag():
                 
             file.save(save_path)
             saved_paths.append(save_path)
-            
+        
+        # Debug Message
         logger.info(f"Saved {len(saved_paths)} files for RAG training")
-        
-        # 检查文件类型并记录PDF文件
-        pdf_files = []
-        for path in saved_paths:
-            if path.lower().endswith('.pdf'):
-                pdf_files.append(path)
-        
-        # 更新进度
-        training_progress['percentage'] = 10
-        training_progress['status'] = f'Processing {len(saved_paths)} files (including {len(pdf_files)} PDFs)...'
 
-        # 处理文件
+        # Update progress
+        training_progress['percentage'] = 20
+
+        # Process files
         processed_dir, file_count = process_folder_for_rag(upload_dir)
         
-        if file_count == 0:
-            error_msg = 'No valid files for processing. PDF files might be corrupted or in an unsupported format.'
-            training_progress['error'] = error_msg
-            training_progress['percentage'] = 100
-            training_progress['is_training'] = False
-            return jsonify({'error': error_msg}), 400
-            
-        # 更新进度
+        # Update progress
         training_progress['percentage'] = 30
         training_progress['status'] = f'Successfully processed {file_count} files. Training RAG model...'
 
@@ -898,15 +766,17 @@ def upload_folder_for_rag():
         
         # Train RAG model
         try:
+            # Update the training progress
+            training_progress['percentage'] = 40
+            training_progress['status'] = 'Training RAG model...'
             new_rag = ChineseRAGSystem(processed_texts_dir=processed_dir, model_save_dir=model_dir)
             new_rag.train_system(processed_dir)
             training_progress['percentage'] = 50
-            training_progress['status'] = 'Training RAG model...'
+            training_progress['status'] = 'RAG model training in progress...'
             
             # Store the new model
             rag_systems[model_name] = new_rag
             training_progress['percentage'] = 70
-            training_progress['status'] = 'Training RAG model...'
             
             # Clean up upload directory but keep processed texts
             processed_texts_backup = os.path.join(model_dir, "processed_texts")
@@ -914,7 +784,7 @@ def upload_folder_for_rag():
                 shutil.rmtree(processed_texts_backup)
             shutil.copytree(processed_dir, processed_texts_backup)
             
-            # 更新进度
+            # Update the training progress
             training_progress['percentage'] = 100
             training_progress['status'] = 'Training complete!'
             training_progress['is_training'] = False
@@ -938,8 +808,9 @@ def upload_folder_for_rag():
         training_progress['is_training'] = False
         return jsonify({'error': str(e)}), 500
 
+# Rename a RAG model
 @app.route('/rename_rag_model', methods=['POST'])
-def rename_rag_model():
+def rename_rag_model() -> None:
     """Rename a RAG model."""
     try:
         data = request.get_json()
@@ -949,15 +820,13 @@ def rename_rag_model():
         if not old_name or not new_name:
             return jsonify({'error': 'Both old_name and new_name are required'}), 400
         
-        # Sanitize new name - 允许中文字符、字母、数字和常用符号
-        # 只过滤掉文件系统不允许的字符
-        import string
-        forbidden_chars = '<>:"/\\|?*'  # Windows文件系统禁止的字符
+        # Only filter out characters not allowed by the file system (Windows forbidden characters)
+        forbidden_chars = '<>:"/\\|?*' 
         sanitized_new_name = new_name
         for char in forbidden_chars:
             sanitized_new_name = sanitized_new_name.replace(char, '_')
-        
-        # 移除首尾空格并确保不为空
+
+        # Remove leading/trailing whitespace and ensure it's not empty
         sanitized_new_name = sanitized_new_name.strip()
         if not sanitized_new_name:
             return jsonify({'error': 'Invalid model name after sanitization'}), 400
@@ -995,6 +864,7 @@ def rename_rag_model():
         # Update the model's save directory
         rag_systems[new_name].model_save_dir = Path(new_model_dir)
         
+        # Debug Message
         logger.info(f"Successfully renamed RAG model from '{old_name}' to '{new_name}'")
         
         return jsonify({
@@ -1008,8 +878,9 @@ def rename_rag_model():
         logger.error(f"Error renaming RAG model: {str(e)}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
+# Delete a RAG model
 @app.route('/delete_rag_model', methods=['POST'])
-def delete_rag_model():
+def delete_rag_model() -> None:
     """Delete a RAG model."""
     try:
         data = request.get_json()
@@ -1017,10 +888,6 @@ def delete_rag_model():
         
         if not model_name:
             return jsonify({'error': 'Model name is required'}), 400
-        
-        # Prevent deletion of default model
-        if model_name == 'default':
-            return jsonify({'error': 'Cannot delete the default model'}), 400
             
         # Check if model exists
         if model_name not in rag_systems:
@@ -1041,7 +908,8 @@ def delete_rag_model():
         except OSError as e:
             logger.error(f"Failed to delete directory {model_dir}: {e}")
             return jsonify({'error': f'Failed to delete model directory: {str(e)}'}), 500
-            
+        
+        # Debug Message
         logger.info(f"Successfully deleted RAG model '{model_name}'")
         
         return jsonify({
@@ -1070,7 +938,7 @@ def test_llm():
             {"role": "user", "content": "Hello, are you working?"}
         ]
         
-        response_data, error = call_llm_api(messages, max_tokens=50)
+        response_data, error = call_llm_api(messages, max_tokens=100)
         if error:
             return jsonify({"status": "error", "message": error}), 500
             
@@ -1115,40 +983,22 @@ def clear_context():
         logger.error(f"Error clearing context: {str(e)}")
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
-@app.route('/get-context', methods=['GET'])
-def get_context():
-    """Get conversation context for current session"""
-    try:
-        session_id = get_or_create_session_id()
-        context = list(conversation_contexts.get(session_id, []))
-        
-        logger.info(f"Getting context for session_id: {session_id}, found {len(context)} messages")
-        
-        return jsonify({
-            'status': 'success',
-            'context': context,
-            'session_id': session_id
-        })
-    except Exception as e:
-        logger.error(f"Error getting context: {str(e)}")
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
-
 if __name__ == '__main__':
-    # uploads目录已经在上面创建了，这里不需要重复创建
-    # 检查LLM是否可用
     try:
         test_messages = [
             {"role": "system", "content": "You are a helpful assistant."},
             {"role": "user", "content": "Test"}
         ]
-        test_response, test_error = call_llm_api(test_messages, max_tokens=10)
+        test_response, test_error = call_llm_api(test_messages, max_tokens=100)
         if test_error:
+            # Debug Message
             logger.warning(f"LLM API not available at startup: {test_error}")
             print(f"Warning: LLM API not available. Please make sure LM Studio is running at {LM_STUDIO_API_URL}")
         else:
+            # Debug Message
             logger.info("LLM API available and responding")
             print(f"LLM API available at {LM_STUDIO_API_URL}")
     except Exception as e:
         logger.error(f"Error testing LLM connection at startup: {str(e)}")
-    
-    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False, threaded=True)
+    finally:
+        app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False, threaded=True)
