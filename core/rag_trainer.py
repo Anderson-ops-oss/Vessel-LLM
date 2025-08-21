@@ -1,3 +1,4 @@
+from fileinput import filename
 from pathlib import Path
 import torch
 from typing import List
@@ -12,6 +13,11 @@ from llama_index.core.retrievers import VectorIndexRetriever
 from sentence_transformers import SentenceTransformer, CrossEncoder
 import os
 
+# Debug
+import logging
+logging.basicConfig(level=logging.DEBUG)
+logger = logging.getLogger(__name__)
+
 
 # Chinese RAG System
 class ChineseRAGSystem:
@@ -21,7 +27,7 @@ class ChineseRAGSystem:
     def __init__(self, 
                  processed_texts_dir: str = "processed_texts",
                  model_save_dir: str = "rag_models",
-                 embedding_model: str = "qwen/Qwen3-Embedding-0.6B",
+                 embedding_model: str = "Qwen/Qwen3-Embedding-0.6B",
                  use_reranker: bool = True,
                  reranker_model: str = "BAAI/bge-reranker-v2-m3",
                  semantic_chunking_model: str = "BAAI/bge-m3"):
@@ -46,7 +52,7 @@ class ChineseRAGSystem:
         self.reranker = None
         self.config = {
             'similarity_top_k': 30,
-            'semantic_chunking_threshold': 0.95,
+            'semantic_chunking_threshold': 0.7,
         }
 
     # Setup models for RAG system
@@ -112,13 +118,14 @@ class ChineseRAGSystem:
                 current_embeddings = [embeddings[i]]
         
         if current_chunk:
+            # print(current_chunk[:3])
             chunks.append(' '.join(current_chunk))
 
         # Only keep chunks longer than 10 characters
         chunks = [chunk for chunk in chunks if len(chunk) > 10]
         return chunks
-    
-    # Load processed text files 
+        
+
     def load_texts(self) -> List[Document]:
         """Load processed text files from the specified directory."""
         
@@ -206,7 +213,6 @@ class ChineseRAGSystem:
         self.setup_retriever()
         self.save_system()
 
-    # Retrieve relevant documents
     def retrieve_relevant_docs(self, query: str) -> str:
         """Retrieve relevant documents and return formatted context"""
         if not self.retriever:
@@ -215,22 +221,59 @@ class ChineseRAGSystem:
         nodes = self.retriever.retrieve(query)
         if not nodes:
             return "No relevant documents found."
-        
+
         if self.reranker:
             node_texts = [node.text for node in nodes]
             pairs = [[query, text] for text in node_texts]
             scores = self.reranker.predict(pairs)
             scored_nodes = list(zip(scores, nodes))
+            
+            # Sort by score (highest first)
             scored_nodes.sort(key=lambda x: x[0], reverse=True)
             nodes = [node for _, node in scored_nodes]
+            
+            # Get top 10 and their scores
+            context_nodes = nodes[:10]
+            top_scores = [score for score, _ in scored_nodes[:10]]
+            
+            # Write debug info to file
+            self.write_debug_to_file(query, context_nodes, top_scores, "reranker_debug.txt")
+            
+        else:
+            context_nodes = nodes[:10]
+            # Write debug info to file
+            self.write_debug_to_file(query, context_nodes, None, "retrieval_debug.txt")
         
-        context_nodes = nodes[:10]
         context = '\n'.join(
-            f"Source: {node.metadata['source_file']}\nContent: {node.text[:500]}"
+            f"Source: {node.metadata['source_file']}\nContent: {node.text[:50000]}"
             for node in context_nodes
         )
         return context
 
+    def write_debug_to_file(self, query: str, context_nodes: list, scores: list = None, filename: str = "debug_output.txt"):
+        """Write debug information to a text file"""
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(f"Query: {query}\n")
+            f.write("="*50 + "\n")
+            
+            if scores:
+                f.write("Ranked Results (with reranker scores):\n")
+                for i, (node, score) in enumerate(zip(context_nodes, scores)):
+                    f.write(f"\nRank {i+1} - Score: {score:.4f}\n")
+                    f.write(f"Source: {node.metadata.get('source_file', 'Unknown')}\n")
+                    f.write(f"Chunk ID: {node.metadata.get('chunk_id', 'Unknown')}\n")
+                    f.write(f"Content: {node.text}\n")
+                    f.write("-" * 30 + "\n")
+            else:
+                f.write("Results (no reranker):\n")
+                for i, node in enumerate(context_nodes):
+                    f.write(f"\nRank {i+1}\n")
+                    f.write(f"Source: {node.metadata.get('source_file', 'Unknown')}\n")
+                    f.write(f"Chunk ID: {node.metadata.get('chunk_id', 'Unknown')}\n")
+                    f.write(f"Content: {node.text}\n")
+                    f.write("-" * 30 + "\n")
+                
+                
 # if __name__ == "__main__":
 #     PROCESSED_DIR = "processed_texts"
 #     MODEL_DIR = "rag_models"
