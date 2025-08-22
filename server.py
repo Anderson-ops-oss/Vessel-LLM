@@ -15,6 +15,7 @@ import time
 from pathlib import Path
 import secrets
 import string
+from openai import OpenAI
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CACHE_DIR = os.path.join(BASE_DIR, 'cache')
@@ -25,8 +26,8 @@ os.environ['HF_HOME'] = os.path.abspath(CACHE_DIR)
 os.environ['TRANSFORMERS_CACHE'] = os.path.abspath(CACHE_DIR)
 os.environ['HF_DATASETS_CACHE'] = os.path.abspath(CACHE_DIR)
 os.environ['SENTENCE_TRANSFORMERS_HOME'] = os.path.abspath(CACHE_DIR)
-os.environ['HF_OFFLINE'] = '1'
-os.environ['TRANSFORMERS_OFFLINE'] = '1'
+# os.environ['HF_OFFLINE'] = '1'
+# os.environ['TRANSFORMERS_OFFLINE'] = '1'
 
 core_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'core')
 if core_path not in sys.path:
@@ -190,8 +191,9 @@ def log_user_question(question: str) -> None:
     except Exception as e:
         logger.error(f"Failed to log user question: {e}")
 
+
 # A function to call the LLM API with proper error handling
-def call_llm_api(messages: list, temperature: float = 0.5, max_tokens: int = 3000, stream: bool = False) -> tuple:
+def call_llm_api(messages: list, temperature: float = 0.25, max_tokens: int = 3000, stream: bool = False) -> tuple:
     """Helper function to call the LLM API with consistent error handling"""
     try:
         payload = {
@@ -239,6 +241,7 @@ def call_llm_api(messages: list, temperature: float = 0.5, max_tokens: int = 300
     except Exception as e:
         logger.error(f"Unexpected error calling LLM API: {str(e)}")
         return None, f"Error: {str(e)}"
+
 
 # A function to build the conversation context
 def build_conversation_context(session_id: str, new_message: str, system_prompt: str = None) -> list:
@@ -382,18 +385,26 @@ def extract_file_content(file_path: str, file_extension: str) -> str:
         if file_extension == '.docx':
             # Debug Message
             logger.info(f"Processing DOCX file: {file_path}")
-            content = processor.extract_text_from_docx(file_path)
+            content = processor.extract_text_from_docx_to_markdown(file_path)
         elif file_extension == '.pdf':
             # Debug Message
             logger.info(f"Processing PDF file: {file_path}")
-            content = processor.extract_text_from_pdf(file_path)
+            content = processor.extract_text_from_pdf_to_markdown(file_path)
         elif file_extension in ['.xlsx', '.xls']:
             # Debug Message
             logger.info(f"Processing Excel file: {file_path}")
-            content = processor.extract_text_from_excel(file_path)
+            content = processor.extract_text_from_excel_to_markdown(file_path)
         elif file_extension == '.txt':
             # Debug Message
             logger.info(f"Processing TXT file: {file_path}")
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
+                raw_content = file.read()
+            # Convert plain text to basic markdown format
+            filename = os.path.splitext(os.path.basename(file_path))[0]
+            content = f"# {filename}\n\n{raw_content}"
+        elif file_extension == '.md':
+            # Debug Message
+            logger.info(f"Processing Markdown file: {file_path}")
             with open(file_path, 'r', encoding='utf-8', errors='ignore') as file:
                 content = file.read()
         else:
@@ -442,9 +453,9 @@ def ask_question_stream():
 
         # System prompt for tool usage
         system_prompt = (
-            "你是一个友善的助手。你可以参考之前的对话内容来提供更好的回答。"
-            "请用清晰、简洁的语言回答，避免过多的标记符号。"
-            "在回答之前，请在 <think> 标签中提供你的推理。"
+            "You are a helpful assistant. You can refer to previous conversation history to provide better answers. "
+            "Please respond in clear, concise language and avoid excessive markup symbols. "
+            "Before answering, please provide your reasoning within <think> </think>tags."
         )
 
         # Build conversation context with history
@@ -543,9 +554,15 @@ def upload_and_ask():
 
         # System prompt for file processing
         system_prompt = (
-            "你是一个友善的助手，你必须基于提供的信息来回答问题。你可以参考之前的对话内容来提供更好的回答。"
-            "请用清晰、简洁的语言回答，避免过多的标记符号。"
-            "在回答之前，请在 <think> 标签中提供你的推理。"
+            "You are a helpful assistant that MUST answer questions based ONLY on the provided file content. "
+            "CRITICAL RULES:\n"
+            "1. You can ONLY use information explicitly stated in the provided files\n"
+            "2. You MUST NOT add any information from your training data or general knowledge\n"
+            "3. If the provided files do not contain enough information to answer the question, you MUST say 'The provided files do not contain sufficient information to answer this question'\n"
+            "4. You can refer to previous conversation history only if it relates to the same provided files\n"
+            "5. Always cite which file or section your answer comes from\n"
+            "6. If you're uncertain about any information, clearly state your uncertainty\n"
+            "Before answering, please provide your reasoning within <think> </think>tags, explaining what information you found in the files and how it relates to the question."
         )
 
         # Build conversation context with history
@@ -601,10 +618,17 @@ def rag_ask():
                 
                 # Build enhanced prompt with RAG context and conversation history
                 system_prompt = (
-                    f"你是一个友善的助手，基于提供的知识库内容和之前的对话历史来回答问题。"
-                    f"请用清晰、简洁的语言回答，避免过多的标记符号。"
-                    f"在回答之前，请在 <think> 标签中提供你的推理。\n\n"
-                    f"相关知识库内容：\n{rag_context}"
+                    "You are a helpful assistant that MUST answer questions based STRICTLY on the provided knowledge base content. "
+                    "CRITICAL RULES:\n"
+                    "1. You can ONLY use information explicitly stated in the provided knowledge base content below\n"
+                    "2. You MUST NOT add any information from your training data or general knowledge beyond what's provided\n"
+                    "3. If the knowledge base does not contain sufficient information to answer the question, you MUST say 'The knowledge base does not contain sufficient information to answer this question'\n"
+                    "4. You can refer to previous conversation history only if it relates to the same knowledge base content\n"
+                    "5. Always cite which source document your answer comes from when possible\n"
+                    "6. If you're uncertain about any information, clearly state your uncertainty\n"
+                    "7. Do not make assumptions or inferences beyond what is explicitly stated in the knowledge base\n"
+                    "Before answering, please provide your reasoning within <think> </think> tags, explaining what information you found in the knowledge base and how it relates to the question.\n\n"
+                    f"Knowledge Base Content:\n{rag_context}"
                 )
                 
                 # Build conversation context with history
@@ -665,7 +689,7 @@ def process_folder_for_rag(upload_dir: str) -> tuple:
             if text.strip():  # Only save non-empty texts
                 filename = os.path.basename(file_path)
                 base_name = os.path.splitext(filename)[0]
-                processed_file = os.path.join(processed_dir, f"{base_name}_processed.txt")
+                processed_file = os.path.join(processed_dir, f"{base_name}_processed.md")
                 with open(processed_file, 'w', encoding='utf-8') as f:
                     f.write(text)
                 file_count += 1
@@ -926,7 +950,14 @@ def delete_rag_model() -> None:
 @app.route('/health', methods=['GET'])
 def health_check():
     """Simple endpoint to check if server is running"""
-    return jsonify({"status": "ok", "llm_url": LM_STUDIO_API_URL, "rag_available": RAG_AVAILABLE})
+    api_type = "LM Studio Local API"
+    api_url = LM_STUDIO_API_URL
+    return jsonify({
+        "status": "ok", 
+        "api_type": api_type,
+        "api_url": api_url, 
+        "rag_available": RAG_AVAILABLE
+    })
 
 # Add an endpoint to test LLM connection
 @app.route('/test_llm', methods=['GET'])
@@ -941,9 +972,11 @@ def test_llm():
         response_data, error = call_llm_api(messages, max_tokens=100)
         if error:
             return jsonify({"status": "error", "message": error}), 500
-            
+        
+        api_type = "LM Studio Local API"
         return jsonify({
             "status": "ok", 
+            "api_type": api_type,
             "message": "LLM connection successful", 
             "response": response_data['choices'][0]['message']['content']
         })
@@ -993,11 +1026,15 @@ if __name__ == '__main__':
         if test_error:
             # Debug Message
             logger.warning(f"LLM API not available at startup: {test_error}")
-            print(f"Warning: LLM API not available. Please make sure LM Studio is running at {LM_STUDIO_API_URL}")
+            api_type = "LM Studio Local API"
+            api_url = LM_STUDIO_API_URL
+            print(f"Warning: {api_type} not available. Please check your configuration at {api_url}")
         else:
             # Debug Message
             logger.info("LLM API available and responding")
-            print(f"LLM API available at {LM_STUDIO_API_URL}")
+            api_type = "LM Studio Local API"
+            api_url =  LM_STUDIO_API_URL
+            print(f"{api_type} available at {api_url}")
     except Exception as e:
         logger.error(f"Error testing LLM connection at startup: {str(e)}")
     finally:
