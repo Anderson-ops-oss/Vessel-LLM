@@ -19,97 +19,7 @@ class ChineseDocumentProcessor:
         self.output_dir = Path(output_dir)
         self.output_dir.mkdir(exist_ok=True)
     
-    def clean_text(self, text: str) -> str:
-        """Clean and optimize text for RAG embedding model, designed for Chinese and English documents."""
-        if not text or not text.strip():
-            # Debug Message
-            logger.warning("Input text is empty or whitespace-only")
-            return ""
-        
-        try:
-            # Remove control characters
-            text = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', text)
-            # Remove common garbled text patterns (keep Chinese, English, numbers, and common punctuation)
-            text = re.sub(r'[^\u4e00-\u9fffA-Za-z0-9\s.,!?;:\-()（）《》【】“”‘’、，。！？；：]+', ' ', text)
-
-            # Remove specific patterns (e.g., hex codes, UUIDs, error messages, PDF headers/footers and duplicate punctuation)
-            text = re.sub(r'\b0x[0-9a-fA-F]{4,}\b', '', text)
-            text = re.sub(r'\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b', '', text)
-            text = re.sub(r'\b(Error|Warning|Exception|Failed):?\s*[A-Za-z0-9_-]+\b', '', text, flags=re.IGNORECASE)
-            text = re.sub(r'\bPage\s+\d+\s+of\s+\d+\b', '', text, flags=re.IGNORECASE)
-            text = re.sub(r'([.,!?;:\-])\1+', r'\1', text)
-
-            # Remove duplicate whitespace
-            text = re.sub(r'\s+', ' ', text) 
-            text = re.sub(r'\n+', '\n', text)
-            
-            # Remove leading and trailing whitespace
-            text = text.strip()
-
-            # Process unordered text, attempt to reorganize by sentence
-            sentences = []
-            current_sentence = []
-            for line in text.split('\n'):
-                line = line.strip()
-                if not line:
-                    continue
-                # Use defined sentence splitting
-                parts = re.split(r'([。！？.!?])', line)
-                for i, part in enumerate(parts):
-                    if part in '。！？.!?':
-                        if current_sentence:
-                            current_sentence.append(part)
-                            sentences.append(''.join(current_sentence))
-                            current_sentence = []
-                    else:
-                        if part.strip():
-                            current_sentence.append(part)
-
-            # Add remaining sentence
-            if current_sentence:
-                sentences.append(''.join(current_sentence))
-
-            # Remove too short sentences
-            filtered_sentences = []
-            has_chinese = any(re.search(r'[\u4e00-\u9fff]', s) for s in sentences)
-            sentence_lengths = [len(s.strip()) for s in sentences]
-            for s in sentences:
-                # Keep Chinese sentences (length > 3) or English sentences (length > 6)
-                if has_chinese and re.search(r'[\u4e00-\u9fff]', s) and len(s.strip()) > 3:
-                    filtered_sentences.append(s)
-                elif not has_chinese and len(s.strip()) > 6:
-                    filtered_sentences.append(s)
-
-            # Check cleaned text quality
-            cleaned_text = '\n'.join(filtered_sentences)
-            if not cleaned_text.strip():
-                logger.warning(
-                    f"Text is empty after filtering. Has Chinese: {has_chinese}, "
-                    f"Sentence count: {len(sentences)}, Kept: {len(filtered_sentences)}, "
-                    f"Sentence lengths: {sentence_lengths[:10]}..."
-                )
-                # Fallback: Return minimally cleaned text
-                minimal_text = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', text)
-                minimal_text = re.sub(r'\b0x[0-9a-fA-F]{4,}\b', '', minimal_text)
-                minimal_text = re.sub(r'\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b', '', minimal_text)
-                minimal_text = re.sub(r'\b(Error|Warning|Exception|Failed):?\s*[A-Za-z0-9_-]+\b', '', minimal_text, flags=re.IGNORECASE)
-                minimal_text = re.sub(r'\bPage\s+\d+\s+of\s+\d+\b', '', minimal_text, flags=re.IGNORECASE)
-                minimal_text = re.sub(r'([.,!?;:\-])\1+', r'\1', minimal_text)
-                minimal_text = re.sub(r'\s+', ' ', minimal_text).strip()
-                if minimal_text:
-                    logger.info("Returning minimally cleaned text to avoid empty output")
-                    return minimal_text
-                logger.warning("Minimal cleaned text is also empty")
-                return ""
-
-            # Remove isolated punctuations
-            cleaned_text = re.sub(r'(?<![\u4e00-\u9fff])[.,;:!?](?![\u4e00-\u9fff])\s*', ' ', cleaned_text)
-            cleaned_text = re.sub(r'\s+', ' ', cleaned_text).strip()
-        
-            return cleaned_text
-        except Exception as e:
-            logger.error(f"Error cleaning text: {e}")
-            return text.strip() 
+    
     
     def process_documents(self) -> Dict[str, str]:
         """Process all documents in the specified directory and clean extracted text."""
@@ -126,87 +36,243 @@ class ChineseDocumentProcessor:
                 try:
                     if file_extension == '.docx':
                         logger.info(f"Process documents: {file_path}")
-                        content = self.extract_text_from_docx(file_path)
-                        processed_texts[file_path] = self.clean_text(content)
+                        content = self.extract_text_from_docx_to_markdown(file_path)
+                        processed_texts[file_path] = self.clean_markdown_text(content)
                     
                     elif file_extension == '.pdf':
                         logger.info(f"Process documents: {file_path}")
-                        content = self.extract_text_from_pdf(file_path)
-                        processed_texts[file_path] = self.clean_text(content)
+                        content = self.extract_text_from_pdf_to_markdown(file_path)
+                        processed_texts[file_path] = self.clean_markdown_text(content)
                     
                     elif file_extension in ['.xlsx', '.xls']:
                         logger.info(f"Process documents: {file_path}")
-                        content = self.extract_text_from_excel(file_path)
-                        processed_texts[file_path] = self.clean_text(content)
+                        content = self.extract_text_from_excel_to_markdown(file_path)
+                        processed_texts[file_path] = self.clean_markdown_text(content)
                     
                     elif file_extension == '.txt':
                         logger.info(f"Process documents: {file_path}")
                         with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
                             content = f.read()
-                        processed_texts[file_path] = self.clean_text(content)
+                        processed_texts[file_path] = self.clean_markdown_text(content)
+                    
+                    elif file_extension == '.md':
+                        logger.info(f"Process documents: {file_path}")
+                        with open(file_path, 'r', encoding='utf-8', errors='replace') as f:
+                            content = f.read()
+                        processed_texts[file_path] = self.clean_markdown_text(content)
                 except Exception as e:
                     logger.error(f"Fail to extract {file_extension} files from: {file_path}: {e}")
                     processed_texts[file_path] = f"[提取失败: {os.path.basename(file_path)}]"
         
         return processed_texts
     
-    def extract_text_from_docx(self, file_path: str) -> str:
-        """Extract text from a DOCX file."""
+    
+
+    def clean_markdown_text(self, text: str) -> str:
+        """Clean text while preserving Markdown structure for RAG."""
+        if not text or not text.strip():
+            logger.warning("Input text is empty or whitespace-only")
+            return ""
+        
+        try:
+            # Remove control characters but preserve markdown syntax
+            text = re.sub(r'[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]', '', text)
+            
+            # Remove specific patterns but keep markdown formatting
+            text = re.sub(r'\b0x[0-9a-fA-F]{4,}\b', '', text)
+            text = re.sub(r'\b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b', '', text)
+            text = re.sub(r'\b(Error|Warning|Exception|Failed):?\s*[A-Za-z0-9_-]+\b', '', text, flags=re.IGNORECASE)
+            text = re.sub(r'\bPage\s+\d+\s+of\s+\d+\b', '', text, flags=re.IGNORECASE)
+            
+            # Clean up excessive whitespace but preserve markdown structure
+            text = re.sub(r'[ \t]+', ' ', text)  # Multiple spaces to single space
+            text = re.sub(r'\n{3,}', '\n\n', text)  # Multiple newlines to double newline
+            
+            # Remove lines that are too short but preserve headers and lists
+            lines = text.split('\n')
+            filtered_lines = []
+            
+            for line in lines:
+                line = line.strip()
+                if not line:
+                    filtered_lines.append('')
+                    continue
+                
+                # Keep markdown headers
+                if line.startswith('#'):
+                    filtered_lines.append(line)
+                # Keep markdown lists
+                elif line.startswith(('- ', '* ', '+ ')) or re.match(r'^\d+\.\s', line):
+                    filtered_lines.append(line)
+                # Keep table rows
+                elif '|' in line:
+                    filtered_lines.append(line)
+                # Keep other content if it's long enough
+                elif len(line) > 10 or re.search(r'[\u4e00-\u9fff]', line):
+                    filtered_lines.append(line)
+            
+            return '\n'.join(filtered_lines).strip()
+            
+        except Exception as e:
+            logger.error(f"Error cleaning markdown text: {e}")
+            return text.strip()
+
+    def extract_text_from_docx_to_markdown(self, file_path: str) -> str:
+        """Extract text from DOCX and convert to Markdown format."""
         try:
             doc = DocxDocument(file_path)
-            return '\n'.join([para.text for para in doc.paragraphs if para.text.strip()])
+            markdown_lines = []
+            
+            # Add document title
+            filename = os.path.splitext(os.path.basename(file_path))[0]
+            markdown_lines.append(f"# {filename}")
+            markdown_lines.append("")
+            
+            current_header_level = 1
+            
+            for para in doc.paragraphs:
+                if not para.text.strip():
+                    continue
+                    
+                text = para.text.strip()
+                
+                # Try to detect headers based on text characteristics
+                if self._is_likely_header(text):
+                    current_header_level = min(current_header_level + 1, 4)
+                    markdown_lines.append(f"{'#' * current_header_level} {text}")
+                    markdown_lines.append("")
+                else:
+                    # Regular paragraph
+                    markdown_lines.append(text)
+                    markdown_lines.append("")
+            
+            return '\n'.join(markdown_lines)
+            
         except Exception as e:
-            logger.error(f"Error extracting DOCX content from {file_path}: {e}")
+            logger.error(f"Error extracting DOCX to markdown from {file_path}: {e}")
             return ""
-    
-    def extract_text_from_pdf(self, file_path: str) -> str:
-        """Extract text from a PDF file."""
+
+    def extract_text_from_pdf_to_markdown(self, file_path: str) -> str:
+        """Extract text from PDF and convert to Markdown format."""
         try:
             doc = fitz.open(file_path)
-            text = ""
-            for page in doc:
-                text += page.get_text()
+            markdown_lines = []
+            
+            # Add document title
+            filename = os.path.splitext(os.path.basename(file_path))[0]
+            markdown_lines.append(f"# {filename}")
+            markdown_lines.append("")
+            
+            for page_num in range(len(doc)):
+                page = doc[page_num]
+                text = page.get_text()
+                
+                if text.strip():
+                    # Add page separator for multi-page documents
+                    if page_num > 0:
+                        markdown_lines.append(f"## Page {page_num + 1}")
+                        markdown_lines.append("")
+                    
+                    # Process text line by line
+                    lines = text.split('\n')
+                    for line in lines:
+                        line = line.strip()
+                        if not line:
+                            continue
+                            
+                        # Try to detect headers
+                        if self._is_likely_header(line):
+                            markdown_lines.append(f"### {line}")
+                            markdown_lines.append("")
+                        else:
+                            markdown_lines.append(line)
+                    
+                    markdown_lines.append("")
+            
             doc.close()
-            if text.strip():
-                # Debug Message
-                logger.info(f"Successfully extracted text from PDF using PyMuPDF: {file_path}")
-                return text
-            else:
-                logger.warning(f"No text extracted from PDF: {file_path}")
-                return f"[No text extracted from PDF: {os.path.basename(file_path)}]"
+            return '\n'.join(markdown_lines)
+            
         except Exception as e:
-            logger.error(f"Failed to extract text from PDF {file_path}: {e}")
-            return f"[PDF提取失败: {os.path.basename(file_path)}]"
-    
-    def extract_text_from_excel(self, file_path: str) -> str:
-        """Extract text from an Excel file."""
+            logger.error(f"Failed to extract PDF to markdown {file_path}: {e}")
+            return f"# {os.path.basename(file_path)}\n\n[PDF提取失败: {str(e)}]"
+
+    def extract_text_from_excel_to_markdown(self, file_path: str) -> str:
+        """Extract text from Excel and convert to Markdown format."""
         try:
             wb = load_workbook(file_path, read_only=True, data_only=True)
-            text = []
+            markdown_lines = []
             
-            for sheet in wb.sheetnames:
-                ws = wb[sheet]
-                sheet_text = [f"--- Sheet: {sheet} ---"]
-
-                # read cell data
+            # Add document title
+            filename = os.path.splitext(os.path.basename(file_path))[0]
+            markdown_lines.append(f"# {filename}")
+            markdown_lines.append("")
+            
+            for sheet_name in wb.sheetnames:
+                ws = wb[sheet_name]
+                
+                # Add sheet as a section
+                markdown_lines.append(f"## {sheet_name}")
+                markdown_lines.append("")
+                
+                # Get all data from the sheet
+                data = []
                 for row in ws.rows:
                     row_values = []
                     for cell in row:
                         if cell.value is not None:
                             row_values.append(str(cell.value))
-                    if row_values:
-                        sheet_text.append("\t".join(row_values))
-
-                # If the sheet has content
-                if len(sheet_text) > 1:
-                    text.extend(sheet_text)
-                    # Add a blank line to separate different sheets
-                    text.append("")
+                        else:
+                            row_values.append("")
+                    data.append(row_values)
+                
+                # Filter out empty rows
+                data = [row for row in data if any(cell.strip() for cell in row)]
+                
+                if data:
+                    # Create markdown table
+                    if len(data) > 1:
+                        # Header row
+                        header = "| " + " | ".join(data[0]) + " |"
+                        separator = "|" + "|".join([" --- " for _ in data[0]]) + "|"
+                        markdown_lines.append(header)
+                        markdown_lines.append(separator)
+                        
+                        # Data rows
+                        for row in data[1:]:
+                            row_md = "| " + " | ".join(row) + " |"
+                            markdown_lines.append(row_md)
+                    else:
+                        # Single row, treat as list
+                        for item in data[0]:
+                            if item.strip():
+                                markdown_lines.append(f"- {item}")
+                
+                markdown_lines.append("")
             
-            return '\n'.join(text)
+            return '\n'.join(markdown_lines)
+            
         except Exception as e:
-            logger.error(f"Error extracting Excel content from {file_path}: {e}")
-            return ""
+            logger.error(f"Error extracting Excel to markdown from {file_path}: {e}")
+            return f"# {os.path.basename(file_path)}\n\n[Excel提取失败: {str(e)}]"
+
+    def _is_likely_header(self, text: str) -> bool:
+        """Determine if a line of text is likely a header."""
+        if len(text) > 100:  # Too long to be a header
+            return False
+        
+        # Check for common header patterns
+        header_patterns = [
+            r'^[A-Z\u4e00-\u9fff][A-Z\u4e00-\u9fff\s]{2,50}$',  # All caps or Chinese
+            r'^\d+[\.\)]\s*[A-Za-z\u4e00-\u9fff]',  # Numbered sections
+            r'^第[一二三四五六七八九十\d]+[章节部分条款]',  # Chinese section markers
+            r'^[A-Za-z\u4e00-\u9fff][^\.]{5,50}$',  # Short lines without periods
+        ]
+        
+        for pattern in header_patterns:
+            if re.match(pattern, text):
+                return True
+                
+        return False
 
 # if __name__ == "__main__":
 #     processor = ChineseDocumentProcessor(output_dir="processed_texts")
