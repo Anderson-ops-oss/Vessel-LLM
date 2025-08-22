@@ -56,7 +56,7 @@ class ChineseRAGSystem:
         }
 
     # Setup models for RAG system
-    def setup_models(self, force_offline: bool = True) -> None:
+    def setup_models(self, force_offline: bool = False) -> None:
         """Setup embedding, reranker, and semantic chunking models."""
         device = "cuda" if torch.cuda.is_available() else "cpu"
         
@@ -233,19 +233,19 @@ class ChineseRAGSystem:
             nodes = [node for _, node in scored_nodes]
             
             # Get top 10 and their scores
-            context_nodes = nodes[:10]
-            top_scores = [score for score, _ in scored_nodes[:10]]
+            context_nodes = nodes[:5]
+            top_scores = [score for score, _ in scored_nodes[:5]]
             
             # Write debug info to file
             self.write_debug_to_file(query, context_nodes, top_scores, "reranker_debug.txt")
             
         else:
-            context_nodes = nodes[:10]
+            context_nodes = nodes[:5]
             # Write debug info to file
             self.write_debug_to_file(query, context_nodes, None, "retrieval_debug.txt")
         
         context = '\n'.join(
-            f"Source: {node.metadata['source_file']}\nContent: {node.text[:50000]}"
+            f"Source: {node.metadata['source_file']}\nContent: {node.text[:10000]}"
             for node in context_nodes
         )
         return context
