@@ -17,8 +17,8 @@ A powerful Chinese/English document processing and RAG (Retrieval-Augmented Gene
 
 ### Minimum Requirements
 - **Python**: 3.8 or higher
-- **RAM**: 8GB (16GB+ recommended for large documents)
-- **Storage**: 10GB free space (for models and cache)
+- **RAM**: 16GB (24GB+ recommended for large documents)
+- **Storage**: 20GB free space (for models and cache)
 - **Internet**: Required for initial model download
 - **LM Studio**: Latest version running locally
 
@@ -26,7 +26,7 @@ A powerful Chinese/English document processing and RAG (Retrieval-Augmented Gene
 - **Python**: 3.9 or 3.10
 - **RAM**: 24GB+ (32GB+ for optimal performance)
 - **GPU**: NVIDIA GPU with 16GB+ VRAM
-- **Storage**: 20GB+ free space (SSD recommended)
+- **Storage**: 40GB+ free space (SSD recommended)
 - **CPU**: Multi-core processor (Intel i7/AMD Ryzen 7 or better)
 
 ### Platform Support
