@@ -213,7 +213,7 @@ Use Inno Setup to create a professional Windows installer:
    Build → Compile
    ```
 
-4. **The installer will be created** in the `Output/` directory
+4. **The installer will be created** in the `dist/` directory
 
 #### Step 3: Distribution
 
