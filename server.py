@@ -688,7 +688,7 @@ def process_folder_for_rag(upload_dir: str) -> tuple:
             if text.strip():  # Only save non-empty texts
                 filename = os.path.basename(file_path)
                 base_name = os.path.splitext(filename)[0]
-                processed_file = os.path.join(processed_dir, f"{base_name}_processed.md")
+                processed_file = os.path.join(processed_dir, f"{base_name}_processed.txt")
                 with open(processed_file, 'w', encoding='utf-8') as f:
                     f.write(text)
                 file_count += 1
@@ -1038,3 +1038,4 @@ if __name__ == '__main__':
         logger.error(f"Error testing LLM connection at startup: {str(e)}")
     finally:
         app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False, threaded=True)
+
