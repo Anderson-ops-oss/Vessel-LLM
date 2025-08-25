@@ -194,7 +194,7 @@ class ChineseDocumentProcessor:
             
         except Exception as e:
             logger.error(f"Failed to extract PDF to markdown {file_path}: {e}")
-            return f"# {os.path.basename(file_path)}\n\n[PDF提取失败: {str(e)}]"
+            return f"# {os.path.basename(file_path)}\n\n[PDF extraction failed: {str(e)}]"
 
     def extract_text_from_excel_to_markdown(self, file_path: str) -> str:
         """Extract text from Excel and convert to Markdown format."""
@@ -274,9 +274,3 @@ class ChineseDocumentProcessor:
                 
         return False
 
-# if __name__ == "__main__":
-#     processor = ChineseDocumentProcessor(output_dir="processed_texts")
-    # results = processor.process_documents()
-    # print(f"Processed {len(results)} documents")
-    # for path, content in results.items():
-    #     print(f"{path}: {len(content)} characters")

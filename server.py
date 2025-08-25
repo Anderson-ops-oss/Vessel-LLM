@@ -15,7 +15,6 @@ import time
 from pathlib import Path
 import secrets
 import string
-from openai import OpenAI
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CACHE_DIR = os.path.join(BASE_DIR, 'cache')
