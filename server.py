@@ -25,8 +25,8 @@ os.environ['HF_HOME'] = os.path.abspath(CACHE_DIR)
 os.environ['TRANSFORMERS_CACHE'] = os.path.abspath(CACHE_DIR)
 os.environ['HF_DATASETS_CACHE'] = os.path.abspath(CACHE_DIR)
 os.environ['SENTENCE_TRANSFORMERS_HOME'] = os.path.abspath(CACHE_DIR)
-# os.environ['HF_OFFLINE'] = '1'
-# os.environ['TRANSFORMERS_OFFLINE'] = '1'
+os.environ['HF_OFFLINE'] = '1'
+os.environ['TRANSFORMERS_OFFLINE'] = '1'
 
 core_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'core')
 if core_path not in sys.path:
@@ -1038,4 +1038,5 @@ if __name__ == '__main__':
         logger.error(f"Error testing LLM connection at startup: {str(e)}")
     finally:
         app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False, threaded=True)
+
 
