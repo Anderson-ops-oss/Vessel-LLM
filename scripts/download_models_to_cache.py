@@ -32,7 +32,7 @@ if __name__ == "__main__":
 
     # Setting the cache folder path
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-    CACHE_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', 'cache'))
+    CACHE_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', 'model'))
     os.makedirs(CACHE_DIR, exist_ok=True)
 
     # Setting environment variables to ensure transformers download to the specified cache
