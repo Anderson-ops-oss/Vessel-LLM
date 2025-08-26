@@ -17,7 +17,7 @@ import secrets
 import string
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-CACHE_DIR = os.path.join(BASE_DIR, 'cache')
+CACHE_DIR = os.path.join(BASE_DIR, 'model')
 UPLOADS_DIR = os.path.join(BASE_DIR, 'uploads')
 os.makedirs(CACHE_DIR, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
@@ -69,6 +69,7 @@ except Exception as e:
     rag_systems = {}
     RAG_AVAILABLE = False
 
+# Initialize the server
 app = Flask(__name__)
 CORS(app) 
 app.secret_key = secrets.token_hex(32)
@@ -87,6 +88,15 @@ training_progress = {
     'is_training': False,
     'error': None
 }
+
+# Setting the conversation temperature
+ask_temperature = 0.75
+upload_and_ask_temperature = 0.3
+rag_ask_temperature = 0.25
+
+# LM Studio API endpoint
+LM_STUDIO_API_URL = "http://localhost:1234/v1/chat/completions"
+LM_STUDIO_MODEL = "qwen/qwen3-14b"
 
 # Format the LLM output to be more user-friendly
 def format_markdown_to_user_friendly(text: str) -> str:
@@ -174,9 +184,6 @@ def format_markdown_to_user_friendly(text: str) -> str:
     return formatted_text
 
 
-# LM Studio API endpoint
-LM_STUDIO_API_URL = "http://localhost:1234/v1/chat/completions"
-
 # A function to log the user question
 def log_user_question(question: str) -> None:
     """Log the user question with a timestamp."""
@@ -196,7 +203,7 @@ def call_llm_api(messages: list, temperature: float = 0.25, max_tokens: int = 30
     """Helper function to call the LLM API with consistent error handling"""
     try:
         payload = {
-            "model": "qwen/qwen3-14b", 
+            "model": LM_STUDIO_MODEL, 
             "messages": messages,
             "max_tokens": max_tokens,
             "temperature": temperature,
@@ -294,12 +301,12 @@ def get_or_create_session_id() -> str:
     return session['session_id']
 
 # Shared streaming response generator function
-def generate_streaming_response(messages: list, session_id: str, question: str) -> iter:
+def generate_streaming_response(messages: list, session_id: str, question: str, temperature: float) -> iter:
     """Shared function to generate streaming responses for all endpoints"""
     ai_response_content = ""
     try:
         # Call the LLM API with streaming enabled
-        response, error = call_llm_api(messages, stream=True)
+        response, error = call_llm_api(messages, stream=True, temperature=temperature)
         
         if error:
             yield f"data: {json.dumps({'error': error})}\n\n"
@@ -457,11 +464,12 @@ def ask_question_stream():
             "Before answering, please provide your reasoning within <think> </think>tags."
         )
 
+        
         # Build conversation context with history
         messages = build_conversation_context(session_id, question, system_prompt)
 
         return Response(
-            stream_with_context(generate_streaming_response(messages, session_id, question)),
+            stream_with_context(generate_streaming_response(messages, session_id, question, temperature=ask_temperature)),
             mimetype='text/plain',
             headers={
                 'Cache-Control': 'no-cache',
@@ -568,7 +576,7 @@ def upload_and_ask():
         messages = build_conversation_context(session_id, combined_input, system_prompt)
 
         return Response(
-            stream_with_context(generate_streaming_response(messages, session_id, question)),
+            stream_with_context(generate_streaming_response(messages, session_id, question, temperature=upload_and_ask_temperature)),
             mimetype='text/plain',
             headers={
                 'Cache-Control': 'no-cache',
@@ -638,7 +646,7 @@ def rag_ask():
                 return jsonify({'error': f'RAG retrieval error: {str(rag_error)}'}), 500
 
             return Response(
-                stream_with_context(generate_streaming_response(messages, session_id, question)),
+                stream_with_context(generate_streaming_response(messages, session_id, question, temperature=rag_ask_temperature)),
                 mimetype='text/plain',
                 headers={
                     'Cache-Control': 'no-cache',
@@ -1038,5 +1046,4 @@ if __name__ == '__main__':
         logger.error(f"Error testing LLM connection at startup: {str(e)}")
     finally:
         app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False, threaded=True)
-
 
