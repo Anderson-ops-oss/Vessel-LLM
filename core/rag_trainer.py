@@ -56,37 +56,60 @@ class ChineseRAGSystem:
         }
 
     # Setup models for RAG system
-    def setup_models(self, force_offline: bool = False) -> None:
+    def setup_models(self, force_offline: bool = True) -> None:
         """Setup embedding, reranker, and semantic chunking models."""
         device = "cuda" if torch.cuda.is_available() else "cpu"
         
         if force_offline:
-            os.environ['HF_OFFLINE'] = '1'
-            os.environ['TRANSFORMERS_OFFLINE'] = '1'
-            os.environ['HF_DATASETS_OFFLINE'] = '1'
+            try:
+                os.environ['HF_OFFLINE'] = '1'
+                os.environ['TRANSFORMERS_OFFLINE'] = '1'
+                os.environ['HF_DATASETS_OFFLINE'] = '1'
+            
+                self.embedding_model = HuggingFaceEmbedding(
+                    model_name=self.embedding_model_name,
+                    device=device,
+                    local_files_only=force_offline
+                )
+                Settings.embed_model = self.embedding_model
 
-        # Load embedding model
-        self.embedding_model = HuggingFaceEmbedding(
-            model_name=self.embedding_model_name,
-            device=device,
-            local_files_only=force_offline
-        )
-        Settings.embed_model = self.embedding_model
+                # Load semantic chunking model
+                self.semantic_chunker = SentenceTransformer(
+                    self.semantic_chunking_model,
+                    device=device,
+                    local_files_only=force_offline
+                )
 
-        # Load semantic chunking model
-        self.semantic_chunker = SentenceTransformer(
-            self.semantic_chunking_model,
-            device=device,
-            local_files_only=force_offline
-        )
+                # Load reranker model
+                self.reranker = CrossEncoder(
+                    self.reranker_model_name,
+                    device=device,
+                    local_files_only=force_offline
+                )
+                
+            except Exception as e:
+            # Load embedding model
+                self.embedding_model = HuggingFaceEmbedding(
+                    model_name=self.embedding_model_name,
+                    device=device,
+                    local_files_only=False
+                )
+                Settings.embed_model = self.embedding_model
 
-        # Load reranker model
-        if self.use_reranker:
-            self.reranker = CrossEncoder(
-                self.reranker_model_name,
-                device=device,
-                local_files_only=force_offline
-            )
+                # Load semantic chunking model
+                self.semantic_chunker = SentenceTransformer(
+                    self.semantic_chunking_model,
+                    device=device,
+                    local_files_only=False
+                )
+
+                # Load reranker model
+                if self.use_reranker:
+                    self.reranker = CrossEncoder(
+                        self.reranker_model_name,
+                        device=device,
+                        local_files_only=False
+                    )
 
     # Custom semantic chunking
     def custom_semantic_chunking(self, text: str) -> List[str]:
@@ -273,9 +296,3 @@ class ChineseRAGSystem:
                     f.write(f"Content: {node.text}\n")
                     f.write("-" * 30 + "\n")
                 
-                
-# if __name__ == "__main__":
-#     PROCESSED_DIR = "processed_texts"
-#     MODEL_DIR = "rag_models"
-#     rag_system = ChineseRAGSystem(processed_texts_dir=PROCESSED_DIR, model_save_dir=MODEL_DIR)
-#     rag_system.train_system(PROCESSED_DIR)
