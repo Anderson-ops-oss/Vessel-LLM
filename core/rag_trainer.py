@@ -12,6 +12,7 @@ from llama_index.core.schema import Document
 from llama_index.core.retrievers import VectorIndexRetriever
 from sentence_transformers import SentenceTransformer, CrossEncoder
 import os
+import sys
 
 # Debug
 import logging
@@ -27,7 +28,7 @@ class ChineseRAGSystem:
     def __init__(self, 
                  processed_texts_dir: str = "processed_texts",
                  model_save_dir: str = "rag_models",
-                 embedding_model: str = "Qwen/Qwen3-Embedding-0.6B",
+                 embedding_model: str = "qwen/Qwen3-Embedding-0.6B",
                  use_reranker: bool = True,
                  reranker_model: str = "BAAI/bge-reranker-v2-m3",
                  semantic_chunking_model: str = "BAAI/bge-m3"):
@@ -60,56 +61,86 @@ class ChineseRAGSystem:
         """Setup embedding, reranker, and semantic chunking models."""
         device = "cuda" if torch.cuda.is_available() else "cpu"
         
-        if force_offline:
-            try:
-                os.environ['HF_OFFLINE'] = '1'
-                os.environ['TRANSFORMERS_OFFLINE'] = '1'
-                os.environ['HF_DATASETS_OFFLINE'] = '1'
+        # Get the path to the local model directory
+        # Handle both development and packaged environments
+
+        if getattr(sys, 'frozen', False):
+            # If running as packaged executable
+            application_path = Path(sys.executable).parent
+            local_model_dir = application_path / "model"
+        else:
+            # If running in development environment
+            current_dir = Path(__file__).parent
+            project_root = current_dir.parent
+            local_model_dir = project_root / "model"
+        
+        try:
+            # Debug: Log the determined model directory path
+            logger.info(f"Attempting to load models from: {local_model_dir}")
+            logger.info(f"Model directory exists: {local_model_dir.exists()}")
+            if local_model_dir.exists():
+                logger.info(f"Contents of model directory: {list(local_model_dir.iterdir())}")
             
-                self.embedding_model = HuggingFaceEmbedding(
-                    model_name=self.embedding_model_name,
-                    device=device,
-                    local_files_only=force_offline
-                )
-                Settings.embed_model = self.embedding_model
+            # Set environment variables to use local model directory
+            os.environ['HF_HOME'] = str(local_model_dir)
+            os.environ['TRANSFORMERS_CACHE'] = str(local_model_dir)
+            os.environ['HF_DATASETS_CACHE'] = str(local_model_dir)
+            os.environ['SENTENCE_TRANSFORMERS_HOME'] = str(local_model_dir)
+            
+            # Try to load embedding model from local directory first
+            # Fix the model name case to match download script
+            embedding_model_name = "qwen/Qwen3-Embedding-0.6B"
+            self.embedding_model = HuggingFaceEmbedding(
+                model_name=embedding_model_name,
+                device=device,
+                cache_folder=str(local_model_dir)
+            )
+            Settings.embed_model = self.embedding_model
+            logger.info(f"Successfully loaded embedding model from local cache: {local_model_dir}")
 
-                # Load semantic chunking model
-                self.semantic_chunker = SentenceTransformer(
-                    self.semantic_chunking_model,
-                    device=device,
-                    local_files_only=force_offline
-                )
+            # Load semantic chunking model from local directory
+            self.semantic_chunker = SentenceTransformer(
+                self.semantic_chunking_model,
+                device=device,
+                cache_folder=str(local_model_dir)
+            )
+            logger.info(f"Successfully loaded semantic chunking model from local cache: {local_model_dir}")
 
-                # Load reranker model
+            # Load reranker model from local directory
+            if self.use_reranker:
                 self.reranker = CrossEncoder(
                     self.reranker_model_name,
                     device=device,
-                    local_files_only=force_offline
+                    cache_folder=str(local_model_dir)
                 )
+                logger.info(f"Successfully loaded reranker model from local cache: {local_model_dir}")
                 
-            except Exception as e:
-            # Load embedding model
-                self.embedding_model = HuggingFaceEmbedding(
-                    model_name=self.embedding_model_name,
+        except Exception as e:
+            logger.warning(f"Failed to load models from local cache ({local_model_dir}): {e}")
+            logger.info("Attempting to load models from online/default cache...")
+            
+            # Fallback: Load models from online or default cache
+            self.embedding_model = HuggingFaceEmbedding(
+                model_name=self.embedding_model_name,
+                device=device,
+                local_files_only=False
+            )
+            Settings.embed_model = self.embedding_model
+
+            # Load semantic chunking model
+            self.semantic_chunker = SentenceTransformer(
+                self.semantic_chunking_model,
+                device=device,
+                local_files_only=False
+            )
+
+            # Load reranker model
+            if self.use_reranker:
+                self.reranker = CrossEncoder(
+                    self.reranker_model_name,
                     device=device,
                     local_files_only=False
                 )
-                Settings.embed_model = self.embedding_model
-
-                # Load semantic chunking model
-                self.semantic_chunker = SentenceTransformer(
-                    self.semantic_chunking_model,
-                    device=device,
-                    local_files_only=False
-                )
-
-                # Load reranker model
-                if self.use_reranker:
-                    self.reranker = CrossEncoder(
-                        self.reranker_model_name,
-                        device=device,
-                        local_files_only=False
-                    )
 
     # Custom semantic chunking
     def custom_semantic_chunking(self, text: str) -> List[str]:
