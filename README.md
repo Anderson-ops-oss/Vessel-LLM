@@ -16,17 +16,15 @@ A powerful Chinese/English document processing and RAG (Retrieval-Augmented Gene
 ## System Requirements
 
 ### Minimum Requirements
-- **Python**: 3.8 or higher
 - **RAM**: 16GB (24GB+ recommended for large documents)
 - **Storage**: 20GB free space (for models and cache)
 - **Internet**: Required for initial model download
 - **LM Studio**: Latest version running locally
 
 ### Recommended Requirements
-- **Python**: 3.9 or 3.10
 - **RAM**: 24GB+ (32GB+ for optimal performance)
-- **GPU**: NVIDIA GPU with 16GB+ VRAM
-- **Storage**: 40GB+ free space (SSD recommended)
+- **GPU**: NVIDIA GPU with 16GB+ VRAM (24+ recommended for more powerful LLM)
+- **Storage**: 40GB+ free space
 - **CPU**: Multi-core processor (Intel i7/AMD Ryzen 7 or better)
 
 ### Platform Support
@@ -61,7 +59,7 @@ python -m venv vessel_llm_env
 vessel_llm_env\Scripts\activate
 ```
 
-#### Option B: Using Anaconda/Miniconda
+#### Option B: Using Anaconda/Miniconda (Recommended)
 
 **All Platforms:**
 ```bash
@@ -111,7 +109,7 @@ This will download:
 ### Step 5: Setup LM Studio
 
 1. Download and install [LM Studio](https://lmstudio.ai/)
-2. Download a compatible model (recommended: qwen/qwen3-14b or similar)
+2. Download a compatible model (recommended: qwen/qwen3-14b or better)
 3. Start the local server in LM Studio on `http://localhost:1234`
 4. Ensure the model is loaded and the server is running
 
@@ -237,10 +235,9 @@ Create a portable version by copying the `dist/` folder contents:
 
 ### Deployment Notes
 
-- **First Run**: Always run the model downloader first on the target machine
+- **First Run**: Always run the model downloader (download_models_to_cache.spec) first on the target machine
 - **Internet Required**: Initial setup requires internet connection for model downloads
 - **System Requirements**: Ensure target machines meet minimum system requirements
-- **LM Studio**: Users still need to install and configure LM Studio separately
 - **Antivirus**: Some antivirus software may flag the executable - add exceptions if needed
 
 ## Project Structure
@@ -254,6 +251,7 @@ Vessel-LLM/
 ├── requirements.txt               # Python dependencies
 ├── start.bat                      # Windows startup script
 ├── README.md                      # Project documentation
+|── lm_studio.exe                  # LM studio installer
 ├── core/                          # Core application modules
 │   ├── document_extractor.py      # Document processing utilities
 │   ├── rag_trainer.py             # RAG system implementation
@@ -271,7 +269,7 @@ Vessel-LLM/
 │       └── script.js              # Frontend JavaScript
 ├── uploads/                       # Temporary file storage (created at runtime)
 ├── rag_models/                    # Trained RAG models (created at runtime)
-├── cache/                         # Model cache directory (created at runtime)
+├── model/                         # Model directory (created at runtime)
 └── dist/                          # Built executables (created by PyInstaller)
     ├── server/                    # Server executable distribution
     └── download_models_to_cache/  # Model downloader distribution
@@ -286,7 +284,7 @@ Vessel-LLM/
 - `GET /rag_models` - List available RAG models
 - `POST /rename_rag_model` - Rename RAG model
 - `POST /delete_rag_model` - Delete RAG model
-- `GET /health` - Health check
+- `GET /health` - Check the server status when connect to the server
 
 ## Configuration
 
@@ -313,10 +311,10 @@ LM_STUDIO_API_URL = "http://localhost:1234/v1/chat/completions"
 The application automatically sets these environment variables:
 
 ```python
-HF_HOME = "./cache"                    # HuggingFace cache directory
-TRANSFORMERS_CACHE = "./cache"         # Transformers cache
-HF_DATASETS_CACHE = "./cache"         # Datasets cache
-SENTENCE_TRANSFORMERS_HOME = "./cache" # Sentence transformers cache
+HF_HOME = "./model"                    # HuggingFace cache directory
+TRANSFORMERS_CACHE = "./model"         # Transformers cache
+HF_DATASETS_CACHE = "./model"         # Datasets cache
+SENTENCE_TRANSFORMERS_HOME = "./model" # Sentence transformers cache
 ```
 
 ## Troubleshooting
@@ -340,17 +338,14 @@ SENTENCE_TRANSFORMERS_HOME = "./cache" # Sentence transformers cache
    - Use smaller batch sizes for large documents
    - Ensure sufficient RAM (24GB+ recommended)
    - Consider using CPU instead of GPU for large models
-
-### Performance Tips
-
-- Use GPU if available for faster inference
-- Process documents in smaller batches
-- Monitor memory usage during training
-- Use SSD storage for better I/O performance
+  
+5. **tiktoken not found**
+   - Ensure tiktoken library included in the deploy package
+   - Reinstall the deploy package
 
 
 ## Acknowledgments
 
 - HuggingFace for the transformer models
 - LlamaIndex for the RAG framework
-- The open-source AI community
+- LM Studio for offline LLM
