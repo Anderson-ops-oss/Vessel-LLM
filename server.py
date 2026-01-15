@@ -16,6 +16,8 @@ from pathlib import Path
 import secrets
 import string
 
+from core.document_extractor import DocumentProcessor
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 CACHE_DIR = os.path.join(BASE_DIR, 'model')
 UPLOADS_DIR = os.path.join(BASE_DIR, 'uploads')
@@ -34,8 +36,7 @@ if core_path not in sys.path:
 
 # Import RAG system and document extractor from core folder
 try:
-    from core.document_extractor import ChineseDocumentProcessor
-    from core.rag_trainer import ChineseRAGSystem
+    from core.rag_trainer import RAGSystem
     # Set up RAG model directory
     BASE_MODEL_DIR = os.path.join(BASE_DIR, "rag_models")
     # Ensure that RAG model directory exists
@@ -52,7 +53,7 @@ try:
         # Check if model directory and config file exist
         if os.path.isdir(model_path) and os.path.exists(config_path):
             try:
-                rag_systems[model_dir] = ChineseRAGSystem(model_save_dir=model_path)
+                rag_systems[model_dir] = RAGSystem(model_save_dir=model_path)
                 rag_systems[model_dir].load_system()
                 # Debug Message
                 print(f"RAG system '{model_dir}' loaded successfully!")
@@ -385,7 +386,7 @@ def extract_file_content(file_path: str, file_extension: str) -> str:
     try:
         # Create a temporary directory for processing
         temp_dir = os.path.dirname(file_path)
-        processor = ChineseDocumentProcessor(temp_dir)
+        processor = DocumentProcessor(temp_dir)
         
         # Process the specific file based on extension
         if file_extension == '.docx':
@@ -687,7 +688,7 @@ def process_folder_for_rag(upload_dir: str) -> tuple:
     
     try:
         # Use unified document processor
-        processor = ChineseDocumentProcessor(upload_dir)
+        processor = DocumentProcessor(upload_dir)
         processed_texts = processor.process_documents()
 
         # Save processed texts
@@ -800,7 +801,7 @@ def upload_folder_for_rag():
             # Update the training progress
             training_progress['percentage'] = 40
             training_progress['status'] = 'Training RAG model...'
-            new_rag = ChineseRAGSystem(processed_texts_dir=processed_dir, model_save_dir=model_dir)
+            new_rag = RAGSystem(processed_texts_dir=processed_dir, model_save_dir=model_dir)
             new_rag.train_system(processed_dir)
             training_progress['percentage'] = 50
             training_progress['status'] = 'RAG model training in progress...'

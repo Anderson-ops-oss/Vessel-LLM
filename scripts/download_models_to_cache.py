@@ -24,15 +24,27 @@ def download_semantic_chunking_model(model_name: str, cache_dir: str):
     SentenceTransformer(model_name, cache_folder=cache_dir)
     print(f"Semantic chunking model downloaded to {cache_dir}")
 
+# Downloading conversation model
+def download_conversation_model(model_name: str, cache_dir: str):
+    print(f"Downloading conversation model: {model_name} ...")
+    AutoModel.from_pretrained(model_name, cache_dir=cache_dir)
+    AutoTokenizer.from_pretrained(model_name, cache_dir=cache_dir)
+    print(f"Conversation model downloaded to {cache_dir}")
+
+
 if __name__ == "__main__":
     # Defining model names
-    EMBEDDING_MODEL = "qwen/Qwen3-Embedding-0.6B" 
-    RERANKER_MODEL = "BAAI/bge-reranker-v2-m3" 
-    SEMANTIC_CHUNKING_MODEL = "BAAI/bge-m3" 
+    EMBEDDING_MODEL = "Qwen/Qwen3-VL-Embedding-2B" 
+    RERANKER_MODEL = "Qwen/Qwen3-VL-Reranker-2B" 
+    SEMANTIC_CHUNKING_MODEL = "sentence-transformers/all-MiniLM-L6-v2" 
+    CONVERSACTION_MODEL = "Qwen/Qwen3-VL-8B-Thinking"
+
 
     # Setting the cache folder path
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    print(f"Base directory: {BASE_DIR}")
     CACHE_DIR = os.path.abspath(os.path.join(BASE_DIR, '..', 'model'))
+    print(f"Cache directory: {CACHE_DIR}")
     os.makedirs(CACHE_DIR, exist_ok=True)
 
     # Setting environment variables to ensure transformers download to the specified cache
@@ -45,3 +57,4 @@ if __name__ == "__main__":
     download_embedding_model(EMBEDDING_MODEL, CACHE_DIR)
     download_reranker_model(RERANKER_MODEL, CACHE_DIR)
     download_semantic_chunking_model(SEMANTIC_CHUNKING_MODEL, CACHE_DIR)
+    download_conversation_model(CONVERSACTION_MODEL, CACHE_DIR)

@@ -20,8 +20,8 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
-# Chinese RAG System
-class ChineseRAGSystem:
+# RAG System
+class RAGSystem:
     """A class to handle the RAG system for Chinese and English documents."""
 
     # Initialize the RAG system
