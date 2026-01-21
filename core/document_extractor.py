@@ -1,30 +1,21 @@
 import os
 from pathlib import Path
 import logging
-from typing import Dict, List, Union, Tuple
+from typing import Dict, List
 import re
-import fitz  # PyMuPDF
+import fitz 
 from docx import Document as DocxDocument
 from openpyxl import load_workbook
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-# Try importing advanced libraries
-try:
-    from rapidocr_onnxruntime import RapidOCR
-    OCR_AVAILABLE = True
-except ImportError:
-    OCR_AVAILABLE = False
-    logger.warning("RapidOCR not found. Image OCR will not work. Install with: pip install rapidocr_onnxruntime")
-
 try:
     import pdfplumber
     PDFPLUMBER_AVAILABLE = True
 except ImportError:
     PDFPLUMBER_AVAILABLE = False
-    logger.warning("pdfplumber not found. Advanced table extraction will be disabled. Install with: pip install pdfplumber")
+    pdfplumber = None
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 class DocumentProcessor:
     """
@@ -38,23 +29,61 @@ class DocumentProcessor:
     Images (with OCR): .png, .jpg, .jpeg, .bmp, .gif, .tiff, .webp
     """
 
-    def __init__(self, upload_file_dir: str = "processed_texts"):
+    def __init__(self, upload_file_dir: str = "processed_texts", enable_ocr: bool = False):
         """
         Initialize document processor.
         Args: 
             upload_file_dir (str): Directory containing documents to process.
+            enable_ocr (bool): Whether to enable OCR for image files.
         """
         self.upload_file_dir = Path(upload_file_dir)
         self.upload_file_dir.mkdir(exist_ok=True)
         
-        # Initialize OCR engine if available
-        self.ocr_engine = None
-        if OCR_AVAILABLE:
+        if enable_ocr:
             try:
+                from rapidocr_onnxruntime import RapidOCR
                 self.ocr_engine = RapidOCR()
-            except Exception as e:
-                logger.error(f"Failed to initialize RapidOCR: {e}")
-        print("OCR Available:", OCR_AVAILABLE)
+            except ImportError:
+                logger.warning("RapidOCR not available, OCR features disabled")
+                self.ocr_engine = None
+        else:
+            self.ocr_engine = None
+
+    def get_pdf_page_count(self, file_path: str) -> int:
+        """Get the number of pages in a PDF file."""
+        try:
+            with fitz.open(file_path) as doc:
+                return len(doc)
+        except Exception as e:
+            logger.error(f"Error getting PDF page count: {e}")
+            return 0
+
+    def convert_pdf_to_images(self, file_path: str, max_pages: int = 5) -> List:
+        """
+        Convert PDF pages to images for multimodal processing.
+        Args:
+            file_path: Path to PDF
+            max_pages: Maximum number of pages to convert
+        Returns:
+            List of PIL Images
+        """
+        from PIL import Image
+        import io
+        
+        images = []
+        try:
+            with fitz.open(file_path) as doc:
+                num_pages = min(len(doc), max_pages)
+                for i in range(num_pages):
+                    page = doc[i]
+                    # Higher DPI (2.0) for better text recognition by the VL model
+                    pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))
+                    img_data = pix.tobytes("png")
+                    images.append(Image.open(io.BytesIO(img_data)))
+            return images
+        except Exception as e:
+            logger.error(f"Error converting PDF to images: {e}")
+            return []
 
     def process_documents(self) -> Dict[str, str]:
         """
@@ -115,19 +144,15 @@ class DocumentProcessor:
             str: Extracted text from the image.
         """
         if not self.ocr_engine:
-            return "[OCR not available. Please install rapidocr_onnxruntime]"
-
+            return "[OCR engine not initialized]"
         try:
             result, _ = self.ocr_engine(image_path)
             if result:
-                # result is a list of [box, text, score]
-                # We extract just the text
-                texts = [line[1] for line in result]
-                return "\n".join(texts)
-            return ""
+                ocr_text = "\n".join([line[1] for line in result])
+                return "[No text detected in image]"
         except Exception as e:
-            logger.error(f"OCR failed for {image_path}: {e}")
-            return f"[OCR Failed: {e}]"
+            logger.error(f"image extracted failed for {image_path}: {e}")
+            return f"[Image Extraction failed: {e}]"
 
     def clean_markdown_text(self, text: str) -> str:
         """
@@ -213,11 +238,12 @@ class DocumentProcessor:
                     continue
                 
                 # Simple header detection based on style or content
-                if 'Heading' in para.style.name:
+                style_name = para.style.name if para.style else None
+                if style_name and 'Heading' in style_name:
                     level = 1
                     try:
                         # Extract level from "Heading 1", "Heading 2" etc.
-                        level = int(para.style.name.split()[-1])
+                        level = int(style_name.split()[-1])
                     except:
                         level = 2
                     lines.append(f"{'#' * level} {text}")

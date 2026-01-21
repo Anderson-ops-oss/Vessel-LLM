@@ -1,6 +1,9 @@
 import os
 from transformers import AutoModel, AutoTokenizer
 from sentence_transformers import SentenceTransformer
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Downloading embedding model
 def download_embedding_model(model_name: str, cache_dir: str):
@@ -34,12 +37,14 @@ def download_conversation_model(model_name: str, cache_dir: str):
 
 if __name__ == "__main__":
     # Defining model names
-    EMBEDDING_MODEL = "Qwen/Qwen3-VL-Embedding-2B" 
-    RERANKER_MODEL = "Qwen/Qwen3-VL-Reranker-2B" 
-    SEMANTIC_CHUNKING_MODEL = "sentence-transformers/all-MiniLM-L6-v2" 
-    CONVERSACTION_MODEL = "Qwen/Qwen3-VL-8B-Thinking"
+    EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "")
+    RERANKER_MODEL = os.getenv("RERANKER_MODEL", "")
+    SEMANTIC_CHUNKING_MODEL = os.getenv("SEMANTIC_CHUNKING_MODEL", "")
+    CONVERSACTION_MODEL = os.getenv("LLM_MODEL", "")
 
-
+    if not all([EMBEDDING_MODEL, RERANKER_MODEL, SEMANTIC_CHUNKING_MODEL, CONVERSACTION_MODEL]):
+        raise ValueError("One or more model names are not set in environment variables. Make sure you have set EMBEDDING_MODEL, RERANKER_MODEL, SEMANTIC_CHUNKING_MODEL, and LLM_MODEL in .env file.")
+    
     # Setting the cache folder path
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     print(f"Base directory: {BASE_DIR}")
